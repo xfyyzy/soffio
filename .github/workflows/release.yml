@@ -10,6 +10,7 @@ permissions:
 env:
   BIN_NAME: soffio
   MERMAID_CLI_IMAGE: minlag/mermaid-cli:latest
+  RELEASE_TAG: ${{ github.ref_name }}
 
 jobs:
   build-binaries:
@@ -33,6 +34,7 @@ jobs:
             -v "$HOME/.npm:/root/.npm" \
             -e BIN_NAME="${BIN_NAME}" \
             -e CPU_LEVEL="${CPU_LEVEL}" \
+            -e RELEASE_TAG="${RELEASE_TAG}" \
             -w /work \
             rust:1.91-alpine3.20 \
             sh -ec '
@@ -45,17 +47,17 @@ jobs:
               rm -rf dist && mkdir -p dist && \
               cp target/release/${BIN_NAME} dist/${BIN_NAME} && \
               strip dist/${BIN_NAME} || true && \
-              tar_name="${BIN_NAME}-${CPU_LEVEL}-musl.tar.gz" && \
+              tar_name="${BIN_NAME}-${RELEASE_TAG}-${CPU_LEVEL}-musl.tar.gz" && \
               tar czf "${tar_name}" -C dist ${BIN_NAME}
             '
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl
-          path: ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl.tar.gz
+          name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl
+          path: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl.tar.gz
       - uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl.tar.gz
+          files: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl.tar.gz
         if: startsWith(github.ref, 'refs/tags/')
 
   docker:
@@ -85,3 +87,4 @@ jobs:
             MERMAID_CLI_IMAGE=${{ env.MERMAID_CLI_IMAGE }}
           tags: |
             ghcr.io/${{ github.repository }}:amd64-${{ matrix.cpu_level }}
+            ghcr.io/${{ github.repository }}:${{ env.RELEASE_TAG }}-amd64-${{ matrix.cpu_level }}
