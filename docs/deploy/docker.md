@@ -84,4 +84,3 @@ docker compose -f docker-compose.yml up -d
 
 上述命令需要与运行中服务共享数据库和上传目录，可通过 `--network` 与 `-v soffio_uploads:/var/lib/soffio/uploads`
 等参数连接现有资源。
-

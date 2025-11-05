@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        cpu_level: [x86-64-v2, x86-64-v3, x86-64-v4]
+        cpu_level: [x86-64-v2, x86-64-v3]
     steps:
       - uses: actions/checkout@v5
       - name: Prepare cache directories
@@ -68,7 +68,7 @@ jobs:
     needs: build-binaries
     strategy:
       matrix:
-        cpu_level: [x86-64-v2, x86-64-v3, x86-64-v4]
+        cpu_level: [x86-64-v2, x86-64-v3]
     steps:
       - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3
