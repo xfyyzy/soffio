@@ -46,21 +46,16 @@ jobs:
               cp target/release/${BIN_NAME} dist/${BIN_NAME} && \
               strip dist/${BIN_NAME} || true && \
               tar_name="${BIN_NAME}-${CPU_LEVEL}-musl.tar.gz" && \
-              tar czf "${tar_name}" -C dist ${BIN_NAME} && \
-              sha256sum "${tar_name}" > "${tar_name%.tar.gz}.sha256"
+              tar czf "${tar_name}" -C dist ${BIN_NAME}
             '
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
           name: ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl
-          path: |
-            ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl.tar.gz
-            ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl.sha256
+          path: ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl.tar.gz
       - uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl.tar.gz
-            ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl.sha256
+          files: ${{ env.BIN_NAME }}-${{ matrix.cpu_level }}-musl.tar.gz
         if: startsWith(github.ref, 'refs/tags/')
 
   docker:
