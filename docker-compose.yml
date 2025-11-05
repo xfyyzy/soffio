@@ -39,7 +39,7 @@ services:
       - "3000:3000"
     restart: unless-stopped
     volumes:
-      - ./update:/var/lib/soffio/uploads
+      - ./uploads:/var/lib/soffio/uploads
     healthcheck:
       test:
         - "CMD"
