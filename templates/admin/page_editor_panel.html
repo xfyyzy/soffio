@@ -1,0 +1,40 @@
+<section data-role="panel">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">{{ content.heading }}</h2>
+  </header>
+  <div data-role="panel-body">
+    <form id="page-editor-form" data-role="page-editor" method="post" action="{{ content.form_action }}"
+      {% if content.enable_live_submit %}data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))"{% endif %}>
+      <label>
+        <span>Title</span>
+        <input type="text" name="title" value="{{ content.title }}" required>
+      </label>
+      <label>
+        <span>Body Markdown</span>
+        <textarea name="body_markdown" rows="12" required>{{ content.body_markdown }}</textarea>
+      </label>
+      <label>
+        <span>Status</span>
+        <select name="status">
+          {% for option in content.status_options %}
+          <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </form>
+    <section data-role="metadata">
+      <h3>Publication</h3>
+      <p>
+        <strong>Last Published:</strong>
+        {% if let Some(time) = content.published_at %}
+        {{ time }}
+        {% else %}
+        <span data-role="muted">—</span>
+        {% endif %}
+      </p>
+    </section>
+    <div data-role="form-actions">
+      <button type="submit" form="page-editor-form">{{ content.submit_label }}</button>
+    </div>
+  </div>
+</section>

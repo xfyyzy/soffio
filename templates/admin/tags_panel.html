@@ -1,0 +1,97 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}tags{% endblock %}
+
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}
+      <a href="{{ content.new_tag_href }}">New Tag</a>
+{% endblock panel_toolbar %}
+
+{% block panel_controls %}
+{% let panel_action = content.panel_action %}
+{% include "admin/partials/status_tabs.html" %}
+{% include "admin/partials/filter_form.html" %}
+{% endblock panel_controls %}
+
+{% block panel_content %}
+{% let panel_action = content.panel_action %}
+    <table data-role="publishable-table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Slug</th>
+          <th scope="col">Usage</th>
+          <th scope="col">{{ content.time_column_label }}</th>
+          <th scope="col">Pinned</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tag in content.tags %}
+        <tr data-role="tag-row" data-tag-id="{{ tag.id }}">
+          <td data-column="title">
+            <span>{{ tag.name }}</span>
+          </td>
+          <td data-column="slug">
+            <span data-role="slug-value">{{ tag.slug }}</span>
+          </td>
+          <td>{{ tag.usage_count }}</td>
+          <td>
+            {% if let Some(time) = &tag.display_time %}
+            {{ time }}
+            {% else %}
+            <span data-role="muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if tag.pinned %}
+            <span data-role="pinned-indicator">Pinned</span>
+            {% endif %}
+          </td>
+          <td data-role="publishable-actions">
+            <a href="{{ tag.edit_href }}" data-role="secondary">Edit</a>
+            {% if tag.pinned %}
+            <form data-role="inline-form" method="post" action="{{ tag.unpin_action }}"
+              data-on-submit__prevent="(@post(`{{ tag.unpin_action }}`, { contentType: 'form' }))">
+              {% if let Some(status) = &content.active_status_key %}
+              <input type="hidden" name="status_filter" value="{{ status }}">
+              {% endif %}
+              <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+              <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+              <input type="hidden" name="cursor" value="{% if let Some(value) = &content.cursor_param %}{{ value }}{% endif %}">
+              <input type="hidden" name="trail" value="{% if let Some(value) = &content.trail %}{{ value }}{% endif %}">
+              <button type="submit">Unpin</button>
+            </form>
+            {% else %}
+            <form data-role="inline-form" method="post" action="{{ tag.pin_action }}"
+              data-on-submit__prevent="(@post(`{{ tag.pin_action }}`, { contentType: 'form' }))">
+              {% if let Some(status) = &content.active_status_key %}
+              <input type="hidden" name="status_filter" value="{{ status }}">
+              {% endif %}
+              <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+              <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+              <input type="hidden" name="cursor" value="{% if let Some(value) = &content.cursor_param %}{{ value }}{% endif %}">
+              <input type="hidden" name="trail" value="{% if let Some(value) = &content.trail %}{{ value }}{% endif %}">
+              <button type="submit">Pin</button>
+            </form>
+            {% endif %}
+            <form data-role="inline-form" method="post" action="{{ tag.delete_action }}"
+              data-on-submit__prevent="(@post(`{{ tag.delete_action }}`, { contentType: 'form' }))">
+              <input type="hidden" name="name" value="{{ tag.name }}">
+              {% if let Some(status) = &content.active_status_key %}
+              <input type="hidden" name="status_filter" value="{{ status }}">
+              {% endif %}
+              <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+              <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+              <input type="hidden" name="cursor" value="{% if let Some(value) = &content.cursor_param %}{{ value }}{% endif %}">
+              <input type="hidden" name="trail" value="{% if let Some(value) = &content.trail %}{{ value }}{% endif %}">
+              <button type="submit" data-variant="danger" {% if tag.usage_count > 0 %}disabled{% endif %}>Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+{% include "admin/partials/pagination.html" %}
+{% endblock panel_content %}

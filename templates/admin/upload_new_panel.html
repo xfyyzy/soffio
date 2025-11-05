@@ -1,0 +1,73 @@
+{% extends "admin/layouts/panel.html" %}
+{% import "admin/macros/uploads.html" as uploads %}
+
+{% block panel_id %}uploads-form{% endblock %}
+
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}
+      <a href="{{ content.back_href }}">Back to uploads</a>
+{% endblock panel_toolbar %}
+
+{% block panel_content %}
+    <form
+      method="post"
+      action="{{ content.upload_action }}"
+      enctype="multipart/form-data"
+      data-upload-limit="{{ content.upload_limit_bytes }}"
+      data-on-submit__prevent="(@processUploadQueue())"
+    >
+      <input type="hidden" name="queue_manifest" value="{{ content.queue.manifest_json() }}">
+      <p data-role="muted">Each file must be ≤ {{ content.upload_limit_mib }} MiB. You can pick multiple files at once.</p>
+      <label data-role="field">
+        <input
+          type="file"
+          name="file"
+          required
+          multiple
+          data-on-change="(@queueFiles())"
+        >
+      </label>
+      <section
+        data-role="upload-queue"
+        data-upload-queue
+        aria-live="polite"
+      >
+        {% call uploads::queue(&content.queue.entries, content.upload_limit_mib) %}
+      </section>
+      <div data-role="form-actions">
+        <button type="submit" data-role="primary">Upload files</button>
+      </div>
+    </form>
+    <form
+      method="post"
+      action="{{ content.queue_sync_action }}"
+      data-role="upload-queue-sync"
+      hidden
+      data-on-submit__prevent="(@post(`{{ content.queue_sync_action }}`, { contentType: 'form' }))"
+    >
+      <input type="hidden" name="queue_manifest" value="{{ content.queue.manifest_json() }}">
+    </form>
+    <form
+      method="post"
+      action="{{ content.upload_action }}"
+      data-role="upload-queue-upload"
+      hidden
+      enctype="multipart/form-data"
+      data-on-submit__prevent="(@post(`{{ content.upload_action }}`, { contentType: 'form' }))"
+    >
+      <input type="hidden" name="queue_entry_id" value="">
+      <input type="hidden" name="suppress_panel_patch" value="true">
+      <input type="file" name="file">
+    </form>
+    <form
+      method="post"
+      action="{{ content.toast_action }}"
+      data-role="uploads-toast"
+      hidden
+      data-on-submit__prevent="(@post(`{{ content.toast_action }}`, { contentType: 'form' }))"
+    >
+      <input type="hidden" name="kind" value="">
+      <input type="hidden" name="message" value="">
+    </form>
+{% endblock panel_content %}

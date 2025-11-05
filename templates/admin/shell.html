@@ -1,0 +1,23 @@
+{% extends "admin/base.html" %}
+
+{% block shell %}
+<admin-shell data-structure="columns" role="document">
+  <admin-nav role="navigation" aria-label="Admin navigation">
+    <h1 data-role="brand">{{ view.chrome.brand.title }}</h1>
+    {% for link in view.chrome.navigation.items %}
+    <a
+      data-role="nav-link"
+      href="{{ link.href }}"
+      {% if link.is_active %}data-state="active"{% endif %}
+      {% if link.open_in_new_tab %}target="_blank" rel="noopener noreferrer"{% endif %}
+    >
+      {{ link.label }}
+    </a>
+    {% endfor %}
+  </admin-nav>
+  <admin-main role="main">
+    <aside data-admin-toast="stack" aria-live="polite"></aside>
+    {% block content %}{% endblock %}
+  </admin-main>
+</admin-shell>
+{% endblock %}

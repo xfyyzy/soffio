@@ -1,0 +1,3 @@
+ALTER TABLE post_sections
+    ADD COLUMN contains_math BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN contains_mermaid BOOLEAN NOT NULL DEFAULT FALSE;

@@ -1,0 +1,92 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}navigation{% endblock %}
+
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}
+      <a href="{{ content.new_navigation_href }}">New Item</a>
+{% endblock panel_toolbar %}
+
+{% block panel_controls %}
+{% let panel_action = content.panel_action %}
+{% include "admin/partials/status_tabs.html" %}
+{% include "admin/partials/filter_form.html" %}
+{% endblock panel_controls %}
+
+{% block panel_content %}
+{% let panel_action = content.panel_action %}
+    <table data-role="publishable-table">
+      <thead>
+        <tr>
+          <th scope="col" data-column="label">Label</th>
+          <th scope="col" data-column="type">Type</th>
+          <th scope="col" data-column="destination">Destination</th>
+          <th scope="col" data-column="order">Order</th>
+          <th scope="col" data-column="visible">Visible</th>
+          <th scope="col" data-column="actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in content.items %}
+        <tr data-role="navigation-row" data-navigation-id="{{ item.id }}">
+          <td data-column="label">
+            <a href="{{ item.preview_href }}" title="{{ item.label }}" target="_blank" rel="noopener noreferrer">{{ item.label }}</a>
+          </td>
+          <td data-column="type">
+            <status-badge data-status="{{ item.destination_type_status }}">{{ item.destination_type_label }}</status-badge>
+          </td>
+          <td data-column="destination">
+            <span title="{{ item.destination_display }}">{{ item.destination_display }}</span>
+          </td>
+          <td data-column="order">{{ item.sort_order }}</td>
+          <td data-column="visible">
+            {% if item.visible %}
+            <span data-role="pinned-indicator">Visible</span>
+            {% endif %}
+          </td>
+          <td data-column="actions">
+            <div data-role="row-actions">
+              <a href="{{ item.edit_href }}">Edit</a>
+              <form data-role="inline-form" method="post"
+                    action="{{ item.toggle_action }}"
+                    data-on-submit__prevent="(@post(`{{ item.toggle_action }}`, { contentType: 'form' }))">
+                {% if let Some(status) = &content.active_status_key %}
+                <input type="hidden" name="status" value="{{ status }}">
+                {% endif %}
+                {% if let Some(value) = &content.filter_search %}
+                <input type="hidden" name="search" value="{{ value }}">
+                {% endif %}
+                {% if let Some(value) = &content.cursor_param %}
+                <input type="hidden" name="cursor" value="{{ value }}">
+                {% endif %}
+                {% if let Some(value) = &content.trail %}
+                <input type="hidden" name="trail" value="{{ value }}">
+                {% endif %}
+                <button type="submit">{{ item.toggle_label }}</button>
+              </form>
+              <form data-role="inline-form" method="post"
+                    action="{{ item.delete_action }}"
+                    data-on-submit__prevent="(@post(`{{ item.delete_action }}`, { contentType: 'form' }))">
+                {% if let Some(status) = &content.active_status_key %}
+                <input type="hidden" name="status" value="{{ status }}">
+                {% endif %}
+                {% if let Some(value) = &content.filter_search %}
+                <input type="hidden" name="search" value="{{ value }}">
+                {% endif %}
+                {% if let Some(value) = &content.cursor_param %}
+                <input type="hidden" name="cursor" value="{{ value }}">
+                {% endif %}
+                {% if let Some(value) = &content.trail %}
+                <input type="hidden" name="trail" value="{{ value }}">
+                {% endif %}
+                <button type="submit" data-variant="danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+{% include "admin/partials/pagination.html" %}
+{% endblock panel_content %}

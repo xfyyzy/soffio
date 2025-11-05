@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            slug,\n            title,\n            body_markdown,\n            status AS \"status: PageStatus\",\n            scheduled_at,\n            published_at,\n            archived_at\n        FROM pages\n        ORDER BY slug\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "body_markdown",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "status: PageStatus",
+        "type_info": {
+          "Custom": {
+            "name": "page_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "published",
+                "archived",
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "scheduled_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "archived_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "141c50188e1ef269238e6fee293ee2fb1c9837a2557dbfed8df2d09c519184eb"
+}

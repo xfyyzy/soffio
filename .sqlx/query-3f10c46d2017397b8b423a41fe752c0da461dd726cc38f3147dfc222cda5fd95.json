@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pages\n            SET rendered_html = $2,\n                updated_at = now()\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3f10c46d2017397b8b423a41fe752c0da461dd726cc38f3147dfc222cda5fd95"
+}

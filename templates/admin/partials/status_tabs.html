@@ -1,0 +1,27 @@
+    <status-filters role="list">
+      {% for filter in content.filters %}
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="{{ panel_action }}" data-on-submit__prevent="(@post(`{{ panel_action }}`, { contentType: 'form' }))">
+          {% if let Some(key) = &filter.status_key %}
+          <input type="hidden" name="status" value="{{ key }}">
+          {% endif %}
+          {% if let Some(value) = &content.filter_search %}
+          <input type="hidden" name="search" value="{{ value }}">
+          {% endif %}
+          {% if content.tag_filter_enabled %}
+          {% if let Some(value) = &content.filter_tag %}
+          <input type="hidden" name="tag" value="{{ value }}">
+          {% endif %}
+          {% endif %}
+          {% if content.month_filter_enabled %}
+          {% if let Some(value) = &content.filter_month %}
+          <input type="hidden" name="month" value="{{ value }}">
+          {% endif %}
+          {% endif %}
+          <button type="submit" data-role="status-filter"{% if filter.is_active %} data-state="active"{% endif %}>
+            {{ filter.label }} ({{ filter.count }})
+          </button>
+        </form>
+      </status-filter>
+      {% endfor %}
+    </status-filters>

@@ -1,0 +1,56 @@
+<section data-role="panel">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">{{ content.heading }}</h2>
+  </header>
+  <div data-role="panel-body">
+    <form data-role="navigation-editor" method="post" action="{{ content.form_action }}"
+      {% if content.enable_live_submit %}data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))"{% endif %}>
+      <label>
+        <span>Label</span>
+        <input type="text" name="label" value="{{ content.label }}" required>
+      </label>
+      <label>
+        <span>Destination Type</span>
+        <select name="destination_type"
+          data-on-change__prevent="(@post(`{{ content.preview_action }}`, { contentType: 'form' }))">
+          {% for option in content.destination_type_options %}
+          <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% if content.active_destination_type == "internal" %}
+      <label>
+        <span>Destination Page</span>
+        <select name="destination_page_id">
+          <option value="" {% if !content.page_has_selection %}selected{% endif %}>Select a page</option>
+          {% for option in content.page_options %}
+          <option value="{{ option.id }}" {% if option.selected %}selected{% endif %}>
+            {{ option.title }} ({{ option.slug }})
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      {% else %}
+      <label>
+        <span>Destination URL</span>
+        <input type="url" name="destination_url" value="{% if let Some(url) = &content.destination_url %}{{ url }}{% endif %}">
+      </label>
+      {% endif %}
+      <label>
+        <span>Sort Order</span>
+        <input type="number" name="sort_order" value="{{ content.sort_order }}" required>
+      </label>
+      <div data-role="pin-toggle">
+        <label for="{{ content.visible_input_id }}">Visible</label>
+        <input id="{{ content.visible_input_id }}" type="checkbox" name="visible" value="on" {% if content.visible %}checked{% endif %}>
+      </div>
+      <div data-role="pin-toggle">
+        <label for="{{ content.open_in_new_tab_input_id }}">Open in new tab</label>
+        <input id="{{ content.open_in_new_tab_input_id }}" type="checkbox" name="open_in_new_tab" value="on" {% if content.open_in_new_tab %}checked{% endif %}>
+      </div>
+      <div data-role="form-actions">
+        <button type="submit">{{ content.submit_label }}</button>
+      </div>
+    </form>
+  </div>
+</section>

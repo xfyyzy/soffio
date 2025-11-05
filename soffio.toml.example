@@ -1,0 +1,139 @@
+# Soffio configuration template.
+#
+# Every key lists its equivalent environment variable (prefix `SOFFIO__`) and
+# CLI flag so operators can translate across configuration sources. Configuration
+# precedence is CLI > environment > file.
+
+[server]
+# Public listener host.
+# Env: SOFFIO__SERVER__HOST
+# CLI: --server-host
+host = "127.0.0.1"
+
+# Administrative listener host.
+# Env: SOFFIO__SERVER__ADMIN_HOST
+# CLI: --server-admin-host
+admin_host = "127.0.0.1"
+
+# Public listener port.
+# Env: SOFFIO__SERVER__PUBLIC_PORT
+# CLI: --server-public-port
+public_port = 3000
+
+# Administrative listener port.
+# Env: SOFFIO__SERVER__ADMIN_PORT
+# CLI: --server-admin-port
+admin_port = 3001
+
+# Graceful shutdown timeout in seconds.
+# Env: SOFFIO__SERVER__GRACEFUL_SHUTDOWN_SECONDS
+# CLI: --server-graceful-shutdown-seconds
+graceful_shutdown_seconds = 30
+
+[logging]
+# Base log level (`trace`, `debug`, `info`, `warn`, or `error`).
+# Env: SOFFIO__LOGGING__LEVEL
+# CLI: --log-level
+level = "info"
+
+# Emit JSON logs when true.
+# Env: SOFFIO__LOGGING__JSON
+# CLI: --log-json
+json = false
+
+[database]
+# Postgres connection URL.
+# Env: SOFFIO__DATABASE__URL
+# CLI: --database-url
+url = "postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev"
+
+# Maximum size of the HTTP Postgres connection pool.
+# Env: SOFFIO__DATABASE__HTTP_MAX_CONNECTIONS
+# CLI: --database-http-max-connections
+http_max_connections = 8
+
+# Maximum size of the jobs Postgres connection pool.
+# Env: SOFFIO__DATABASE__JOBS_MAX_CONNECTIONS
+# CLI: --database-jobs-max-connections
+jobs_max_connections = 8
+
+[uploads]
+# Directory where uploaded assets are stored.
+# Env: SOFFIO__UPLOADS__DIRECTORY
+# CLI: --uploads-directory
+directory = "uploads"
+
+# Maximum request body size accepted by the admin upload endpoint (bytes).
+# Env: SOFFIO__UPLOADS__MAX_REQUEST_BYTES
+# CLI: --uploads-max-request-bytes
+max_request_bytes = 10_485_760
+
+[cache]
+# Enable the HTML fragment cache used by presentation-layer partials.
+# Env: SOFFIO__CACHE__ENABLE_HTML_FRAGMENT_CACHE
+# CLI: --cache-enable-html-fragment-cache
+enable_html_fragment_cache = false
+
+# Enable the response cache for HTTP handlers.
+# Env: SOFFIO__CACHE__ENABLE_RESPONSE_CACHE
+# CLI: --cache-enable-response-cache
+enable_response_cache = false
+
+[rate_limit]
+# Window size for rate limiting in seconds.
+# Env: SOFFIO__RATE_LIMIT__WINDOW_SECONDS
+# CLI: --rate-limit-window-seconds
+window_seconds = 60
+
+# Maximum requests allowed within the window.
+# Env: SOFFIO__RATE_LIMIT__MAX_REQUESTS
+# CLI: --rate-limit-max-requests
+max_requests = 180
+
+[scheduler]
+# Background job cadence in seconds.
+# Env: SOFFIO__SCHEDULER__CADENCE_SECONDS
+# CLI: --scheduler-cadence-seconds
+cadence_seconds = 300
+
+[jobs]
+# Concurrent render-post workers.
+# Env: SOFFIO__JOBS__RENDER_POST_CONCURRENCY
+# CLI: --jobs-render-post-concurrency
+render_post_concurrency = 2
+
+# Concurrent render-summary workers.
+# Env: SOFFIO__JOBS__RENDER_SUMMARY_CONCURRENCY
+# CLI: --jobs-render-summary-concurrency
+render_summary_concurrency = 2
+
+# Concurrent render-page workers.
+# Env: SOFFIO__JOBS__RENDER_PAGE_CONCURRENCY
+# CLI: --jobs-render-page-concurrency
+render_page_concurrency = 1
+
+# Concurrent publish-post workers.
+# Env: SOFFIO__JOBS__PUBLISH_POST_CONCURRENCY
+# CLI: --jobs-publish-post-concurrency
+publish_post_concurrency = 1
+
+# Concurrent publish-page workers.
+# Env: SOFFIO__JOBS__PUBLISH_PAGE_CONCURRENCY
+# CLI: --jobs-publish-page-concurrency
+publish_page_concurrency = 1
+
+# Concurrent cache-invalidation workers.
+# Env: SOFFIO__JOBS__CACHE_INVALIDATION_CONCURRENCY
+# CLI: --jobs-cache-invalidation-concurrency
+cache_invalidation_concurrency = 1
+
+[render]
+# Mermaid CLI executable invoked for server-side diagram rendering.
+# Env: SOFFIO__RENDER__MERMAID_CLI_PATH
+# CLI: --render-mermaid-cli-path
+mermaid_cli_path = "mmdc"
+
+# Directory used to cache rendered Mermaid SVGs.
+# Env: SOFFIO__RENDER__MERMAID_CACHE_DIR
+# CLI: --render-mermaid-cache-dir
+mermaid_cache_dir = "/tmp/soffio-mermaid"

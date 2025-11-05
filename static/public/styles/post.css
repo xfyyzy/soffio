@@ -1,0 +1,215 @@
+@import "./gfm.css";
+
+meta-column[data-region="meta"] > [data-role="meta-card"] {
+  display: block;
+  box-shadow: none;
+  max-height: calc(100vh - 7rem);
+  overflow-y: auto;
+}
+
+[data-role="meta-card"] h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-role="meta-card"] ul {
+  margin: 0;
+  padding-left: 0;
+  color: var(--text-secondary);
+}
+
+.meta-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.meta-tag-list li a {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-soft);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text-secondary);
+}
+
+[data-role="post-summary"] {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem 1.25rem;
+  background: var(--surface-muted);
+}
+
+[data-role="post-quote"] {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  border-left: 3px solid var(--border-strong);
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+[data-role="post-quote"] p {
+  margin: 0;
+}
+
+summary-title[data-role="summary-title"] {
+  display: block;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+[data-role="post-summary"] ul {
+  margin: 0.75rem 0 0;
+  padding-left: 1.2rem;
+}
+
+[data-role="post-section"] {
+  margin: 2rem 0;
+  scroll-margin-top: var(--article-anchor-offset);
+}
+
+[data-role="post-section"]:first-of-type {
+  margin-top: 0;
+}
+
+[data-role="post-section"] > :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0 0 0.75rem;
+  color: var(--text-primary);
+}
+
+[data-role="post-section"] figure {
+  margin: 1.5rem 0;
+}
+
+[data-role="post-section"] img {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: var(--radius-soft);
+}
+
+[data-role="post-section"] img[data-default-aspect] {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
+  background-color: var(--surface-muted);
+}
+
+[data-role="post-section"] p {
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+[data-role="post-table"] {
+  width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+[data-role="table-head"] {
+  background: var(--surface-muted);
+}
+
+[data-role="table-row"] {
+  border-top: 1px solid var(--border);
+}
+
+[data-role="table-row"]:first-child {
+  border-top: none;
+}
+
+[data-role="table-header-cell"],
+[data-role="table-cell"] {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  color: var(--text-primary);
+  border-left: 1px solid var(--border);
+}
+
+[data-role="table-header-cell"] {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+[data-role="table-header-cell"]:first-child,
+[data-role="table-cell"]:first-child {
+  border-left: none;
+}
+
+@media (max-width: 768px) {
+  [data-role="post-table"] {
+    display: block;
+    overflow-x: auto;
+    border-radius: var(--radius-soft);
+  }
+
+  [data-role="table-row"] {
+    display: table-row;
+  }
+}
+
+[data-role="post-list"] {
+  padding-left: 1.2rem;
+  margin: 0.75rem 0;
+  color: var(--text-primary);
+}
+
+[data-role="post-toc"] {
+  display: block;
+  --toc-indent-step: 0.5rem;
+  --toc-font-scale: 0.95;
+}
+
+[data-role="post-toc"] [data-role="toc-list"] {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+[data-role="post-toc"] [data-role="toc-item"] {
+  display: block;
+  padding-left: 0.25rem;
+}
+
+[data-role="post-toc"] [data-role="toc-item"] > [data-role="toc-list"] {
+  margin-left: var(--toc-indent-step);
+  font-size: calc(1em * var(--toc-font-scale));
+}
+
+a[data-role="toc-link"] {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: text-decoration-color var(--transition-fast) ease;
+}
+
+a[data-role="toc-link"]:hover,
+a[data-role="toc-link"]:focus {
+  text-decoration-color: var(--accent);
+}

@@ -1,0 +1,115 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE navigation_items\n            SET label = $2,\n                destination_type = $3,\n                destination_page_id = $4,\n                destination_url = $5,\n                sort_order = $6,\n                visible = $7,\n                open_in_new_tab = $8,\n                updated_at = now()\n            WHERE id = $1\n            RETURNING id, label, destination_type AS \"destination_type: NavigationDestinationType\",\n                     destination_page_id,\n                     (SELECT slug FROM pages WHERE id = destination_page_id) AS \"destination_page_slug?\",\n                     destination_url, sort_order, visible, open_in_new_tab,\n                     created_at,\n                     COALESCE(updated_at, created_at) AS \"primary_time!\",\n                     updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "destination_type: NavigationDestinationType",
+        "type_info": {
+          "Custom": {
+            "name": "navigation_destination_type",
+            "kind": {
+              "Enum": [
+                "internal",
+                "external"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "destination_page_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "destination_page_slug?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "destination_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "sort_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "visible",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "open_in_new_tab",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "primary_time!",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        {
+          "Custom": {
+            "name": "navigation_destination_type",
+            "kind": {
+              "Enum": [
+                "internal",
+                "external"
+              ]
+            }
+          }
+        },
+        "Uuid",
+        "Text",
+        "Int4",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      null,
+      true,
+      false,
+      false,
+      false,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "d19140b5edb35f57904a2a2297ef2bba2579f039f8c835fa46521b9343438828"
+}

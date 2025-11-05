@@ -1,0 +1,23 @@
+<section data-role="panel">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">{{ content.heading }}</h2>
+  </header>
+  <div data-role="panel-body">
+    <form data-role="tag-editor" method="post"
+      data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
+      <label>
+        <span>Name</span>
+        <input type="text" name="name" value="{{ content.name }}" required>
+      </label>
+      <label>
+        <span>Description</span>
+        <textarea name="description" rows="4">{% if let Some(desc) = content.description %}{{ desc }}{% endif %}</textarea>
+      </label>
+      <div data-role="pin-toggle">
+        <label for="tag-pin-toggle">{{ content.pin_label }}</label>
+        <input id="tag-pin-toggle" type="checkbox" name="pinned" value="on" {% if content.pinned %}checked{% endif %}>
+      </div>
+      <button type="submit">{{ content.submit_label }}</button>
+    </form>
+  </div>
+</section>

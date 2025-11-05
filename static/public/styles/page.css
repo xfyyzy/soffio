@@ -1,0 +1,19 @@
+@import "./gfm.css";
+
+section[data-role="page-body"] {
+  display: block;
+  width: min(var(--content-width), 100%);
+  margin: 0 auto;
+  padding: 0;
+}
+
+section[data-role="page-body"] figure {
+  margin: 1.5rem 0;
+}
+
+section[data-role="page-body"] img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}

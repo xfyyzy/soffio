@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO tags (id, slug, name, description, pinned)\n            VALUES ($1, $2, $3, $4, $5)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "63d0cc678df0895cf978376ae3cb116879c2c545c8a1bb5eee57f7dd856aea72"
+}

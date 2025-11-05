@@ -1,0 +1,33 @@
+{% macro site_header(brand, nav_entries) %}
+<header data-role="banner">
+  <header-bar data-layout="row" role="presentation">
+    <h1 data-role="brand-title">
+      <a data-role="brand" href="{{ brand.href }}">
+        {{ brand.title }}
+      </a>
+    </h1>
+    <nav data-role="primary-nav" aria-label="Primary navigation">
+      {% for link in nav_entries %}
+      <a
+        data-role="nav-link"
+        href="{{ link.href }}"
+        {% if let Some(target) = link.target %}
+        target="{{ target }}"
+        {% endif %}
+        {% if let Some(rel) = link.rel %}
+        rel="{{ rel }}"
+        {% endif %}
+      >
+        {{ link.label }}
+      </a>
+      {% endfor %}
+    </nav>
+  </header-bar>
+</header>
+{% endmacro %}
+
+{% macro site_footer(footer) %}
+<footer data-role="footer">
+  <footer-copy>{{ footer.copy }}</footer-copy>
+</footer>
+{% endmacro %}

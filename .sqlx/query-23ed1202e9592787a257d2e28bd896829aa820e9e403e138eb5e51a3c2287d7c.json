@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            slug,\n            title,\n            excerpt,\n            body_markdown,\n            summary_markdown,\n            status AS \"status: PostStatus\",\n            pinned,\n            scheduled_at,\n            published_at,\n            archived_at\n        FROM posts\n        ORDER BY slug\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "excerpt",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "body_markdown",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "summary_markdown",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "status: PostStatus",
+        "type_info": {
+          "Custom": {
+            "name": "post_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "published",
+                "archived",
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "pinned",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "scheduled_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "archived_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "23ed1202e9592787a257d2e28bd896829aa820e9e403e138eb5e51a3c2287d7c"
+}

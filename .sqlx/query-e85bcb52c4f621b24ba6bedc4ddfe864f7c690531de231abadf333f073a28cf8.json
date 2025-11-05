@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE apalis.jobs\n               SET status = $2,\n                   last_error = $3,\n                   attempts = COALESCE($4, attempts),\n                   run_at = COALESCE($5, run_at),\n                   priority = COALESCE($6, priority),\n                   done_at = CASE\n                       WHEN $2 IN ('Done','Failed','Killed') THEN COALESCE(done_at, now())\n                       ELSE NULL\n                   END\n             WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Timestamptz",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e85bcb52c4f621b24ba6bedc4ddfe864f7c690531de231abadf333f073a28cf8"
+}

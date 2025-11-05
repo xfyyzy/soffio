@@ -1,0 +1,80 @@
+<h1 id="gfm-feature-showcase">GFM Feature Showcase</h1>
+<h2 id="table-with-alignment">Table With Alignment</h2>
+<table data-role="post-table" role="table">
+<thead data-role="table-head" role="rowgroup">
+<tr data-role="table-row" role="row">
+<th align="left" data-role="table-header-cell" scope="col">Left</th>
+<th align="center" data-role="table-header-cell" scope="col">Center</th>
+<th align="right" data-role="table-header-cell" scope="col">Right</th>
+</tr>
+</thead>
+<tbody data-role="table-body" role="rowgroup">
+<tr data-role="table-row" role="row">
+<td align="left" data-role="table-cell">Alpha</td>
+<td align="center" data-role="table-cell">Beta</td>
+<td align="right" data-role="table-cell">Gamma</td>
+</tr>
+<tr data-role="table-row" role="row">
+<td align="left" data-role="table-cell">Longer cell</td>
+<td align="center" data-role="table-cell">Inline <code>code</code></td>
+<td align="right" data-role="table-cell"><del>Struck</del></td>
+</tr>
+</tbody>
+</table>
+<h2 id="task-list">Task List</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked="" disabled=""> Checked item</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled=""> Pending item</li>
+</ul>
+<h2 id="alerts">Alerts</h2>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title">Note</p>
+<p>This is a GitHub alert with a default title.</p>
+</div>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title">Tip</p>
+<p>Remember to hydrate during long writing sessions.</p>
+</div>
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title">Important</p>
+<p>Releases happen every Friday at 17:00 UTC.</p>
+</div>
+<div class="markdown-alert markdown-alert-warning">
+<p class="markdown-alert-title">Warning</p>
+<p>Preview links expire after 24 hours.</p>
+</div>
+<div class="markdown-alert markdown-alert-caution">
+<p class="markdown-alert-title">Caution</p>
+<p>Editing production config in the browser can break live traffic.</p>
+</div>
+<h2 id="description-list">Description List</h2>
+<dl>
+<dt>Feature</dt>
+<dd>Describes the thing using definition list syntax.</dd>
+</dl>
+<h2 id="footnote">Footnote</h2>
+<p>Footnote reference.<sup class="footnote-ref"><a href="#fn-ref" id="fnref-ref" data-footnote-ref="" rel="noopener noreferrer" data-link-kind="anchor">1</a></sup></p>
+<h2 id="inline-styles">Inline Styles</h2>
+<p><del>Strikethrough</del>, ++Underline++, ==Highlight==, and regular text.</p>
+<h2 id="code-block">Code Block</h2>
+<pre class="syntax-highlight syntax-lang-rust" data-language="rust" role="region" aria-label="Code block in rust"><code class="language-rust syntax-code"><span class="syntax-source syntax-rust"><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-storage syntax-type syntax-function syntax-rust">fn</span> </span><span class="syntax-entity syntax-name syntax-function syntax-rust">main</span></span><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-meta syntax-function syntax-parameters syntax-rust"><span class="syntax-punctuation syntax-section syntax-parameters syntax-begin syntax-rust">(</span></span><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-meta syntax-function syntax-parameters syntax-rust"><span class="syntax-punctuation syntax-section syntax-parameters syntax-end syntax-rust">)</span></span></span></span><span class="syntax-meta syntax-function syntax-rust"> </span><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-meta syntax-block syntax-rust"><span class="syntax-punctuation syntax-section syntax-block syntax-begin syntax-rust">{</span>
+    <span class="syntax-support syntax-macro syntax-rust">println!</span><span class="syntax-meta syntax-group syntax-rust"><span class="syntax-punctuation syntax-section syntax-group syntax-begin syntax-rust">(</span></span><span class="syntax-meta syntax-group syntax-rust"><span class="syntax-string syntax-quoted syntax-double syntax-rust"><span class="syntax-punctuation syntax-definition syntax-string syntax-begin syntax-rust">"</span>Hello, world!<span class="syntax-punctuation syntax-definition syntax-string syntax-end syntax-rust">"</span></span></span><span class="syntax-meta syntax-group syntax-rust"><span class="syntax-punctuation syntax-section syntax-group syntax-end syntax-rust">)</span></span><span class="syntax-punctuation syntax-terminator syntax-rust">;</span>
+</span><span class="syntax-meta syntax-block syntax-rust"><span class="syntax-punctuation syntax-section syntax-block syntax-end syntax-rust">}</span></span></span>
+</span></code></pre>
+<h2 id="autolink">Autolink</h2>
+<p>Visit <a href="https://github.com" rel="noopener noreferrer" data-link-kind="external">https://github.com</a> for more details.</p>
+<h2 id="autolink-literals">Autolink Literals</h2>
+<p>Visit <a href="http://www.github.com" rel="noopener noreferrer" data-link-kind="external">www.github.com</a> for more info or email <a href="mailto:support@example.com" rel="noopener noreferrer" data-link-kind="other">support@example.com</a> for help.</p>
+<h2 id="html-filtering">HTML Filtering</h2>
+<title>Leaked Title</title>
+
+<h2 id="html-preservation">HTML Preservation</h2>
+<p>Allow inline edits like <ins>inserted text</ins> to pass through when safe.</p>
+<section class="footnotes" data-footnotes="">
+<ol>
+<li id="fn-ref">
+<p>Footnote body with a <a href="https://example.com" rel="noopener noreferrer" data-link-kind="external">link</a>. <a href="#fnref-ref" class="footnote-backref" data-footnote-backref="" data-footnote-backref-idx="1" aria-label="Back to reference 1" rel="noopener noreferrer" data-link-kind="anchor">↩</a></p>
+</li>
+</ol>
+</section>
+

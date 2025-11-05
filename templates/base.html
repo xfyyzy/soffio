@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="blue">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ view.meta.title }}</title>
+    <meta name="description" content="{{ view.meta.description }}">
+    <meta property="og:title" content="{{ view.meta.og_title }}">
+    <meta property="og:description" content="{{ view.meta.og_description }}">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="stylesheet" href="/static/common/tokens.css">
+    <link rel="stylesheet" href="/static/public/app.css">
+    {% block extra_styles %}{% endblock %}
+    <script type="module" src="/static/common/components.js" defer></script>
+    <script type="module" src="/static/common/datastar-init.js" defer></script>
+  </head>
+  <body data-page="shell">
+    {% block content %}{% endblock %}
+  </body>
+</html>

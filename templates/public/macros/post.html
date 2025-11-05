@@ -1,0 +1,34 @@
+{% macro toc(events) %}
+<nav data-role="post-toc" role="navigation" aria-label="Table of contents">
+  {% for event in events %}
+    {% match event %}
+    {% when PostTocEvent::StartList %}
+  <ul data-role="toc-list" role="list">
+    {% when PostTocEvent::EndList %}
+  </ul>
+    {% when PostTocEvent::StartItem with { anchor, title, level } %}
+  <li data-role="toc-item" data-level="{{ level }}">
+    <a data-role="toc-link" href="#{{ anchor }}" title="{{ title }}">{{ title }}</a>
+    {% when PostTocEvent::EndItem %}
+  </li>
+    {% endmatch %}
+  {% endfor %}
+</nav>
+{% endmacro %}
+
+{% macro sections(events) %}
+{% for event in events %}
+  {% match event %}
+  {% when PostSectionEvent::StartSection with { anchor, level, heading_html, body_html } %}
+<section id="{{ anchor }}" data-role="post-section" data-level="{{ level }}">
+  {{ heading_html | safe }}
+  {{ body_html | safe }}
+  {% when PostSectionEvent::StartChildren %}
+  <div data-role="post-subsections">
+  {% when PostSectionEvent::EndChildren %}
+  </div>
+  {% when PostSectionEvent::EndSection %}
+</section>
+  {% endmatch %}
+{% endfor %}
+{% endmacro %}

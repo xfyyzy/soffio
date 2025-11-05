@@ -1,0 +1,221 @@
+---
+source: tests/admin_panels.rs
+expression: rendered
+---
+<section data-role="panel" data-admin-panel="tags">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">Tags</h2>
+  </header>
+  <div data-role="panel-body">
+
+    <div data-role="panel-toolbar">
+      <a href="/tags/new">New Tag</a>
+</div>
+
+
+
+    <status-filters role="list">
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+          
+          
+          <input type="hidden" name="search" value="rust">
+          
+          
+          
+          
+          <input type="hidden" name="month" value="2025-10">
+          
+          
+          <button type="submit" data-role="status-filter">
+            All (5)
+          </button>
+        </form>
+      </status-filter>
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+          
+          <input type="hidden" name="status" value="pinned">
+          
+          
+          <input type="hidden" name="search" value="rust">
+          
+          
+          
+          
+          <input type="hidden" name="month" value="2025-10">
+          
+          
+          <button type="submit" data-role="status-filter" data-state="active">
+            Pinned (2)
+          </button>
+        </form>
+      </status-filter>
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+          
+          <input type="hidden" name="status" value="unpinned">
+          
+          
+          <input type="hidden" name="search" value="rust">
+          
+          
+          
+          
+          <input type="hidden" name="month" value="2025-10">
+          
+          
+          <button type="submit" data-role="status-filter">
+            Unpinned (3)
+          </button>
+        </form>
+      </status-filter>
+      
+    </status-filters>
+    <form data-role="filter-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+      
+      <input type="hidden" name="status" value="pinned">
+      
+      
+      
+      <label>
+        <span>Month</span>
+        <select name="month">
+          <option value="" >All months</option>
+          
+          <option value="2025-10" selected>October 2025 (1)</option>
+          
+        </select>
+      </label>
+      
+      <label>
+        <span>Search</span>
+        <input type="text" name="search" value="rust">
+      </label>
+      <div data-role="filter-actions">
+        <button type="submit">Apply Filters</button>
+        
+        <button type="submit" name="clear" value="1" data-role="secondary">Clear</button>
+        
+      </div>
+    </form>
+
+
+
+    <table data-role="publishable-table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Slug</th>
+          <th scope="col">Usage</th>
+          <th scope="col">Updated/Created</th>
+          <th scope="col">Pinned</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr data-role="tag-row" data-tag-id="111">
+          <td data-column="title">
+            <span>rust</span>
+          </td>
+          <td data-column="slug">
+            <span data-role="slug-value">rust</span>
+          </td>
+          <td>10</td>
+          <td>
+            
+            2025-10-24T12:00:00Z
+            
+          </td>
+          <td>
+            
+            <span data-role="pinned-indicator">Pinned</span>
+            
+          </td>
+          <td data-role="publishable-actions">
+            <a href="/tags/111/edit" data-role="secondary">Edit</a>
+            
+            <form data-role="inline-form" method="post" action="/tags/111/unpin"
+              data-on-submit__prevent="(@post(`/tags/111/unpin`, { contentType: 'form' }))">
+              
+              <input type="hidden" name="status_filter" value="pinned">
+              
+              <input type="hidden" name="filter_search" value="rust">
+              <input type="hidden" name="filter_month" value="2025-10">
+              <input type="hidden" name="cursor" value="cursor">
+              <input type="hidden" name="trail" value="~">
+              <button type="submit">Unpin</button>
+            </form>
+            
+            <form data-role="inline-form" method="post" action="/tags/111/delete"
+              data-on-submit__prevent="(@post(`/tags/111/delete`, { contentType: 'form' }))">
+              <input type="hidden" name="name" value="rust">
+              
+              <input type="hidden" name="status_filter" value="pinned">
+              
+              <input type="hidden" name="filter_search" value="rust">
+              <input type="hidden" name="filter_month" value="2025-10">
+              <input type="hidden" name="cursor" value="cursor">
+              <input type="hidden" name="trail" value="~">
+              <button type="submit" data-variant="danger" disabled>Delete</button>
+            </form>
+          </td>
+        </tr>
+        
+      </tbody>
+    </table>
+    <nav data-role="pagination">
+      <form data-role="pagination-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+        
+        <input type="hidden" name="status" value="pinned">
+        
+        
+        <input type="hidden" name="search" value="rust">
+        
+        
+        
+        
+        <input type="hidden" name="month" value="2025-10">
+        
+        
+        
+          
+          <input type="hidden" name="cursor" value="prev">
+          
+          
+          <input type="hidden" name="trail" value="">
+          
+          <button type="submit" data-role="prev">Previous</button>
+        
+      </form>
+      <form data-role="pagination-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+        
+        <input type="hidden" name="status" value="pinned">
+        
+        
+        <input type="hidden" name="search" value="rust">
+        
+        
+        
+        
+        <input type="hidden" name="month" value="2025-10">
+        
+        
+        
+          
+          <input type="hidden" name="cursor" value="next">
+          
+          
+          <input type="hidden" name="trail" value="~.cursor">
+          
+          <button type="submit" data-role="next">Next</button>
+        
+      </form>
+    </nav>
+
+  </div>
+</section>

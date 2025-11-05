@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO post_tags (post_id, tag_id)\n                SELECT $1, id\n                FROM UNNEST($2::uuid[]) AS id\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "145c3fd2443bba285b86ef84dd10c0a467b733b29d8b28652d08b7ee84a49df3"
+}

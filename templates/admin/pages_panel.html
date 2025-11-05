@@ -1,0 +1,60 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}pages{% endblock %}
+
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}
+      <a href="{{ content.new_page_href }}">New Page</a>
+{% endblock panel_toolbar %}
+
+{% block panel_controls %}
+{% let panel_action = content.panel_action %}
+{% let row_action_prefix = content.row_action_prefix %}
+{% include "admin/partials/status_tabs.html" %}
+{% include "admin/partials/filter_form.html" %}
+{% endblock panel_controls %}
+
+{% block panel_content %}
+{% let panel_action = content.panel_action %}
+{% let row_action_prefix = content.row_action_prefix %}
+    <table data-role="publishable-table">
+      <thead>
+        <tr>
+          <th scope="col" data-column="title">Title</th>
+          <th scope="col" data-column="slug">Slug</th>
+          <th scope="col" data-column="status">Status</th>
+          <th scope="col">{{ content.time_column_label }}</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in content.pages %}
+        <tr data-role="page-row" data-page-id="{{ item.id }}">
+          <td data-column="title">
+            <a href="{{ item.preview_href }}" target="_blank" rel="noopener" title="{{ item.title }}">{{ item.title }}</a>
+          </td>
+          <td data-column="slug">
+            <span data-role="slug-value" title="{{ item.slug }}">{{ item.slug }}</span>
+          </td>
+          <td data-column="status">
+            <span data-role="status-badges">
+              <status-badge data-status="{{ item.status_key }}">{{ item.status_label }}</status-badge>
+            </span>
+          </td>
+          <td>
+            {% if let Some(time) = &item.display_time %}
+            {{ time }}
+            {% else %}
+            <span data-role="muted">—</span>
+            {% endif %}
+          </td>
+          <td data-role="publishable-actions">
+{% include "admin/partials/post_row_actions.html" %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+{% include "admin/partials/pagination.html" %}
+{% endblock panel_content %}

@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                t.id,\n                t.slug,\n                t.name,\n                t.pinned,\n                COUNT(p.id) AS \"count!\"\n            FROM tags t\n            LEFT JOIN post_tags pt ON pt.tag_id = t.id\n            LEFT JOIN posts p\n                ON p.id = pt.post_id\n                AND p.status = 'published'\n                AND p.published_at IS NOT NULL\n            GROUP BY t.id, t.slug, t.name, t.pinned\n            ORDER BY t.pinned DESC, LOWER(t.name), t.slug\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "pinned",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "d29d8ddf051fc48c0d1d330821e88dd85cbe33ac6d6452c0ea81b81f872f448e"
+}

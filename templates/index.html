@@ -1,0 +1,18 @@
+{% extends "shell.html" %}
+
+{% import "public/macros/feed.html" as feed %}
+
+{% block extra_styles %}
+  <link rel="stylesheet" href="/static/public/styles/feed.css">
+{% endblock %}
+
+{% block shell_content %}
+{% if let Some(ld_json) = view.content.posts_ld_json %}
+<script type="application/ld+json">{{ ld_json | safe }}</script>
+{% endif %}
+<main data-role="content">
+  <layout-frame data-layout="split" role="group" aria-label="Page layout">
+    {% call feed::feed_layout(view.content) %}
+  </layout-frame>
+</main>
+{% endblock %}

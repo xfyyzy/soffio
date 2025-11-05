@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare cache directories
+        run: |
+          mkdir -p ~/.cargo/registry ~/.cargo/git ~/.npm
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Lint & Test (Alpine musl)
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/work" \
+            -v "$HOME/.cargo:/root/.cargo" \
+            -v "$HOME/.npm:/root/.npm" \
+            -w /work \
+            rust:1.91-alpine3.20 \
+            sh -ec '
+              apk update && \
+              apk add --no-cache bash binutils build-base ca-certificates clang cmake curl git libstdc++ nodejs npm pkgconf python3 && \
+              rustup component add rustfmt clippy && \
+              npm install --global --unsafe-perm typescript@latest && \
+              cargo fmt --all -- --check && \
+              cargo check --workspace --all-targets && \
+              cargo clippy --workspace --all-targets -- -D warnings && \
+              cargo test --workspace --all-targets -- --nocapture
+            '

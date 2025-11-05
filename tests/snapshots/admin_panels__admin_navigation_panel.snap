@@ -1,0 +1,194 @@
+---
+source: tests/admin_panels.rs
+expression: rendered
+---
+<section data-role="panel" data-admin-panel="navigation">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">Navigation</h2>
+  </header>
+  <div data-role="panel-body">
+
+    <div data-role="panel-toolbar">
+      <a href="/navigation/new">New Item</a>
+</div>
+
+
+
+    <status-filters role="list">
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/navigation/panel" data-on-submit__prevent="(@post(`/navigation/panel`, { contentType: 'form' }))">
+          
+          
+          <input type="hidden" name="search" value="about">
+          
+          
+          
+          <button type="submit" data-role="status-filter" data-state="active">
+            All (2)
+          </button>
+        </form>
+      </status-filter>
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/navigation/panel" data-on-submit__prevent="(@post(`/navigation/panel`, { contentType: 'form' }))">
+          
+          <input type="hidden" name="status" value="visible">
+          
+          
+          <input type="hidden" name="search" value="about">
+          
+          
+          
+          <button type="submit" data-role="status-filter">
+            Visible (1)
+          </button>
+        </form>
+      </status-filter>
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/navigation/panel" data-on-submit__prevent="(@post(`/navigation/panel`, { contentType: 'form' }))">
+          
+          <input type="hidden" name="status" value="hidden">
+          
+          
+          <input type="hidden" name="search" value="about">
+          
+          
+          
+          <button type="submit" data-role="status-filter">
+            Hidden (1)
+          </button>
+        </form>
+      </status-filter>
+      
+    </status-filters>
+    <form data-role="filter-form" method="post" action="/navigation/panel" data-on-submit__prevent="(@post(`/navigation/panel`, { contentType: 'form' }))">
+      
+      <input type="hidden" name="status" value="visible">
+      
+      
+      
+      <label>
+        <span>Search</span>
+        <input type="text" name="search" value="about">
+      </label>
+      <div data-role="filter-actions">
+        <button type="submit">Apply Filters</button>
+        
+        <button type="submit" name="clear" value="1" data-role="secondary">Clear</button>
+        
+      </div>
+    </form>
+
+
+
+    <table data-role="publishable-table">
+      <thead>
+        <tr>
+          <th scope="col" data-column="label">Label</th>
+          <th scope="col" data-column="type">Type</th>
+          <th scope="col" data-column="destination">Destination</th>
+          <th scope="col" data-column="order">Order</th>
+          <th scope="col" data-column="visible">Visible</th>
+          <th scope="col" data-column="actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr data-role="navigation-row" data-navigation-id="nav1">
+          <td data-column="label">
+            <a href="https://example.com/about" title="About" target="_blank" rel="noopener noreferrer">About</a>
+          </td>
+          <td data-column="type">
+            <status-badge data-status="internal">Internal</status-badge>
+          </td>
+          <td data-column="destination">
+            <span title="/about">/about</span>
+          </td>
+          <td data-column="order">1</td>
+          <td data-column="visible">
+            
+            <span data-role="pinned-indicator">Visible</span>
+            
+          </td>
+          <td data-column="actions">
+            <div data-role="row-actions">
+              <a href="/navigation/nav1/edit">Edit</a>
+              <form data-role="inline-form" method="post"
+                    action="/navigation/nav1/visibility"
+                    data-on-submit__prevent="(@post(`/navigation/nav1/visibility`, { contentType: 'form' }))">
+                
+                <input type="hidden" name="status" value="visible">
+                
+                
+                <input type="hidden" name="search" value="about">
+                
+                
+                <input type="hidden" name="cursor" value="cursor_token">
+                
+                
+                <input type="hidden" name="trail" value="trail_token">
+                
+                <button type="submit">Hide</button>
+              </form>
+              <form data-role="inline-form" method="post"
+                    action="/navigation/nav1/delete"
+                    data-on-submit__prevent="(@post(`/navigation/nav1/delete`, { contentType: 'form' }))">
+                
+                <input type="hidden" name="status" value="visible">
+                
+                
+                <input type="hidden" name="search" value="about">
+                
+                
+                <input type="hidden" name="cursor" value="cursor_token">
+                
+                
+                <input type="hidden" name="trail" value="trail_token">
+                
+                <button type="submit" data-variant="danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        
+      </tbody>
+    </table>
+    <nav data-role="pagination">
+      <form data-role="pagination-form" method="post" action="/navigation/panel" data-on-submit__prevent="(@post(`/navigation/panel`, { contentType: 'form' }))">
+        
+        <input type="hidden" name="status" value="visible">
+        
+        
+        <input type="hidden" name="search" value="about">
+        
+        
+        
+        
+          
+          <input type="hidden" name="cursor" value="prev">
+          
+          
+          <input type="hidden" name="trail" value="prev_trail">
+          
+          <button type="submit" data-role="prev">Previous</button>
+        
+      </form>
+      <form data-role="pagination-form" method="post" action="/navigation/panel" data-on-submit__prevent="(@post(`/navigation/panel`, { contentType: 'form' }))">
+        
+        <input type="hidden" name="status" value="visible">
+        
+        
+        <input type="hidden" name="search" value="about">
+        
+        
+        
+        
+          <button type="button" data-role="next" disabled>Next</button>
+        
+      </form>
+    </nav>
+
+  </div>
+</section>

@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT p.slug\n        FROM navigation_items ni\n        INNER JOIN pages p ON p.id = ni.destination_page_id\n        WHERE ni.destination_type = 'internal'::navigation_destination_type\n          AND ni.visible = TRUE\n          AND p.status = 'published'::page_status\n          AND p.published_at IS NOT NULL\n        ORDER BY ni.sort_order ASC, ni.id ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "slug",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "31a99e6b47de7bed009399847c1e3724604344ddeeb273879e8bba15abb6800b"
+}

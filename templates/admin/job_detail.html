@@ -1,0 +1,81 @@
+{% extends "admin/shell.html" %}
+
+{% block content %}
+<section data-role="panel">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">Job {{ view.content.id }}</h2>
+  </header>
+  <div data-role="panel-body">
+    {% match view.content.flash %}
+    {% when Some(flash) %}
+    <div data-role="flash" data-flash-kind="{{ flash.kind }}">{{ flash.text }}</div>
+    {% when None %}{% endmatch %}
+
+    <dl data-role="job-detail">
+      <div>
+        <dt>Type</dt>
+        <dd>{{ view.content.job_type }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd>{{ view.content.status }}</dd>
+      </div>
+      <div>
+        <dt>Attempts</dt>
+        <dd>{{ view.content.attempts }} / {{ view.content.max_attempts }}</dd>
+      </div>
+      <div>
+        <dt>Run At</dt>
+        <dd>{{ view.content.run_at }}</dd>
+      </div>
+      <div>
+        <dt>Locked At</dt>
+        <dd>{% if let Some(time) = view.content.lock_at %}{{ time }}{% else %}<span data-role="muted">Never</span>{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Locked By</dt>
+        <dd>{% if let Some(worker) = view.content.lock_by %}{{ worker }}{% else %}<span data-role="muted">—</span>{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Completed</dt>
+        <dd>{% if let Some(time) = view.content.done_at %}{{ time }}{% else %}<span data-role="muted">Pending</span>{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Priority</dt>
+        <dd>{{ view.content.priority }}</dd>
+      </div>
+      <div>
+        <dt>Last Error</dt>
+        <dd>{% if let Some(error) = view.content.last_error %}{{ error }}{% else %}<span data-role="muted">—</span>{% endif %}</dd>
+      </div>
+    </dl>
+
+    <section data-role="job-payload">
+      <header><h3>Payload</h3></header>
+      <pre>{{ view.content.payload_pretty }}</pre>
+    </section>
+
+    <footer data-role="job-actions">
+      <a href="{{ view.content.back_href }}" data-role="secondary">Back to list</a>
+      {% if view.content.can_retry %}
+      <form method="post" action="{{ view.content.retry_action }}" data-role="inline-form">
+        <input type="hidden" name="state" value="{% if let Some(value) = &view.content.filter_state %}{{ value }}{% endif %}">
+        <input type="hidden" name="job_type" value="{% if let Some(value) = &view.content.filter_job_type %}{{ value }}{% endif %}">
+        <input type="hidden" name="search" value="{% if let Some(value) = &view.content.filter_search %}{{ value }}{% endif %}">
+        <input type="hidden" name="cursor" value="{% if let Some(value) = &view.content.filter_cursor %}{{ value }}{% endif %}">
+        <button type="submit" data-role="primary">Retry</button>
+      </form>
+      {% endif %}
+      {% if view.content.can_cancel %}
+      <form method="post" action="{{ view.content.cancel_action }}" data-role="inline-form">
+        <input type="hidden" name="state" value="{% if let Some(value) = &view.content.filter_state %}{{ value }}{% endif %}">
+        <input type="hidden" name="job_type" value="{% if let Some(value) = &view.content.filter_job_type %}{{ value }}{% endif %}">
+        <input type="hidden" name="search" value="{% if let Some(value) = &view.content.filter_search %}{{ value }}{% endif %}">
+        <input type="hidden" name="cursor" value="{% if let Some(value) = &view.content.filter_cursor %}{{ value }}{% endif %}">
+        <button type="submit" data-role="danger">Cancel</button>
+      </form>
+      {% endif %}
+    </footer>
+  </div>
+</section>
+{% endblock %}

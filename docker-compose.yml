@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: soffio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: soffio
+      POSTGRES_PASSWORD: soffio_local_dev
+      POSTGRES_DB: soffio_dev
+      PGDATA: /var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    shm_size: 256m
+
+  app:
+    image: ghcr.io/xfyyzy/soffio:amd64-x86-64-v2
+    container_name: soffio-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      RUST_LOG: info
+      SOFFIO__SERVER__HOST: 0.0.0.0
+      SOFFIO__SERVER__ADMIN_HOST: 0.0.0.0
+      SOFFIO__SERVER__PUBLIC_PORT: 3000
+      SOFFIO__SERVER__ADMIN_PORT: 3001
+      SOFFIO__DATABASE__URL: postgres://soffio:soffio_local_dev@postgres:5432/soffio_dev
+      SOFFIO__UPLOADS__DIRECTORY: /var/lib/soffio/uploads
+      SOFFIO__UPLOADS__MAX_REQUEST_BYTES: 10485760
+      SOFFIO__LOGGING__LEVEL: info
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    volumes:
+      - ./update:/var/lib/soffio/uploads
+    healthcheck:
+      test:
+        - "CMD"
+        - "/bin/busybox"
+        - "sh"
+        - "-c"
+        - "/bin/busybox wget -qO- http://127.0.0.1:3000/_health/db >/dev/null && /bin/busybox wget -qO- http://127.0.0.1:3001/_health/db >/dev/null"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  pg-data:

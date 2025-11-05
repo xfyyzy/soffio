@@ -1,0 +1,251 @@
+---
+source: tests/admin_panels.rs
+assertion_line: 92
+expression: rendered
+---
+<section data-role="panel" data-admin-panel="posts">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">Posts</h2>
+  </header>
+  <div data-role="panel-body">
+
+    <div data-role="panel-toolbar">
+      <a href="/posts/new">New Post</a>
+</div>
+
+
+
+    <status-filters role="list">
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/posts/panel" data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
+          
+          
+          <input type="hidden" name="search" value="hello">
+          
+          
+          
+          <input type="hidden" name="tag" value="rust">
+          
+          
+          
+          
+          <input type="hidden" name="month" value="2025-10">
+          
+          
+          <button type="submit" data-role="status-filter" data-state="active">
+            All (2)
+          </button>
+        </form>
+      </status-filter>
+      
+    </status-filters>
+    <form data-role="filter-form" method="post" action="/posts/panel" data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
+      
+      <input type="hidden" name="status" value="draft">
+      
+      
+      
+      
+      
+      <label>
+        <span>Tag</span>
+        <select name="tag">
+          <option value="" >All tags</option>
+          
+          <option value="rust" selected>Rust (3)</option>
+          
+        </select>
+      </label>
+      
+      
+      <label>
+        <span>Month</span>
+        <select name="month">
+          <option value="" >All months</option>
+          
+          <option value="2025-10" selected>October 2025 (1)</option>
+          
+        </select>
+      </label>
+      
+      <label>
+        <span>Search</span>
+        <input type="text" name="search" value="hello">
+      </label>
+      <div data-role="filter-actions">
+        <button type="submit">Apply Filters</button>
+        
+        <button type="submit" name="clear" value="1" data-role="secondary">Clear</button>
+        
+      </div>
+    </form>
+
+
+
+
+    <table data-role="publishable-table">
+        <thead>
+          <tr>
+            <th scope="col" data-column="title">Title</th>
+            <th scope="col" data-column="slug">Slug</th>
+            <th scope="col" data-column="status">Status</th>
+            <th scope="col">Published/Updated</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr data-role="post-row" data-post-id="123">
+            <td data-column="title">
+              <a href="http://localhost:3000/posts/_preview/123" target="_blank" rel="noopener" title="Hello World">Hello World</a>
+            </td>
+            <td data-column="slug">
+              <span data-role="slug-value" title="hello-world">hello-world</span>
+            </td>
+            <td data-column="status">
+              <span data-role="status-badges">
+                <status-badge data-status="draft">Draft</status-badge>
+                
+              </span>
+            </td>
+            <td>
+              
+              2025-10-24T12:00:00Z
+              
+            </td>
+            <td data-role="publishable-actions">
+              <div data-role="row-actions">
+                <a href="/posts/hello-world/edit">Edit</a>
+                
+                
+                <form data-role="inline-form" method="post" action="/posts/123/pin"
+                  data-on-submit__prevent="(@post(`/posts/123/pin`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="123">
+                  <input type="hidden" name="status_filter" value="draft">
+                  <input type="hidden" name="filter_search" value="hello">
+                  <input type="hidden" name="filter_tag" value="rust">
+                  <input type="hidden" name="filter_month" value="2025-10">
+                  
+                  <input type="hidden" name="cursor" value="current">
+                  
+                  
+                  <input type="hidden" name="trail" value="~">
+                  
+                  <button type="submit">Pin</button>
+                </form>
+                
+                
+                
+                <form data-role="inline-form" method="post" action="/posts/123/publish"
+                  data-on-submit__prevent="(@post(`/posts/123/publish`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="123">
+                  <input type="hidden" name="status_filter" value="draft">
+                  <input type="hidden" name="filter_search" value="hello">
+                  <input type="hidden" name="filter_tag" value="rust">
+                  <input type="hidden" name="filter_month" value="2025-10">
+                  
+                  <input type="hidden" name="cursor" value="current">
+                  
+                  
+                  <input type="hidden" name="trail" value="~">
+                  
+                  <button type="submit">Publish</button>
+                </form>
+                
+                
+                
+                <form data-role="inline-form" method="post" action="/posts/123/archive"
+                  data-on-submit__prevent="(@post(`/posts/123/archive`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="123">
+                  <input type="hidden" name="status_filter" value="draft">
+                  <input type="hidden" name="filter_search" value="hello">
+                  <input type="hidden" name="filter_tag" value="rust">
+                  <input type="hidden" name="filter_month" value="2025-10">
+                  
+                  <input type="hidden" name="cursor" value="current">
+                  
+                  
+                  <input type="hidden" name="trail" value="~">
+                  
+                  <button type="submit">Archive</button>
+                </form>
+                
+                
+                <form data-role="inline-form" method="post"
+                  action="/posts/123/delete"
+                  data-on-submit__prevent="(@post(`/posts/123/delete`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="123">
+                  <input type="hidden" name="status_filter" value="draft">
+                  <input type="hidden" name="filter_search" value="hello">
+                  <input type="hidden" name="filter_tag" value="rust">
+                  <input type="hidden" name="filter_month" value="2025-10">
+                  
+                  <input type="hidden" name="cursor" value="current">
+                  
+                  
+                  <input type="hidden" name="trail" value="~">
+                  
+                  <button type="submit" data-variant="danger">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          
+        </tbody>
+      </table>
+    <nav data-role="pagination">
+      <form data-role="pagination-form" method="post" action="/posts/panel" data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
+        
+        <input type="hidden" name="status" value="draft">
+        
+        
+        <input type="hidden" name="search" value="hello">
+        
+        
+        
+        <input type="hidden" name="tag" value="rust">
+        
+        
+        
+        
+        <input type="hidden" name="month" value="2025-10">
+        
+        
+        
+          
+          
+          <button type="submit" data-role="prev">Previous</button>
+        
+      </form>
+      <form data-role="pagination-form" method="post" action="/posts/panel" data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
+        
+        <input type="hidden" name="status" value="draft">
+        
+        
+        <input type="hidden" name="search" value="hello">
+        
+        
+        
+        <input type="hidden" name="tag" value="rust">
+        
+        
+        
+        
+        <input type="hidden" name="month" value="2025-10">
+        
+        
+        
+          
+          <input type="hidden" name="cursor" value="next">
+          
+          
+          <input type="hidden" name="trail" value="~.current">
+          
+          <button type="submit" data-role="next">Next</button>
+        
+      </form>
+    </nav>
+
+  </div>
+</section>

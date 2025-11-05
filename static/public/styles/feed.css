@@ -1,0 +1,121 @@
+empty-state {
+  display: block;
+  padding: 2.2rem;
+  border-radius: var(--radius-soft);
+  border: none;
+  background-color: var(--surface);
+  text-align: center;
+}
+
+empty-title {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+empty-copy {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--text-secondary);
+}
+
+load-more {
+  display: block;
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+a[data-role="load-more"] {
+  display: inline-block;
+  border: 1px solid var(--border-strong);
+  background-color: var(--surface);
+  border-radius: var(--radius-soft);
+  padding: 0.65rem 1.4rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-flat);
+  transition: border-color var(--transition-fast) ease, box-shadow var(--transition-medium) ease;
+}
+
+a[data-role="load-more"]:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow-hover);
+}
+
+filters-column[data-region="filters"] :is(filter-panel[data-role="filter-group"], .filter-panel) {
+  display: block;
+}
+
+:is(h2.filter-title, filter-title) {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+ul.filter-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+:is(tag-chip-group, .tag-chip-group) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+[data-role="tag-chip"] {
+  font-size: 0.95rem;
+}
+
+button[data-role="tag-chip"] {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+
+button[data-role="tag-chip"]:hover {
+  text-decoration-color: var(--accent);
+}
+
+:is(a, button)[data-role="tag-chip"][data-active="true"] {
+  font-weight: 600;
+}
+
+chip-count {
+  display: inline-block;
+  font-weight: 500;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+a[data-role="tag-chip"]:active,
+a[data-role="load-more"]:active {
+  border-color: var(--border);
+  background-color: var(--surface-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+      a[data-role="load-more"],
+      a[data-role="tag-chip"],
+      button[data-role="load-more"],
+      tag-chip-group,
+      .tag-chip-group
+    ) {
+    transition: none !important;
+  }
+}

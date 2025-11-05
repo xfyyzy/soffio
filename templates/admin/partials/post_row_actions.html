@@ -1,0 +1,104 @@
+              <div data-role="row-actions">
+                <a href="{{ item.edit_href }}">Edit</a>
+                {% for action in item.actions %}
+                {% match action.value %}
+                {% when "pin" %}
+                <form data-role="inline-form" method="post" action="{{ row_action_prefix }}/{{ item.id }}/pin"
+                  data-on-submit__prevent="(@post(`{{ row_action_prefix }}/{{ item.id }}/pin`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ item.id }}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(key) = &content.active_status_key %}{{ key }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_tag" value="{% if let Some(value) = &content.filter_tag %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+                  {% if let Some(value) = &content.cursor_param %}
+                  <input type="hidden" name="cursor" value="{{ value }}">
+                  {% endif %}
+                  {% if let Some(value) = &content.trail %}
+                  <input type="hidden" name="trail" value="{{ value }}">
+                  {% endif %}
+                  <button type="submit">{{ action.label }}</button>
+                </form>
+                {% when "unpin" %}
+                <form data-role="inline-form" method="post" action="{{ row_action_prefix }}/{{ item.id }}/unpin"
+                  data-on-submit__prevent="(@post(`{{ row_action_prefix }}/{{ item.id }}/unpin`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ item.id }}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(key) = &content.active_status_key %}{{ key }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_tag" value="{% if let Some(value) = &content.filter_tag %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+                  {% if let Some(value) = &content.cursor_param %}
+                  <input type="hidden" name="cursor" value="{{ value }}">
+                  {% endif %}
+                  {% if let Some(value) = &content.trail %}
+                  <input type="hidden" name="trail" value="{{ value }}">
+                  {% endif %}
+                  <button type="submit">{{ action.label }}</button>
+                </form>
+                {% when "publish" %}
+                <form data-role="inline-form" method="post" action="{{ row_action_prefix }}/{{ item.id }}/publish"
+                  data-on-submit__prevent="(@post(`{{ row_action_prefix }}/{{ item.id }}/publish`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ item.id }}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(key) = &content.active_status_key %}{{ key }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_tag" value="{% if let Some(value) = &content.filter_tag %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+                  {% if let Some(value) = &content.cursor_param %}
+                  <input type="hidden" name="cursor" value="{{ value }}">
+                  {% endif %}
+                  {% if let Some(value) = &content.trail %}
+                  <input type="hidden" name="trail" value="{{ value }}">
+                  {% endif %}
+                  <button type="submit"{% if action.is_danger %} data-variant="danger"{% endif %}>{{ action.label }}</button>
+                </form>
+                {% when "draft" %}
+                <form data-role="inline-form" method="post" action="{{ row_action_prefix }}/{{ item.id }}/draft"
+                  data-on-submit__prevent="(@post(`{{ row_action_prefix }}/{{ item.id }}/draft`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ item.id }}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(key) = &content.active_status_key %}{{ key }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_tag" value="{% if let Some(value) = &content.filter_tag %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+                  {% if let Some(value) = &content.cursor_param %}
+                  <input type="hidden" name="cursor" value="{{ value }}">
+                  {% endif %}
+                  {% if let Some(value) = &content.trail %}
+                  <input type="hidden" name="trail" value="{{ value }}">
+                  {% endif %}
+                  <button type="submit"{% if action.is_danger %} data-variant="danger"{% endif %}>{{ action.label }}</button>
+                </form>
+                {% when "archive" %}
+                <form data-role="inline-form" method="post" action="{{ row_action_prefix }}/{{ item.id }}/archive"
+                  data-on-submit__prevent="(@post(`{{ row_action_prefix }}/{{ item.id }}/archive`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ item.id }}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(key) = &content.active_status_key %}{{ key }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_tag" value="{% if let Some(value) = &content.filter_tag %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+                  {% if let Some(value) = &content.cursor_param %}
+                  <input type="hidden" name="cursor" value="{{ value }}">
+                  {% endif %}
+                  {% if let Some(value) = &content.trail %}
+                  <input type="hidden" name="trail" value="{{ value }}">
+                  {% endif %}
+                  <button type="submit"{% if action.is_danger %} data-variant="danger"{% endif %}>{{ action.label }}</button>
+                </form>
+                {% else %}
+                {% endmatch %}
+                {% endfor %}
+                <form data-role="inline-form" method="post"
+                  action="{{ row_action_prefix }}/{{ item.id }}/delete"
+                  data-on-submit__prevent="(@post(`{{ row_action_prefix }}/{{ item.id }}/delete`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ item.id }}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(key) = &content.active_status_key %}{{ key }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_tag" value="{% if let Some(value) = &content.filter_tag %}{{ value }}{% endif %}">
+                  <input type="hidden" name="filter_month" value="{% if let Some(value) = &content.filter_month %}{{ value }}{% endif %}">
+                  {% if let Some(value) = &content.cursor_param %}
+                  <input type="hidden" name="cursor" value="{{ value }}">
+                  {% endif %}
+                  {% if let Some(value) = &content.trail %}
+                  <input type="hidden" name="trail" value="{{ value }}">
+                  {% endif %}
+                  <button type="submit" data-variant="danger">Delete</button>
+                </form>
+              </div>

@@ -1,0 +1,46 @@
+{% extends "shell.html" %}
+{% import "public/macros/post.html" as post %}
+
+{% block extra_styles %}
+  <link rel="stylesheet" href="/static/public/styles/post.css">
+  {% if view.content.has_code_blocks %}
+  <link rel="stylesheet" href="/static/public/styles/code.css">
+  {% endif %}
+  {% if view.content.has_math_blocks %}
+  <link rel="stylesheet" href="/static/public/katex/katex.min.css">
+  {% endif %}
+{% endblock %}
+
+{% block shell_content %}
+<main data-role="content">
+  <layout-frame data-layout="split" role="group" aria-label="Article layout">
+    {% let post = view.content %}
+    {% if let Some(toc) = post.toc %}
+    <meta-column data-region="meta" role="complementary" aria-label="Article metadata">
+      <aside data-role="meta-card">
+        {% call post::toc(&toc.events) %}
+      </aside>
+    </meta-column>
+    {% endif %}
+    <content-panel data-region="primary" role="region" aria-label="Article body">
+      <post-card data-entry="{{ post.slug }}" role="listitem" view-transition-name="post-card-{{ post.slug }}">
+        <article data-role="card" aria-labelledby="post-heading">
+          {%- let heading_id = "post-heading" -%}
+          {%- let slug = post.slug -%}
+          {%- let title = post.title -%}
+          {%- let excerpt = post.excerpt -%}
+          {%- let iso_date = post.iso_date -%}
+          {%- let published = post.published -%}
+          {%- let tags = post.tags -%}
+          {% if let Some(summary_html) = post.summary_html %}
+          <section data-role="post-summary" aria-label="Key takeaways">
+            {{ summary_html | safe }}
+          </section>
+          {% endif %}
+          {% call post::sections(&post.sections) %}
+        </article>
+      </post-card>
+    </content-panel>
+  </layout-frame>
+</main>
+{% endblock %}

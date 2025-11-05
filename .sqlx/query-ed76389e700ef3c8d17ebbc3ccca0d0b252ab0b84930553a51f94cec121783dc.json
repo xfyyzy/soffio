@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            ni.label,\n            ni.destination_type AS \"destination_type: NavigationDestinationType\",\n            ni.destination_url,\n            p.slug AS \"destination_page_slug?\",\n            ni.sort_order,\n            ni.open_in_new_tab,\n            ni.visible\n        FROM navigation_items ni\n        LEFT JOIN pages p ON p.id = ni.destination_page_id\n        ORDER BY ni.sort_order ASC, ni.label ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "destination_type: NavigationDestinationType",
+        "type_info": {
+          "Custom": {
+            "name": "navigation_destination_type",
+            "kind": {
+              "Enum": [
+                "internal",
+                "external"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "destination_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "destination_page_slug?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "sort_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "open_in_new_tab",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "visible",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ed76389e700ef3c8d17ebbc3ccca0d0b252ab0b84930553a51f94cec121783dc"
+}

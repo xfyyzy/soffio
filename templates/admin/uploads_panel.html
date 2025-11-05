@@ -1,0 +1,88 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}uploads{% endblock %}
+
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}
+      <a href="{{ content.new_upload_href }}">Upload File</a>
+{% endblock panel_toolbar %}
+
+{% block panel_controls %}
+{% let panel_action = content.panel_action %}
+{% include "admin/partials/filter_form.html" %}
+{% endblock panel_controls %}
+
+{% block panel_content %}
+{% let panel_action = content.panel_action %}
+    <table data-role="uploads-table">
+      <thead>
+        <tr>
+          <th scope="col">Filename</th>
+          <th scope="col">Content Type</th>
+          <th scope="col">Size</th>
+          <th scope="col">Uploaded</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in content.uploads %}
+        <tr data-role="upload-row" data-upload-id="{{ item.id }}">
+          <td data-column="filename">
+            {% if let Some(href) = &item.preview_href %}
+            <a href="{{ href }}" target="_blank" rel="noopener" title="{{ item.filename }}">{{ item.filename }}</a>
+            {% else %}
+            <span title="{{ item.filename }}">{{ item.filename }}</span>
+            {% endif %}
+          </td>
+          <td data-column="content-type">{{ item.content_type }}</td>
+          <td data-column="size" data-size-bytes="{{ item.size_bytes }}">{{ item.size_label }}</td>
+          <td data-column="created-at">{{ item.created_at }}</td>
+          <td data-role="publishable-actions">
+            <div data-role="row-actions">
+              <a href="{{ item.download_href }}">Download</a>
+              <form
+                method="post"
+                action="{{ content.copy_toast_action }}"
+                data-role="inline-form"
+                data-on-submit__prevent="(@post(`{{ content.copy_toast_action }}`, { contentType: 'form' }))"
+              >
+                <input type="hidden" name="kind" value="success">
+                <input type="hidden" name="message" value="Link copied to clipboard">
+                <button
+                  type="submit"
+                  data-role="secondary"
+                  data-on-click__prevent="(@copyUploadLink({ href: `{{ item.public_href }}`, successMessage: 'Link copied to clipboard', errorMessage: 'Copy failed' }))"
+                >Copy Link</button>
+              </form>
+              <form
+                method="post"
+                action="{{ item.delete_action }}"
+                data-role="inline-form"
+                data-on-submit__prevent="(@post(`{{ item.delete_action }}`, { contentType: 'form' }))"
+              >
+                {% if let Some(cursor) = &content.cursor_param %}
+                <input type="hidden" name="cursor" value="{{ cursor }}">
+                {% endif %}
+                {% if let Some(trail) = &content.trail %}
+                <input type="hidden" name="trail" value="{{ trail }}">
+                {% endif %}
+                {% if let Some(search) = &content.filter_search %}
+                <input type="hidden" name="search" value="{{ search }}">
+                {% endif %}
+                {% if let Some(value) = &content.filter_tag %}
+                <input type="hidden" name="content_type" value="{{ value }}">
+                {% endif %}
+                {% if let Some(value) = &content.filter_month %}
+                <input type="hidden" name="month" value="{{ value }}">
+                {% endif %}
+                <button type="submit" data-variant="danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+{% include "admin/partials/pagination.html" %}
+{% endblock panel_content %}

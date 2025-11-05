@@ -1,0 +1,40 @@
+<section data-role="panel" data-admin-panel="settings">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">{{ content.heading }}</h2>
+    <p data-role="panel-subtitle">Last updated {{ content.updated_at }}</p>
+  </header>
+  <div data-role="panel-body">
+    <div data-role="panel-toolbar">
+      <a href="{{ content.edit_href }}">Edit Settings</a>
+    </div>
+    <table data-role="settings-summary-table">
+      <tbody>
+        {% for field in content.simple_fields %}
+        <tr>
+          <th scope="row">{{ field.label }}</th>
+          <td>
+            {% match field.value_kind %}
+            {% when AdminSettingsSummaryValueKind::Text %}
+            <span>{{ field.value }}</span>
+            {% when AdminSettingsSummaryValueKind::Badge { status, label } %}
+            <status-badge data-status="{{ status }}">{{ label }}</status-badge>
+            {% when AdminSettingsSummaryValueKind::Multiline %}
+            <span>{{ field.value }}</span>
+            {% endmatch %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if !content.multiline_fields.is_empty() %}
+    <div data-role="settings-summary-text-group">
+      {% for field in content.multiline_fields %}
+      <section data-role="settings-summary-text">
+        <h3>{{ field.label }}</h3>
+        <textarea readonly rows="4">{{ field.value }}</textarea>
+      </section>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>

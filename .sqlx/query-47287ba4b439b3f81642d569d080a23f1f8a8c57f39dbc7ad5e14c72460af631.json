@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            p.slug AS \"post_slug!\",\n            t.slug AS \"tag_slug!\"\n        FROM post_tags pt\n        INNER JOIN posts p ON p.id = pt.post_id\n        INNER JOIN tags t ON t.id = pt.tag_id\n        ORDER BY p.slug, t.slug\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "post_slug!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "tag_slug!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "47287ba4b439b3f81642d569d080a23f1f8a8c57f39dbc7ad5e14c72460af631"
+}

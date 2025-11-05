@@ -1,0 +1,56 @@
+name: Bug report
+description: 帮助我们复现并修复问题
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈问题！提交前请确认已搜索过现有 Issue。
+  - type: input
+    id: summary
+    attributes:
+      label: 概要
+      description: 用一句话描述问题
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 列出详细步骤、命令或 API 调用
+      placeholder: |
+        1. ...
+        2. ...
+        3. 看到错误 ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 包含错误信息、截图或日志片段（敏感信息请脱敏）
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Soffio 版本 / Git 提交哈希
+      placeholder: v0.1.0 或 8字符提交哈希
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 运行环境
+      description: 包含操作系统、数据库版本、是否启用缓存等
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: 如可能，附上 `RUST_LOG=debug` 的完整日志

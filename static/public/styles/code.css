@@ -1,0 +1,60 @@
+/* Project-specific code block styling.
+ *
+ * This file is checked into VCS and defines the shared card treatment for
+ * highlighted code. The Syntect colour palette gets appended at build time
+ * by build.rs, so keep this file focused on layout and theming hooks.
+ */
+
+pre.syntax-highlight {
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  padding: 1rem 1.25rem;
+  border: none;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  font-family: var(--font-code);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+pre.syntax-highlight code.syntax-code {
+  display: block;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  tab-size: 2;
+  font-family: inherit;
+}
+
+pre.syntax-highlight code.syntax-code span {
+  text-shadow: none;
+}
+
+pre.syntax-highlight[data-language]::before {
+  content: attr(data-language);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 640px) {
+  pre.syntax-highlight {
+    font-size: 0.85rem;
+  }
+}
+
+.syntax-highlight,
+.syntax-code {
+  background-color: var(--surface-muted);
+}
+
+.syntax-code {
+  color: var(--text-primary);
+}

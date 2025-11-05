@@ -1,0 +1,98 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT ni.id,\n                   ni.label,\n                   ni.destination_type AS \"destination_type: NavigationDestinationType\",\n                   ni.destination_page_id,\n                   p.slug AS \"destination_page_slug?\",\n                    ni.destination_url,\n                    ni.sort_order,\n                    ni.visible,\n                    ni.open_in_new_tab,\n                    ni.created_at,\n                    COALESCE(ni.updated_at, ni.created_at) AS \"primary_time!\",\n                    ni.updated_at\n            FROM navigation_items ni\n            LEFT JOIN pages p ON p.id = ni.destination_page_id\n            WHERE ni.id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "destination_type: NavigationDestinationType",
+        "type_info": {
+          "Custom": {
+            "name": "navigation_destination_type",
+            "kind": {
+              "Enum": [
+                "internal",
+                "external"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "destination_page_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "destination_page_slug?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "destination_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "sort_order",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "visible",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "open_in_new_tab",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "primary_time!",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "283b15f0559fde120565ce8116bcec27d2d32f1b56d0eb314f78908041b99d00"
+}

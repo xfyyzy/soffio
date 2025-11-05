@@ -1,0 +1,139 @@
+{% macro filter_panel(panel_id, panel_title, items, sr_suffix) %}
+<section
+  class="filter-panel"
+  id="{{ panel_id }}"
+  data-role="filter-group"
+  role="region"
+  aria-labelledby="{{ panel_id }}-title"
+>
+  <h2 class="filter-title" id="{{ panel_id }}-title">{{ panel_title }}</h2>
+  <ul class="filter-list" role="list">
+    {% for item in items %}
+    {% set count_id = panel_id ~ "-count-" ~ loop.index %}
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="{{ item.is_active }}"
+        data-count="{{ item.count }}"
+        aria-describedby="{{ count_id }}"
+        href="{{ item.path }}"
+      >
+        {{ item.label }}<span class="sr-only">, {{ item.count }} {{ sr_suffix }}</span>
+      </a>
+      <chip-count id="{{ count_id }}" aria-hidden="true">{{ item.count }}</chip-count>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endmacro %}
+
+{% macro filters_column(content) %}
+{% if content.show_tag_filters || content.show_month_filters -%}
+<filters-column data-region="filters" role="complementary" aria-label="Filter posts">
+  {% if content.show_tag_filters -%}
+  {% call filter_panel("tag-panel", "Filter by tag", content.tags, "posts") %}
+  {%- endif %}
+  {% if content.show_month_filters -%}
+  {% call filter_panel("month-panel", "Filter by month", content.months, "posts") %}
+  {%- endif %}
+</filters-column>
+{%- endif %}
+{% endmacro %}
+
+{% macro post_card_header(slug, heading_id, title, excerpt, iso_date, published, tags, link_enabled) %}
+<card-heading role="presentation">
+  <h2 id="{{ heading_id }}" data-role="card-title" view-transition-name="post-title-{{ slug }}">
+    {% if link_enabled %}
+    <a data-role="card-link" href="/posts/{{ slug }}">
+      {{ title }}
+    </a>
+    {% else %}
+    <span data-role="card-link">
+      {{ title }}
+    </span>
+    {% endif %}
+  </h2>
+</card-heading>
+<card-excerpt view-transition-name="post-excerpt-{{ slug }}">{{ excerpt }}</card-excerpt>
+<card-footer role="contentinfo">
+  <time data-role="published" datetime="{{ iso_date }}" view-transition-name="post-date-{{ slug }}">{{ published }}</time>
+  <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-{{ slug }}">
+    {% for badge in tags %}
+    <a data-role="badge" role="listitem" href="/tags/{{ badge.value }}">{{ badge.label }}</a>
+    {% endfor %}
+  </tag-badges>
+</card-footer>
+{% endmacro %}
+
+{% macro post_card(post, heading_id, tags) %}
+<post-card data-entry="{{ post.slug }}" role="listitem" view-transition-name="post-card-{{ post.slug }}">
+  <article data-role="card" aria-labelledby="{{ heading_id }}">
+    {% call post_card_header(post.slug, heading_id, post.title, post.excerpt, post.iso_date, post.published, tags, true) %}
+  </article>
+</post-card>
+{% endmacro %}
+
+{% macro post_cards(posts, heading_offset=0) %}
+{% for post in posts %}
+{% set heading_index = heading_offset + loop.index %}
+{% set heading_id = "post-title-" ~ heading_index %}
+{% set tags = post.badges %}
+  {% call post_card(post, heading_id, tags) %}
+{% endfor %}
+{% endmacro %}
+
+{% macro feed_grid(content) %}
+<post-grid
+  id="post-grid"
+  data-count="{{ content.post_count }}"
+  data-total="{{ content.total_count }}"
+  role="list"
+  aria-live="polite"
+>
+  {% if content.has_results %}
+    {% call post_cards(content.posts) %}
+  {% else %}
+  <empty-state role="status" aria-live="polite">
+    <empty-title role="heading" aria-level="2">No matching posts</empty-title>
+    <empty-copy role="note">Adjust the filters or clear them to explore the full archive.</empty-copy>
+  </empty-state>
+  {% endif %}
+</post-grid>
+{% endmacro %}
+
+{% macro feed_loader(content) %}
+{% if content.has_results %}
+{% match content.next_cursor %}
+{% when Some with (cursor) %}
+<div
+  id="feed-sentinel"
+  data-role="infinite-loader"
+  data-indicator-feed-loading
+  data-signals-feed-loading="false"
+  data-on-intersect__once="($feedLoading = true, @get(`/ui/posts?cursor={{ cursor }}{{ content.load_more_query }}`))"
+  style="width: 100%; min-height: 1px;"
+>
+  <progress-spinner
+    id="feed-loading-indicator"
+    role="status"
+    data-show="$feedLoading"
+    style="display: none;"
+    aria-live="polite"
+  >
+    Loading more posts…
+  </progress-spinner>
+</div>
+{% when None %}
+{% endmatch %}
+{% endif %}
+{% endmacro %}
+
+{% macro feed_layout(content) %}
+{% call filters_column(content) %}
+<content-panel data-region="primary" role="region" aria-label="Latest posts">
+  {% call feed_grid(content) %}
+  <div id="feed-sentinel-container" role="presentation" aria-live="polite">
+    {% call feed_loader(content) %}
+  </div>
+</content-panel>
+{% endmacro %}

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE pages\n           SET status = 'published'::page_status,\n               published_at = $2,\n               scheduled_at = NULL,\n               updated_at = now()\n         WHERE id = $1\n        RETURNING id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c0a99ca7119e0fce6f6dbb50ca3762822141f39555b2f8c9274b82d5132c03ed"
+}

@@ -1,0 +1,25 @@
+{% extends "shell.html" %}
+
+{% block extra_styles %}
+  <link rel="stylesheet" href="/static/public/styles/page.css">
+  {% if view.content.contains_code %}
+  <link rel="stylesheet" href="/static/public/styles/code.css">
+  {% endif %}
+  {% if view.content.contains_math %}
+  <link rel="stylesheet" href="/static/public/katex/katex.min.css">
+  {% endif %}
+{% endblock %}
+
+{% block shell_content %}
+<main data-role="content">
+  <layout-frame data-layout="split" role="group" aria-label="Page layout">
+    <content-panel data-region="primary" role="region" aria-label="Page body">
+      <section data-role="page-body">
+        {% block page_body %}
+        {{ view.content.content_html | safe }}
+        {% endblock %}
+      </section>
+    </content-panel>
+  </layout-frame>
+</main>
+{% endblock %}

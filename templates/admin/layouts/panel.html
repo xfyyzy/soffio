@@ -1,0 +1,16 @@
+{% block panel %}
+<section data-role="panel" data-admin-panel="{% block panel_id %}{% endblock %}">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">{% block panel_heading %}{% endblock %}</h2>
+  </header>
+  <div data-role="panel-body">
+{% block panel_toolbar_area %}
+    <div data-role="panel-toolbar">
+{%- block panel_toolbar %}{% endblock panel_toolbar -%}
+    </div>
+{% endblock panel_toolbar_area %}
+{% block panel_controls %}{% endblock %}
+{% block panel_content %}{% endblock %}
+  </div>
+</section>
+{% endblock panel %}

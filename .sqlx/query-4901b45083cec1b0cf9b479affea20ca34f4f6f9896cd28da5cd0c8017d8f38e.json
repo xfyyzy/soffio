@@ -1,0 +1,118 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            homepage_size,\n            admin_page_size,\n            show_tag_aggregations,\n            show_month_aggregations,\n            tag_filter_limit,\n            month_filter_limit,\n            global_toc_enabled,\n            brand_title,\n            brand_href,\n            footer_copy,\n            public_site_url,\n            favicon_svg,\n            timezone,\n            meta_title,\n            meta_description,\n            og_title,\n            og_description\n        FROM site_settings\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "homepage_size",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "admin_page_size",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "show_tag_aggregations",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "show_month_aggregations",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "tag_filter_limit",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "month_filter_limit",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "global_toc_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "brand_title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "brand_href",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "footer_copy",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "public_site_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "favicon_svg",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "timezone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "meta_title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "meta_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 15,
+        "name": "og_title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "og_description",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4901b45083cec1b0cf9b479affea20ca34f4f6f9896cd28da5cd0c8017d8f38e"
+}

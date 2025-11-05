@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "rootDir": "frontend/ts",
+    "outDir": "target/ts-build",
+    "strict": true,
+    "noEmitOnError": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": false,
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "allowImportingTsExtensions": false,
+    "esModuleInterop": false,
+    "sourceMap": false
+  },
+  "include": [
+    "frontend/ts/**/*.ts",
+    "frontend/ts/**/*.d.ts"
+  ],
+  "exclude": []
+}

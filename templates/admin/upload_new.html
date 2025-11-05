@@ -1,0 +1,8 @@
+{% extends "admin/shell.html" %}
+
+{% block content %}
+{% let content = view.content %}
+<div data-admin-content>
+{% include "admin/upload_new_panel.html" %}
+</div>
+{% endblock %}

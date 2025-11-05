@@ -1,0 +1,37 @@
+{% extends "admin/shell.html" %}
+
+{% block content %}
+<section data-role="panel">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">{{ view.content.title }}</h2>
+  </header>
+  <div data-role="panel-body">
+    {% if view.content.has_panels() %}
+    {% for panel in view.content.panels %}
+    <div data-role="metric-section">
+      <h3>{{ panel.title }}</h3>
+      <p data-role="panel-caption">{{ panel.caption }}</p>
+
+      {% if panel.has_metrics() %}
+      <metric-grid role="list">
+        {% for metric in panel.metrics %}
+        <metric-card role="listitem">
+          <span data-role="metric-value">{{ metric.value }}</span>
+          <span data-role="metric-label">{{ metric.label }}</span>
+          {% if let Some(hint) = metric.hint %}
+          <span data-role="metric-hint">{{ hint }}</span>
+          {% endif %}
+        </metric-card>
+        {% endfor %}
+      </metric-grid>
+      {% else %}
+      <p data-role="empty-copy">{{ panel.empty_message }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p data-role="empty-copy">{{ view.content.empty_message }}</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

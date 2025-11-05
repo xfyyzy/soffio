@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, filename, content_type, size_bytes, checksum, stored_path, metadata, created_at\n            FROM uploads\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "filename",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "content_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "size_bytes",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "checksum",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "stored_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "de7e5b90222b23130d314c937ae93ef3e4e9ff8f5f3f11d3a0e2796d4df5fd1c"
+}

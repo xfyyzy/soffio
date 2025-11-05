@@ -1,0 +1,35 @@
+:root {
+  color-scheme: light;
+  --surface: #ffffff;
+  --surface-muted: #f8f8f8;
+  --border: #dfe3e8;
+  --border-strong: #c6ccd4;
+  --accent: #0b57d0;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-faint: #6b7280;
+  --font-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --primary-content-width: 800px;
+  --sidebar-width: 18rem;
+  --layout-split-gap: 1.5rem;
+  --content-horizontal-padding: 1.25rem;
+  --content-width: min(
+    calc(var(--primary-content-width) + 2 * var(--sidebar-width) + 2 * var(--layout-split-gap)),
+    100% - 2rem
+  );
+  --radius-soft: 0.25rem;
+  --shadow-flat: 0 1px 0 rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 3px 8px rgba(15, 23, 42, 0.08);
+  --shadow-raised: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --transition-fast: 0.15s;
+  --transition-medium: 0.2s;
+  --focus-outline-width: 2px;
+  --focus-outline-offset: 3px;
+  --banner-block-size: 4.5rem;
+  --content-padding-top: 2.5rem;
+  --article-anchor-offset: calc(var(--banner-block-size) + var(--content-padding-top));
+}
+
+@view-transition {
+  navigation: auto;
+}

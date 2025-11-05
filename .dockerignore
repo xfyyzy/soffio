@@ -1,0 +1,10 @@
+/target
+/.git
+/.github
+/docs
+/prototype
+/tests
+/var
+/uploads
+/node_modules
+Dockerfile

@@ -1,0 +1,172 @@
+---
+source: tests/snapshots.rs
+expression: body
+---
+event: datastar-patch-elements
+data: selector #post-grid
+data: mode append
+data: elements 
+data: elements 
+data: elements 
+data: elements <post-card data-entry="incremental-build-pipeline" role="listitem" view-transition-name="post-card-incremental-build-pipeline">
+data: elements   <article data-role="card" aria-labelledby="post-title-1"><card-heading role="presentation">
+data: elements   <h2 id="post-title-1" data-role="card-title" view-transition-name="post-title-incremental-build-pipeline">
+data: elements     <a data-role="card-link" href="/posts/incremental-build-pipeline">Incremental Build Pipeline in Rust</a>
+data: elements   </h2>
+data: elements </card-heading>
+data: elements <card-excerpt view-transition-name="post-excerpt-incremental-build-pipeline">How we rebuilt Soffio&#39;s Rust workspace pipeline to deliver artifacts every five minutes without sacrificing determinism.</card-excerpt>
+data: elements <card-footer role="contentinfo">
+data: elements   <time data-role="published" datetime="2025-05-12" view-transition-name="post-date-incremental-build-pipeline">May 12, 2025</time>
+data: elements   <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-incremental-build-pipeline">
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/engineering">#Engineering</a>
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/build">#Build</a>
+data: elements     
+data: elements   </tag-badges>
+data: elements </card-footer>
+data: elements   </article>
+data: elements </post-card>
+data: elements 
+data: elements 
+data: elements 
+data: elements <post-card data-entry="observability-control-plane" role="listitem" view-transition-name="post-card-observability-control-plane">
+data: elements   <article data-role="card" aria-labelledby="post-title-2"><card-heading role="presentation">
+data: elements   <h2 id="post-title-2" data-role="card-title" view-transition-name="post-title-observability-control-plane">
+data: elements     <a data-role="card-link" href="/posts/observability-control-plane">Observability Control Plane Rollout</a>
+data: elements   </h2>
+data: elements </card-heading>
+data: elements <card-excerpt view-transition-name="post-excerpt-observability-control-plane">Refactoring metrics ingestion into a control plane that keeps dashboards within 5s of reality even during deploy storms.</card-excerpt>
+data: elements <card-footer role="contentinfo">
+data: elements   <time data-role="published" datetime="2024-05-03" view-transition-name="post-date-observability-control-plane">May 3, 2024</time>
+data: elements   <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-observability-control-plane">
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/observability">#Observability</a>
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/platform">#Platform</a>
+data: elements     
+data: elements   </tag-badges>
+data: elements </card-footer>
+data: elements   </article>
+data: elements </post-card>
+data: elements 
+data: elements 
+data: elements 
+data: elements <post-card data-entry="edge-cache-wasm-profiling" role="listitem" view-transition-name="post-card-edge-cache-wasm-profiling">
+data: elements   <article data-role="card" aria-labelledby="post-title-3"><card-heading role="presentation">
+data: elements   <h2 id="post-title-3" data-role="card-title" view-transition-name="post-title-edge-cache-wasm-profiling">
+data: elements     <a data-role="card-link" href="/posts/edge-cache-wasm-profiling">边缘缓存的 Wasm 画像实践</a>
+data: elements   </h2>
+data: elements </card-heading>
+data: elements <card-excerpt view-transition-name="post-excerpt-edge-cache-wasm-profiling">借助 WebAssembly sidecar 在生产环境诊断 Soffio 边缘缓存的性能瓶颈。</card-excerpt>
+data: elements <card-footer role="contentinfo">
+data: elements   <time data-role="published" datetime="2023-12-23" view-transition-name="post-date-edge-cache-wasm-profiling">December 23, 2023</time>
+data: elements   <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-edge-cache-wasm-profiling">
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/performance">#Performance</a>
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/wasm">#Wasm</a>
+data: elements     
+data: elements   </tag-badges>
+data: elements </card-footer>
+data: elements   </article>
+data: elements </post-card>
+data: elements 
+data: elements 
+data: elements 
+data: elements <post-card data-entry="async-scheduler-retrospective" role="listitem" view-transition-name="post-card-async-scheduler-retrospective">
+data: elements   <article data-role="card" aria-labelledby="post-title-4"><card-heading role="presentation">
+data: elements   <h2 id="post-title-4" data-role="card-title" view-transition-name="post-title-async-scheduler-retrospective">
+data: elements     <a data-role="card-link" href="/posts/async-scheduler-retrospective">Async Scheduler Retrospective</a>
+data: elements   </h2>
+data: elements </card-heading>
+data: elements <card-excerpt view-transition-name="post-excerpt-async-scheduler-retrospective">A retrospective on stabilising Soffio&#39;s async scheduler after migrating to a fully cooperative model.</card-excerpt>
+data: elements <card-footer role="contentinfo">
+data: elements   <time data-role="published" datetime="2022-12-12" view-transition-name="post-date-async-scheduler-retrospective">December 12, 2022</time>
+data: elements   <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-async-scheduler-retrospective">
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/engineering">#Engineering</a>
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/rust">#Rust</a>
+data: elements     
+data: elements   </tag-badges>
+data: elements </card-footer>
+data: elements   </article>
+data: elements </post-card>
+data: elements 
+data: elements 
+data: elements 
+data: elements <post-card data-entry="feature-flags-at-scale" role="listitem" view-transition-name="post-card-feature-flags-at-scale">
+data: elements   <article data-role="card" aria-labelledby="post-title-5"><card-heading role="presentation">
+data: elements   <h2 id="post-title-5" data-role="card-title" view-transition-name="post-title-feature-flags-at-scale">
+data: elements     <a data-role="card-link" href="/posts/feature-flags-at-scale">Feature Flags at Scale</a>
+data: elements   </h2>
+data: elements </card-heading>
+data: elements <card-excerpt view-transition-name="post-excerpt-feature-flags-at-scale">How Soffio promotes experiment toggles from ad-hoc booleans to audited configuration.</card-excerpt>
+data: elements <card-footer role="contentinfo">
+data: elements   <time data-role="published" datetime="2022-12-01" view-transition-name="post-date-feature-flags-at-scale">December 1, 2022</time>
+data: elements   <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-feature-flags-at-scale">
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/infrastructure">#Infrastructure</a>
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/release">#Release</a>
+data: elements     
+data: elements   </tag-badges>
+data: elements </card-footer>
+data: elements   </article>
+data: elements </post-card>
+data: elements 
+data: elements 
+data: elements 
+data: elements <post-card data-entry="sdk-beta-invite" role="listitem" view-transition-name="post-card-sdk-beta-invite">
+data: elements   <article data-role="card" aria-labelledby="post-title-6"><card-heading role="presentation">
+data: elements   <h2 id="post-title-6" data-role="card-title" view-transition-name="post-title-sdk-beta-invite">
+data: elements     <a data-role="card-link" href="/posts/sdk-beta-invite">SDK Beta Invite</a>
+data: elements   </h2>
+data: elements </card-heading>
+data: elements <card-excerpt view-transition-name="post-excerpt-sdk-beta-invite">Announcing the Soffio SDK private beta with detailed onboarding cohorts and support expectations.</card-excerpt>
+data: elements <card-footer role="contentinfo">
+data: elements   <time data-role="published" datetime="2022-02-22" view-transition-name="post-date-sdk-beta-invite">February 22, 2022</time>
+data: elements   <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-sdk-beta-invite">
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/release">#Release</a>
+data: elements     
+data: elements     <a data-role="badge" role="listitem" href="/tags/community">#Community</a>
+data: elements     
+data: elements   </tag-badges>
+data: elements </card-footer>
+data: elements   </article>
+data: elements </post-card>
+
+event: datastar-patch-elements
+data: selector #feed-sentinel-container
+data: mode inner
+data: elements 
+data: elements 
+data: elements <div
+data: elements   id="feed-sentinel"
+data: elements   data-role="infinite-loader"
+data: elements   data-indicator-feed-loading
+data: elements   data-signals-feed-loading="false"
+data: elements   data-on-intersect__once="($feedLoading = true, @get(`/ui/posts?cursor=eyJzY29wZSI6InB1YmxpYyIsInN0YXR1cyI6InB1Ymxpc2hlZCIsInNvcnRfa2V5IjpbMjAyMiw1MywwLDAsMCwwLDAsMCwwXSwiaWQiOiIwMDMyNDc3MS1jNGJmLTdjYjctODVjMC0wMWU1M2M5MTllYzkifQ`))"
+data: elements   style="width: 100%; min-height: 1px;"
+data: elements >
+data: elements   <progress-spinner
+data: elements     id="feed-loading-indicator"
+data: elements     role="status"
+data: elements     data-show="$feedLoading"
+data: elements     style="display: none;"
+data: elements     aria-live="polite"
+data: elements   >
+data: elements     Loading more posts…
+data: elements   </progress-spinner>
+data: elements </div>
+data: elements 
+
+event: datastar-patch-elements
+data: selector body
+data: mode append
+data: elements <script data-effect="el.remove()">(function() { const grid = document.querySelector('#post-grid'); if (grid) { grid.setAttribute('data-count', '6'); } })();</script>
+
+event: datastar-patch-signals
+data: signals {"feedLoading": false}

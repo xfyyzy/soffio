@@ -1,0 +1,48 @@
+<section data-role="panel">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">{{ content.heading }}</h2>
+  </header>
+  <div data-role="panel-body">
+    <form data-role="settings-editor" method="post" action="{{ content.form_action }}"
+      data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
+      <table data-role="settings-summary-table">
+        <tbody>
+          {% for field in content.simple_fields %}
+          <tr>
+            <th scope="row">{{ field.label }}</th>
+            <td>
+              {% match field.input %}
+              {% when AdminSettingsEditInputKind::Number { name, value, min } %}
+              <input type="number" name="{{ name }}" value="{{ value }}" {% if let Some(min) = min %}min="{{ min }}"{% endif %} required>
+              {% when AdminSettingsEditInputKind::Text { name, value, placeholder } %}
+              <input type="text" name="{{ name }}" value="{{ value }}" {% if let Some(placeholder) = placeholder %}placeholder="{{ placeholder }}"{% endif %} required>
+              {% when AdminSettingsEditInputKind::Checkbox { name, checked, toggle_id } %}
+              <div data-role="pin-toggle">
+                <input id="{{ toggle_id }}" type="checkbox" name="{{ name }}" value="on" {% if checked %}checked{% endif %}>
+                <label for="{{ toggle_id }}">Enabled</label>
+              </div>
+              {% endmatch %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if !content.multiline_fields.is_empty() %}
+      <div data-role="settings-summary-text-group">
+        {% for field in content.multiline_fields %}
+        <section data-role="settings-summary-text">
+          <h3>{{ field.label }}</h3>
+          <textarea name="{{ field.name }}" rows="{{ field.rows }}" required>{{ field.value }}</textarea>
+        </section>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <footer data-role="form-footer">
+        <span data-role="form-hint">Last updated {{ content.updated_at }}</span>
+        <button type="submit" data-role="primary">{{ content.submit_label }}</button>
+      </footer>
+    </form>
+  </div>
+</section>

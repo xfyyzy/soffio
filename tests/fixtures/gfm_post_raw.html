@@ -1,0 +1,80 @@
+<h1>GFM Feature Showcase</h1>
+<h2>Table With Alignment</h2>
+<table>
+<thead>
+<tr>
+<th align="left">Left</th>
+<th align="center">Center</th>
+<th align="right">Right</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">Alpha</td>
+<td align="center">Beta</td>
+<td align="right">Gamma</td>
+</tr>
+<tr>
+<td align="left">Longer cell</td>
+<td align="center">Inline <code>code</code></td>
+<td align="right"><del>Struck</del></td>
+</tr>
+</tbody>
+</table>
+<h2>Task List</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked="" disabled="" /> Checked item</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="" /> Pending item</li>
+</ul>
+<h2>Alerts</h2>
+<div class="markdown-alert markdown-alert-note">
+<p class="markdown-alert-title">Note</p>
+<p>This is a GitHub alert with a default title.</p>
+</div>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title">Tip</p>
+<p>Remember to hydrate during long writing sessions.</p>
+</div>
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title">Important</p>
+<p>Releases happen every Friday at 17:00 UTC.</p>
+</div>
+<div class="markdown-alert markdown-alert-warning">
+<p class="markdown-alert-title">Warning</p>
+<p>Preview links expire after 24 hours.</p>
+</div>
+<div class="markdown-alert markdown-alert-caution">
+<p class="markdown-alert-title">Caution</p>
+<p>Editing production config in the browser can break live traffic.</p>
+</div>
+<h2>Description List</h2>
+<dl>
+<dt>Feature</dt>
+<dd>Describes the thing using definition list syntax.</dd>
+</dl>
+<h2>Footnote</h2>
+<p>Footnote reference.<sup class="footnote-ref"><a href="#fn-ref" id="fnref-ref" data-footnote-ref>1</a></sup></p>
+<h2>Inline Styles</h2>
+<p><del>Strikethrough</del>, ++Underline++, ==Highlight==, and regular text.</p>
+<h2>Code Block</h2>
+<pre class="syntax-highlight syntax-lang-rust" data-language="rust"><code class="language-rust syntax-code"><span class="syntax-source syntax-rust"><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-storage syntax-type syntax-function syntax-rust">fn</span> </span><span class="syntax-entity syntax-name syntax-function syntax-rust">main</span></span><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-meta syntax-function syntax-parameters syntax-rust"><span class="syntax-punctuation syntax-section syntax-parameters syntax-begin syntax-rust">(</span></span><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-meta syntax-function syntax-parameters syntax-rust"><span class="syntax-punctuation syntax-section syntax-parameters syntax-end syntax-rust">)</span></span></span></span><span class="syntax-meta syntax-function syntax-rust"> </span><span class="syntax-meta syntax-function syntax-rust"><span class="syntax-meta syntax-block syntax-rust"><span class="syntax-punctuation syntax-section syntax-block syntax-begin syntax-rust">{</span>
+    <span class="syntax-support syntax-macro syntax-rust">println!</span><span class="syntax-meta syntax-group syntax-rust"><span class="syntax-punctuation syntax-section syntax-group syntax-begin syntax-rust">(</span></span><span class="syntax-meta syntax-group syntax-rust"><span class="syntax-string syntax-quoted syntax-double syntax-rust"><span class="syntax-punctuation syntax-definition syntax-string syntax-begin syntax-rust">&quot;</span>Hello, world!<span class="syntax-punctuation syntax-definition syntax-string syntax-end syntax-rust">&quot;</span></span></span><span class="syntax-meta syntax-group syntax-rust"><span class="syntax-punctuation syntax-section syntax-group syntax-end syntax-rust">)</span></span><span class="syntax-punctuation syntax-terminator syntax-rust">;</span>
+</span><span class="syntax-meta syntax-block syntax-rust"><span class="syntax-punctuation syntax-section syntax-block syntax-end syntax-rust">}</span></span></span>
+</span></code></pre>
+<h2>Autolink</h2>
+<p>Visit <a href="https://github.com">https://github.com</a> for more details.</p>
+<h2>Autolink Literals</h2>
+<p>Visit <a href="http://www.github.com">www.github.com</a> for more info or email <a href="mailto:support@example.com">support@example.com</a> for help.</p>
+<h2>HTML Filtering</h2>
+<title>Leaked Title</title>
+<script>alert('inline script should be stripped');</script>
+<h2>HTML Preservation</h2>
+<p>Allow inline edits like <ins>inserted text</ins> to pass through when safe.</p>
+<section class="footnotes" data-footnotes>
+<ol>
+<li id="fn-ref">
+<p>Footnote body with a <a href="https://example.com">link</a>. <a href="#fnref-ref" class="footnote-backref" data-footnote-backref data-footnote-backref-idx="1" aria-label="Back to reference 1">↩</a></p>
+</li>
+</ol>
+</section>
+

@@ -1,0 +1,662 @@
+---
+source: tests/snapshots.rs
+expression: html
+---
+<filters-column data-region="filters" role="complementary" aria-label="Filter posts">
+  
+  
+  
+  
+  <section
+  class="filter-panel"
+  id="tag-panel"
+  data-role="filter-group"
+  role="region"
+  aria-labelledby="tag-panel-title"
+>
+  <h2 class="filter-title" id="tag-panel-title">Filter by tag</h2>
+  <ul class="filter-list" role="list">
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="true"
+        data-count="19"
+        aria-describedby="tag-panel-count-1"
+        href="/"
+      >
+        All tags<span class="sr-only">, 19 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-1" aria-hidden="true">19</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="8"
+        aria-describedby="tag-panel-count-2"
+        href="/tags/community"
+      >
+        #Community<span class="sr-only">, 8 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-2" aria-hidden="true">8</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="5"
+        aria-describedby="tag-panel-count-3"
+        href="/tags/learning"
+      >
+        #Learning<span class="sr-only">, 5 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-3" aria-hidden="true">5</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="4"
+        aria-describedby="tag-panel-count-4"
+        href="/tags/release"
+      >
+        #Release<span class="sr-only">, 4 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-4" aria-hidden="true">4</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="3"
+        aria-describedby="tag-panel-count-5"
+        href="/tags/engineering"
+      >
+        #Engineering<span class="sr-only">, 3 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-5" aria-hidden="true">3</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="2"
+        aria-describedby="tag-panel-count-6"
+        href="/tags/research"
+      >
+        #Research<span class="sr-only">, 2 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-6" aria-hidden="true">2</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-7"
+        href="/tags/ai"
+      >
+        #AI<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-7" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-8"
+        href="/tags/build"
+      >
+        #Build<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-8" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-9"
+        href="/tags/communication"
+      >
+        #Communication<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-9" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-10"
+        href="/tags/design"
+      >
+        #Design<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-10" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-11"
+        href="/tags/hardware"
+      >
+        #Hardware<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-11" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-12"
+        href="/tags/infrastructure"
+      >
+        #Infrastructure<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-12" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-13"
+        href="/tags/observability"
+      >
+        #Observability<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-13" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-14"
+        href="/tags/performance"
+      >
+        #Performance<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-14" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-15"
+        href="/tags/platform"
+      >
+        #Platform<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-15" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-16"
+        href="/tags/practice"
+      >
+        #Practice<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-16" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-17"
+        href="/tags/rust"
+      >
+        #Rust<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-17" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="tag-panel-count-18"
+        href="/tags/wasm"
+      >
+        #Wasm<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="tag-panel-count-18" aria-hidden="true">1</chip-count>
+    </li>
+    
+  </ul>
+</section>
+  
+  
+  
+  
+  <section
+  class="filter-panel"
+  id="month-panel"
+  data-role="filter-group"
+  role="region"
+  aria-labelledby="month-panel-title"
+>
+  <h2 class="filter-title" id="month-panel-title">Filter by month</h2>
+  <ul class="filter-list" role="list">
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="true"
+        data-count="19"
+        aria-describedby="month-panel-count-1"
+        href="/"
+      >
+        All months<span class="sr-only">, 19 posts</span>
+      </a>
+      <chip-count id="month-panel-count-1" aria-hidden="true">19</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-2"
+        href="/months/2025-05"
+      >
+        May 2025<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-2" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-3"
+        href="/months/2024-05"
+      >
+        May 2024<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-3" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-4"
+        href="/months/2023-12"
+      >
+        December 2023<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-4" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="2"
+        aria-describedby="month-panel-count-5"
+        href="/months/2022-12"
+      >
+        December 2022<span class="sr-only">, 2 posts</span>
+      </a>
+      <chip-count id="month-panel-count-5" aria-hidden="true">2</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="3"
+        aria-describedby="month-panel-count-6"
+        href="/months/2022-02"
+      >
+        February 2022<span class="sr-only">, 3 posts</span>
+      </a>
+      <chip-count id="month-panel-count-6" aria-hidden="true">3</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-7"
+        href="/months/2021-09"
+      >
+        September 2021<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-7" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-8"
+        href="/months/2021-07"
+      >
+        July 2021<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-8" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="2"
+        aria-describedby="month-panel-count-9"
+        href="/months/2021-05"
+      >
+        May 2021<span class="sr-only">, 2 posts</span>
+      </a>
+      <chip-count id="month-panel-count-9" aria-hidden="true">2</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-10"
+        href="/months/2021-04"
+      >
+        April 2021<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-10" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="2"
+        aria-describedby="month-panel-count-11"
+        href="/months/2021-02"
+      >
+        February 2021<span class="sr-only">, 2 posts</span>
+      </a>
+      <chip-count id="month-panel-count-11" aria-hidden="true">2</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-12"
+        href="/months/2020-09"
+      >
+        September 2020<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-12" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-13"
+        href="/months/2020-05"
+      >
+        May 2020<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-13" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-14"
+        href="/months/2020-04"
+      >
+        April 2020<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-14" aria-hidden="true">1</chip-count>
+    </li>
+    
+    
+    <li class="tag-chip-group">
+      <a
+        data-role="tag-chip"
+        data-active="false"
+        data-count="1"
+        aria-describedby="month-panel-count-15"
+        href="/months/2020-03"
+      >
+        March 2020<span class="sr-only">, 1 posts</span>
+      </a>
+      <chip-count id="month-panel-count-15" aria-hidden="true">1</chip-count>
+    </li>
+    
+  </ul>
+</section>
+</filters-column>
+<content-panel data-region="primary" role="region" aria-label="Latest posts">
+  <post-grid
+    id="post-grid"
+    data-count="6"
+    data-total="19"
+    role="list"
+    aria-live="polite"
+  >
+
+      
+      
+      <post-card data-entry="incremental-build-pipeline" role="listitem" view-transition-name="post-card-incremental-build-pipeline">
+        <article data-role="card" aria-labelledby="post-title-1"><card-heading role="presentation">
+  <h2 id="post-title-1" data-role="card-title" view-transition-name="post-title-incremental-build-pipeline">
+    <a data-role="card-link" href="/posts/incremental-build-pipeline">Incremental Build Pipeline in Rust</a>
+  </h2>
+</card-heading>
+<card-excerpt view-transition-name="post-excerpt-incremental-build-pipeline">How we rebuilt Soffio&#39;s Rust workspace pipeline to deliver artifacts every five minutes without sacrificing determinism.</card-excerpt>
+<card-footer role="contentinfo">
+  <time data-role="published" datetime="2025-05-12" view-transition-name="post-date-incremental-build-pipeline">May 12, 2025</time>
+  <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-incremental-build-pipeline">
+    
+    <a data-role="badge" role="listitem" href="/tags/engineering">#Engineering</a>
+    
+    <a data-role="badge" role="listitem" href="/tags/build">#Build</a>
+    
+  </tag-badges>
+</card-footer>
+        </article>
+      </post-card>
+      
+      
+      <post-card data-entry="observability-control-plane" role="listitem" view-transition-name="post-card-observability-control-plane">
+        <article data-role="card" aria-labelledby="post-title-2"><card-heading role="presentation">
+  <h2 id="post-title-2" data-role="card-title" view-transition-name="post-title-observability-control-plane">
+    <a data-role="card-link" href="/posts/observability-control-plane">Observability Control Plane Rollout</a>
+  </h2>
+</card-heading>
+<card-excerpt view-transition-name="post-excerpt-observability-control-plane">Refactoring metrics ingestion into a control plane that keeps dashboards within 5s of reality even during deploy storms.</card-excerpt>
+<card-footer role="contentinfo">
+  <time data-role="published" datetime="2024-05-03" view-transition-name="post-date-observability-control-plane">May 3, 2024</time>
+  <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-observability-control-plane">
+    
+    <a data-role="badge" role="listitem" href="/tags/observability">#Observability</a>
+    
+    <a data-role="badge" role="listitem" href="/tags/platform">#Platform</a>
+    
+  </tag-badges>
+</card-footer>
+        </article>
+      </post-card>
+      
+      
+      <post-card data-entry="edge-cache-wasm-profiling" role="listitem" view-transition-name="post-card-edge-cache-wasm-profiling">
+        <article data-role="card" aria-labelledby="post-title-3"><card-heading role="presentation">
+  <h2 id="post-title-3" data-role="card-title" view-transition-name="post-title-edge-cache-wasm-profiling">
+    <a data-role="card-link" href="/posts/edge-cache-wasm-profiling">边缘缓存的 Wasm 画像实践</a>
+  </h2>
+</card-heading>
+<card-excerpt view-transition-name="post-excerpt-edge-cache-wasm-profiling">借助 WebAssembly sidecar 在生产环境诊断 Soffio 边缘缓存的性能瓶颈。</card-excerpt>
+<card-footer role="contentinfo">
+  <time data-role="published" datetime="2023-12-23" view-transition-name="post-date-edge-cache-wasm-profiling">December 23, 2023</time>
+  <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-edge-cache-wasm-profiling">
+    
+    <a data-role="badge" role="listitem" href="/tags/performance">#Performance</a>
+    
+    <a data-role="badge" role="listitem" href="/tags/wasm">#Wasm</a>
+    
+  </tag-badges>
+</card-footer>
+        </article>
+      </post-card>
+      
+      
+      <post-card data-entry="async-scheduler-retrospective" role="listitem" view-transition-name="post-card-async-scheduler-retrospective">
+        <article data-role="card" aria-labelledby="post-title-4"><card-heading role="presentation">
+  <h2 id="post-title-4" data-role="card-title" view-transition-name="post-title-async-scheduler-retrospective">
+    <a data-role="card-link" href="/posts/async-scheduler-retrospective">Async Scheduler Retrospective</a>
+  </h2>
+</card-heading>
+<card-excerpt view-transition-name="post-excerpt-async-scheduler-retrospective">A retrospective on stabilising Soffio&#39;s async scheduler after migrating to a fully cooperative model.</card-excerpt>
+<card-footer role="contentinfo">
+  <time data-role="published" datetime="2022-12-12" view-transition-name="post-date-async-scheduler-retrospective">December 12, 2022</time>
+  <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-async-scheduler-retrospective">
+    
+    <a data-role="badge" role="listitem" href="/tags/engineering">#Engineering</a>
+    
+    <a data-role="badge" role="listitem" href="/tags/rust">#Rust</a>
+    
+  </tag-badges>
+</card-footer>
+        </article>
+      </post-card>
+      
+      
+      <post-card data-entry="feature-flags-at-scale" role="listitem" view-transition-name="post-card-feature-flags-at-scale">
+        <article data-role="card" aria-labelledby="post-title-5"><card-heading role="presentation">
+  <h2 id="post-title-5" data-role="card-title" view-transition-name="post-title-feature-flags-at-scale">
+    <a data-role="card-link" href="/posts/feature-flags-at-scale">Feature Flags at Scale</a>
+  </h2>
+</card-heading>
+<card-excerpt view-transition-name="post-excerpt-feature-flags-at-scale">How Soffio promotes experiment toggles from ad-hoc booleans to audited configuration.</card-excerpt>
+<card-footer role="contentinfo">
+  <time data-role="published" datetime="2022-12-01" view-transition-name="post-date-feature-flags-at-scale">December 1, 2022</time>
+  <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-feature-flags-at-scale">
+    
+    <a data-role="badge" role="listitem" href="/tags/infrastructure">#Infrastructure</a>
+    
+    <a data-role="badge" role="listitem" href="/tags/release">#Release</a>
+    
+  </tag-badges>
+</card-footer>
+        </article>
+      </post-card>
+      
+      
+      <post-card data-entry="sdk-beta-invite" role="listitem" view-transition-name="post-card-sdk-beta-invite">
+        <article data-role="card" aria-labelledby="post-title-6"><card-heading role="presentation">
+  <h2 id="post-title-6" data-role="card-title" view-transition-name="post-title-sdk-beta-invite">
+    <a data-role="card-link" href="/posts/sdk-beta-invite">SDK Beta Invite</a>
+  </h2>
+</card-heading>
+<card-excerpt view-transition-name="post-excerpt-sdk-beta-invite">Announcing the Soffio SDK private beta with detailed onboarding cohorts and support expectations.</card-excerpt>
+<card-footer role="contentinfo">
+  <time data-role="published" datetime="2022-02-22" view-transition-name="post-date-sdk-beta-invite">February 22, 2022</time>
+  <tag-badges role="list" aria-label="Tags" view-transition-name="post-tags-sdk-beta-invite">
+    
+    <a data-role="badge" role="listitem" href="/tags/release">#Release</a>
+    
+    <a data-role="badge" role="listitem" href="/tags/community">#Community</a>
+    
+  </tag-badges>
+</card-footer>
+        </article>
+      </post-card>
+      
+    
+  </post-grid>
+  <div id="feed-sentinel-container" role="presentation" aria-live="polite">
+
+<div
+  id="feed-sentinel"
+  data-role="infinite-loader"
+  data-indicator-feed-loading
+  data-signals-feed-loading="false"
+  data-on-intersect__once="($feedLoading = true, @get(`/ui/posts?cursor=eyJzY29wZSI6InB1YmxpYyIsInN0YXR1cyI6InB1Ymxpc2hlZCIsInNvcnRfa2V5IjpbMjAyMiw1MywwLDAsMCwwLDAsMCwwXSwiaWQiOiIwMDMyNDc3MS1jNGJmLTdjYjctODVjMC0wMWU1M2M5MTllYzkifQ`))"
+  style="width: 100%; min-height: 1px;"
+>
+  <progress-spinner
+    id="feed-loading-indicator"
+    role="status"
+    data-show="$feedLoading"
+    style="display: none;"
+    aria-live="polite"
+  >
+    Loading more posts…
+  </progress-spinner>
+</div>
+
+
+  </div>
+</content-panel>

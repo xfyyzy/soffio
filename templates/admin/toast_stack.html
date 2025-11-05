@@ -1,0 +1,18 @@
+<aside data-admin-toast="stack" aria-live="polite">
+  {% if toasts.is_empty() %}
+  <div data-toast-placeholder hidden></div>
+  {% else %}
+  <ol data-toast-list>
+    {% for toast in toasts %}
+    <li
+      data-toast
+      data-variant="{{ toast.kind }}"
+      id="toast-{{ toast.id }}"
+      style="--toast-ttl: {{ toast.ttl_ms }}ms;"
+    >
+      <div data-toast-body>{{ toast.text }}</div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+</aside>

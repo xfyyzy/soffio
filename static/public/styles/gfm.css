@@ -1,0 +1,170 @@
+/* GitHub Flavored Markdown shared styles for posts and pages. */
+
+.markdown-alert {
+  position: relative;
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem 1.25rem 3rem;
+  border-radius: var(--radius-soft);
+  border: 1px solid var(--border);
+  border-left-width: 0.4rem;
+  color: var(--text-primary);
+  background: var(--surface-muted);
+}
+
+.markdown-alert::before {
+  position: absolute;
+  left: 1rem;
+  top: 1.05rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.markdown-alert-title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+.markdown-alert-note {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.markdown-alert-note::before {
+  content: "ℹ️";
+}
+
+.markdown-alert-tip {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.markdown-alert-tip::before {
+  content: "💡";
+}
+
+.markdown-alert-important {
+  border-left-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.12);
+}
+
+.markdown-alert-important::before {
+  content: "❗";
+}
+
+.markdown-alert-warning {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.markdown-alert-warning::before {
+  content: "⚠️";
+}
+
+.markdown-alert-caution {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.markdown-alert-caution::before {
+  content: "🔴";
+}
+
+dl {
+  margin: 1.5rem 0;
+}
+
+dt {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+dd {
+  margin: 0.35rem 0 0.75rem 1.25rem;
+  color: var(--text-secondary);
+}
+
+ul.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+ul.contains-task-list > li.task-list-item {
+  position: relative;
+  padding-left: 1.75rem;
+  margin: 0.35rem 0;
+}
+
+ul.contains-task-list > li.task-list-item .task-list-item-checkbox {
+  position: absolute;
+  left: 0;
+  top: 0.4rem;
+  margin: 0;
+  pointer-events: none;
+}
+
+[data-role="table-header-cell"][align="center"],
+[data-role="table-cell"][align="center"],
+table th[align="center"],
+table td[align="center"] {
+  text-align: center;
+}
+
+[data-role="table-header-cell"][align="right"],
+[data-role="table-cell"][align="right"],
+table th[align="right"],
+table td[align="right"] {
+  text-align: right;
+}
+
+section[data-footnotes] {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+section[data-footnotes] ol {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+section[data-footnotes] .footnote-backref {
+  margin-left: 0.35rem;
+}
+
+mark {
+  background: rgba(255, 229, 128, 0.4);
+  color: var(--text-primary);
+  padding: 0 0.15rem;
+  border-radius: 0.2rem;
+}
+
+u {
+  text-decoration-thickness: 0.08em;
+  text-decoration-color: var(--accent);
+}
+
+del {
+  text-decoration-thickness: 0.08em;
+  text-decoration-color: currentColor;
+}
+
+:not(pre) > code {
+  display: inline-block;
+  font-family: var(--font-code);
+  font-size: 0.95em;
+  line-height: 1.55;
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-soft);
+  border: 1px solid var(--border);
+}
+
+:not(pre) > code:before,
+:not(pre) > code:after {
+  content: "";
+}

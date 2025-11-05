@@ -1,0 +1,119 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE posts\n               SET pinned = $2,\n                   updated_at = now()\n             WHERE id = $1\n            RETURNING id, slug, title, excerpt, body_markdown,\n                     status AS \"status: PostStatus\", pinned, scheduled_at, published_at, archived_at,\n                     summary_markdown, summary_html, created_at, updated_at,\n                     CASE\n                         WHEN status = 'published'::post_status THEN COALESCE(published_at, updated_at, created_at)\n                         ELSE COALESCE(updated_at, created_at)\n                     END AS \"primary_time!\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "excerpt",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "body_markdown",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "status: PostStatus",
+        "type_info": {
+          "Custom": {
+            "name": "post_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "published",
+                "archived",
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "pinned",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "scheduled_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "archived_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "summary_markdown",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "summary_html",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "primary_time!",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "c3279260293c33003e75cb7a3677e6a0eb2eea856d0a0239d0ffcbab68eaea18"
+}

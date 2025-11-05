@@ -1,0 +1,31 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE site_settings\n        SET\n            homepage_size = $1,\n            admin_page_size = $2,\n            show_tag_aggregations = $3,\n            show_month_aggregations = $4,\n            tag_filter_limit = $5,\n            month_filter_limit = $6,\n            global_toc_enabled = $7,\n            brand_title = $8,\n            brand_href = $9,\n            footer_copy = $10,\n            public_site_url = $11,\n            favicon_svg = $12,\n            timezone = $13,\n            meta_title = $14,\n            meta_description = $15,\n            og_title = $16,\n            og_description = $17,\n            updated_at = now()\n        WHERE id = $18\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Bool",
+        "Bool",
+        "Int4",
+        "Int4",
+        "Bool",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7115d48b62718211f4f4545a3e3c0dfa93926f505cea657291a3e93cf546eeb7"
+}

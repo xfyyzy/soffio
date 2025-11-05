@@ -1,0 +1,42 @@
+    <form data-role="filter-form" method="post" action="{{ panel_action }}" data-on-submit__prevent="(@post(`{{ panel_action }}`, { contentType: 'form' }))">
+      {% if let Some(status) = &content.active_status_key %}
+      <input type="hidden" name="status" value="{{ status }}">
+      {% endif %}
+      {% if content.tag_filter_enabled %}
+      {% let tag_field = content.tag_filter_field %}
+      {% let tag_label = content.tag_filter_label %}
+      {% let tag_all_label = content.tag_filter_all_label %}
+      <label>
+        <span>{{ tag_label }}</span>
+        <select name="{{ tag_field }}">
+          <option value="" {% if content.filter_tag.is_none() %}selected{% endif %}>{{ tag_all_label }}</option>
+          {% for tag in content.tag_options %}
+          <option value="{{ tag.slug }}" {% if let Some(selected) = &content.filter_tag %}{% if selected == &tag.slug %}selected{% endif %}{% endif %}>{{ tag.name }} ({{ tag.count }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      {% if content.month_filter_enabled %}
+      <label>
+        <span>Month</span>
+        <select name="month">
+          <option value="" {% if content.filter_month.is_none() %}selected{% endif %}>All months</option>
+          {% for month in content.month_options %}
+          <option value="{{ month.key }}" {% if let Some(selected) = &content.filter_month %}{% if selected == &month.key %}selected{% endif %}{% endif %}>{{ month.label }} ({{ month.count }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      <label>
+        <span>Search</span>
+        <input type="text" name="search" value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+      </label>
+      <div data-role="filter-actions">
+        <button type="submit">Apply Filters</button>
+        {% if content.filter_search.is_some() ||
+              (content.tag_filter_enabled && content.filter_tag.is_some()) ||
+              (content.month_filter_enabled && content.filter_month.is_some()) %}
+        <button type="submit" name="clear" value="1" data-role="secondary">Clear</button>
+        {% endif %}
+      </div>
+    </form>

@@ -1,0 +1,108 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pages\n               SET scheduled_at = $2,\n                   published_at = NULL,\n                   status = $3,\n                   updated_at = now()\n             WHERE id = $1\n            RETURNING id, slug, title, body_markdown, rendered_html,\n                     status AS \"status: PageStatus\",\n                     scheduled_at, published_at, archived_at, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "body_markdown",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "rendered_html",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "status: PageStatus",
+        "type_info": {
+          "Custom": {
+            "name": "page_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "published",
+                "archived",
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "scheduled_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "archived_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        {
+          "Custom": {
+            "name": "page_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "published",
+                "archived",
+                "error"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "aac4e0450390fdf1313d1c2a75c446023ddcb99d5814e091ef4e8e57f59b2741"
+}

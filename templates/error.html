@@ -1,0 +1,13 @@
+{% extends "page.html" %}
+
+{% block page_body %}
+<article data-role="error">
+  <h2 data-role="error-title">{{ view.content.title }}</h2>
+  <p data-role="error-copy">{{ view.content.message }}</p>
+  {% if let Some(action) = view.content.primary_action %}
+  <p data-role="error-action">
+    <a href="{{ action.href }}">{{ action.label }}</a>
+  </p>
+  {% endif %}
+</article>
+{% endblock %}

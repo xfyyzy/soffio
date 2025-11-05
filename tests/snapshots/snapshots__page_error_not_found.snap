@@ -1,0 +1,111 @@
+---
+source: tests/snapshots.rs
+expression: html
+---
+<!DOCTYPE html>
+<html lang="en" data-theme="blue">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Soffio</title>
+    <meta name="description" content="Whispers on motion, balance, and form.">
+    <meta property="og:title" content="Soffio">
+    <meta property="og:description" content="Traces of motion, balance, and form in continual drift.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="stylesheet" href="/static/common/tokens.css">
+    <link rel="stylesheet" href="/static/public/app.css">
+    
+  <link rel="stylesheet" href="/static/public/styles/page.css">
+
+    <script type="module" src="/static/common/components.js" defer></script>
+    <script type="module" src="/static/common/datastar-init.js" defer></script>
+  </head>
+  <body data-page="shell">
+    
+<page-shell data-structure="stack" role="document">
+  <header data-role="banner">
+  <header-bar data-layout="row" role="presentation">
+    <h1 data-role="brand-title">
+      <a data-role="brand" href="/">
+        Soffio
+      </a>
+    </h1>
+    <nav data-role="primary-nav" aria-label="Primary navigation">
+      
+      <a
+        data-role="nav-link"
+        href="/about"
+        
+        
+      >
+        About
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="/systems-handbook"
+        
+        
+      >
+        Systems Handbook
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="https://github.com/soffio"
+        
+        target="_blank"
+        
+        
+        rel="noopener noreferrer"
+        
+      >
+        GitHub
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="https://soffio.dev/playbook"
+        
+        target="_blank"
+        
+        
+        rel="noopener noreferrer"
+        
+      >
+        Playbook
+      </a>
+      
+    </nav>
+  </header-bar>
+</header>
+  
+<main data-role="content">
+  <layout-frame data-layout="split" role="group" aria-label="Page layout">
+    <content-panel data-region="primary" role="region" aria-label="Page body">
+      <section data-role="page-body">
+        
+<article data-role="error">
+  <h2 data-role="error-title">Page Not Found</h2>
+  <p data-role="error-copy">The page you requested does not exist. Try returning to the homepage to continue exploring the Soffio Blog.</p>
+  
+  <p data-role="error-action">
+    <a href="/">Back to home</a>
+  </p>
+  
+</article>
+
+      </section>
+    </content-panel>
+  </layout-frame>
+</main>
+
+  <footer data-role="footer">
+  <footer-copy>Stillness guides the wind; the wind reshapes stillness.</footer-copy>
+</footer>
+</page-shell>
+
+  </body>
+</html>

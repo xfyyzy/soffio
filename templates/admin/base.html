@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="blue">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ view.chrome.meta.title }}</title>
+    <meta name="description" content="{{ view.chrome.meta.description }}">
+    <link rel="stylesheet" href="/static/common/tokens.css">
+    <link rel="stylesheet" href="/static/admin/app.css">
+    <script type="module" src="/static/common/components.js" defer></script>
+    <script type="module" src="/static/common/datastar-init.js" defer></script>
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body data-page="admin">
+    {% block shell %}{% endblock %}
+  </body>
+</html>

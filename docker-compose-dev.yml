@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: soffio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: soffio
+      POSTGRES_PASSWORD: soffio_local_dev
+      POSTGRES_DB: soffio_dev
+      PGDATA: /var/lib/postgresql/18/docker
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./var/postgresql/18/docker/:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    shm_size: 256m
+

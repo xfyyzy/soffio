@@ -1,0 +1,61 @@
+{% macro queue(entries, limit_mib) -%}
+<div data-role="upload-queue-body" data-admin-list-kind="queue">
+  {% if entries.is_empty() %}
+  {% else %}
+  <table data-role="upload-queue-table">
+    <thead>
+      <tr>
+        <th scope="col" data-column="filename">Filename</th>
+        <th scope="col" data-column="size">Size</th>
+        <th scope="col" data-column="status">Status</th>
+        <th scope="col" data-column="message">Message</th>
+        <th scope="col" data-column="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in entries %}
+{% call queue_item(entry) %}
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro queue_item(entry) -%}
+<tr
+  data-role="upload-queue-item"
+  data-status="{{ entry.status_class() }}"
+  {% if let Some(id) = &entry.id %}data-queue-id="{{ id }}"{% endif %}
+>
+  <td data-column="filename">
+    <span data-role="upload-queue-filename" title="{{ entry.filename }}">{{ entry.filename }}</span>
+  </td>
+  <td data-column="size">
+    <span data-role="upload-queue-size">{{ entry.size_label }}</span>
+  </td>
+  <td data-column="status">
+    <span data-role="status-badges">
+      <status-badge data-status="{{ entry.status_class() }}">{{ entry.status_label }}</status-badge>
+    </span>
+  </td>
+  <td data-column="message" data-role="upload-queue-message-cell">
+    {% if let Some(message) = &entry.message %}
+    <span data-role="upload-queue-message">{{ message }}</span>
+    {% else %}
+    <span data-role="muted">—</span>
+    {% endif %}
+  </td>
+  <td data-column="actions" data-role="upload-queue-actions">
+    {% if entry.status_class() == "pending" %}
+    <div data-role="row-actions">
+      <button
+        type="button"
+        data-role="upload-queue-remove"
+        data-on-click__prevent="(@removeQueuedFile({ id: {% if let Some(id) = &entry.id %}'{{ id }}'{% else %}null{% endif %} }))"
+      >Remove</button>
+    </div>
+    {% endif %}
+  </td>
+</tr>
+{%- endmacro %}
