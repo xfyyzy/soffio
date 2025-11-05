@@ -29,7 +29,7 @@ src/
     - Rust 稳定版 >= 1.91（支持 2024 Edition）
     - PostgreSQL 18（默认连接 `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`）
     - TypeScript Compiler - Version 5.9.3
-   ```
+
 2. **启动服务**
    ```bash
    SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev cargo run
