@@ -4,6 +4,13 @@ content-panel[data-region="primary"] {
   max-width: var(--primary-content-width);
 }
 
+#feed-sentinel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.2rem 0;
+}
+
 
 * {
   box-sizing: border-box;
