@@ -1,49 +1,49 @@
 # Contributing to Soffio
 
-欢迎加入 Soffio！为了保持代码库的可靠性与可审计性，请遵循以下规则。
+English | [中文](CONTRIBUTING.zh.md)
 
-## 行为准则
+Welcome! To keep the codebase reliable and auditable, please follow the guidelines below.
 
-所有贡献者必须遵守 `CODE_OF_CONDUCT.md`。如遇到不当行为，请参考其中的报告流程。
+## Code of Conduct
 
-## 开发环境要求
+All contributors must follow `CODE_OF_CONDUCT.md`. If you encounter improper behavior, use the reporting process described there.
 
-- Rust 稳定版 ≥ 1.91（2024 Edition）
-- PostgreSQL 18（本地开发可使用仓库附带的迁移）
-- TypeScript Compiler - Version 5.9.3
-- 可选工具：`sqlx-cli`
+## Development Requirements
 
+- Rust stable ≥ 1.91 (2024 Edition)
+- PostgreSQL 18 (local dev can rely on the bundled migrations)
+- TypeScript Compiler 5.9.3
+- Optional tooling: `sqlx-cli`
 
+## Workflow
 
-## 工作流
-
-1. **分支策略**：从 `main` 派生特性分支，命名建议使用 `feature/<topic>` 或 `fix/<topic>`。
-2. **保持颗粒度**：每个 PR 专注单一改动，优先选择最小可行补丁。
-3. **编码约束**：
-    - 不破坏核心不变量，领域层保持纯逻辑。
-    - 避免引入 `unsafe`；如必须使用，请提交安全性论证与测试。
-    - 新增依赖须解释必要性，并启用最少特性。
-4. **检测流程**（全部通过后再提交 PR）：
+1. **Branching**: Branch from `main`. Prefer names like `feature/<topic>` or `fix/<topic>`.
+2. **Scope**: Keep each PR focused on a single change and aim for the smallest viable patch.
+3. **Coding constraints**:
+   - Preserve core invariants; keep the domain layer pure.
+   - Avoid introducing `unsafe`. If unavoidable, include a safety rationale and tests.
+   - Justify new dependencies and enable the minimal feature set.
+4. **Checks** (run all before opening a PR):
    ```bash
    cargo fmt --all -- --check
    cargo check --workspace --all-targets
    cargo clippy --workspace --all-targets -- -D warnings
    cargo test --workspace --all-targets -- --nocapture
    ```
-5. **提交信息**：遵循 `AGENTS.md` 的模板（如 `feat(scope): summary`），在正文中说明不变量、边界层级与测试情况。
-6. **代码审查**：
-    - 在 PR 中链接相关 Issue/讨论。
-    - 补充必要的架构或迁移说明。
-    - 对公共 API 变更，附上迁移指南和示例。
+5. **Commit messages**: Follow the template in `AGENTS.md` (e.g., `feat(scope): summary`). Document invariants, touched boundaries, and test coverage in the body.
+6. **Code review**:
+   - Link related Issues/Discussions in the PR.
+   - Provide architecture or migration notes when needed.
+   - For public API changes, include migration guidance and examples.
 
-## 文档与示例
+## Docs & Examples
 
-- README、CHANGELOG、docs 目录需随功能更新。
+- Keep README, CHANGELOG, and files under `docs/` up to date with your changes.
 
-## 发布流程（维护者）
+## Release Flow (Maintainers)
 
-1. 更新 `CHANGELOG.md` 并打上版本标签。
-2. 运行完整测试矩阵与数据库迁移。
-3. 创建 GitHub Release，附带迁移与兼容性说明。
+1. Update `CHANGELOG.md` and tag the version.
+2. Run the full test matrix plus database migrations.
+3. Publish a GitHub Release with migration and compatibility notes.
 
-感谢你的贡献！如有疑问，请在 Issue 或 Discussions 中提出。
+Thanks for contributing! If you have questions, open an Issue or start a Discussion.

@@ -1,23 +1,25 @@
 # Security Policy
 
-我们高度重视 Soffio 及其用户的安全。若发现潜在的安全漏洞，请遵循以下流程，避免在公开渠道披露细节。
+English | [中文](SECURITY.zh.md)
 
-## 报告方式
-- 通过 GitHub Security Advisories（仓库启用后会提供 “Report a vulnerability” 按钮）。
-   - 受影响的组件或路径
-   - 重现步骤
-   - 影响范围评估（例如：拒绝服务、数据泄露等）
-   - 可选：PoC 或修复建议
+We take the security of Soffio and its users seriously. If you discover a potential vulnerability, please follow the process below and avoid sharing details in public channels.
 
-## 响应时间线（目标）
-- **24 小时内**：确认收到报告。
-- **72 小时内**：提供初步评估与后续计划。
-- **7 天内**：给出修复或缓解方案，并协调发布时间。
+## How to Report
+- Use GitHub Security Advisories (the repository exposes the “Report a vulnerability” button once enabled).
+  - Include the affected component or path.
+  - Provide reproduction steps.
+  - Describe the impact (e.g., DoS, data exposure, privilege escalation).
+  - Optional: attach a proof of concept or remediation suggestion.
 
-在漏洞修复并发布前，请勿在公开渠道披露相关信息。若需要协调同步发布补丁或公告，请在沟通中说明。
+## Response Targets
+- **Within 24 hours**: acknowledge receipt.
+- **Within 72 hours**: share an initial assessment and next steps.
+- **Within 7 days**: deliver a fix or mitigation plan and coordinate disclosure timing.
 
-## 安全更新
-- 修复将通过常规发布流程进行，并在 `CHANGELOG.md` 中标记。
-- 重大漏洞会在 GitHub Release 中附带安全公告。
+Please keep reports confidential until a fix is released. If you need coordinated disclosure or aligned announcements, let us know when you report the issue.
 
-感谢你帮助我们提升 Soffio 的安全性。
+## Security Updates
+- Fixes ship through the standard release pipeline and are noted in `CHANGELOG.md`.
+- Critical advisories are also highlighted in the corresponding GitHub Release notes.
+
+Thank you for helping us keep Soffio secure.

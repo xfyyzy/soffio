@@ -1,26 +1,27 @@
 # Soffio Code of Conduct
 
-Soffio 的社区基于互相尊重、合作与透明。我们期望所有贡献者、维护者与社区成员在任何官方渠道（Issue、Pull
-Request、Discussions、线下活动）中遵守以下原则。
+English | [中文](CODE_OF_CONDUCT.zh.md)
 
-## 我们的承诺
+Soffio’s community is built on respect, collaboration, and transparency. We expect everyone—contributors, maintainers, and community members—to follow these principles across all official channels (Issues, Pull Requests, Discussions, events, etc.).
 
-- 营造无骚扰、包容、多样化的协作环境。
-- 尊重差异，从技术分歧中学习，避免人身攻击。
-- 对问题与改进建议保持开放态度，以事实为依据做决定。
+## Our Commitment
 
-## 行为准则
+- Provide a safe, harassment-free, and inclusive environment.
+- Respect differences, learn from technical disagreements, and avoid personal attacks.
+- Stay open to feedback and base decisions on evidence.
 
-不允许出现以下行为：
+## Expected Behavior
 
-- 歧视、侮辱、恐吓或任何形式的骚扰。
-- 未经同意泄露他人私人信息。
-- 破坏或干扰社区流程、工具或基础设施。
+The following are not acceptable:
 
-鼓励的行为包括：
+- Discrimination, insults, intimidation, or any form of harassment.
+- Sharing someone’s private information without consent.
+- Disrupting or damaging community processes, tools, or infrastructure.
 
-- 友好且建设性的意见反馈。
-- 主动寻求并提供帮助。
-- 在贡献时保持透明，记录关键决策。
+We encourage:
 
-感谢所有遵守并维护该准则的贡献者，让 Soffio 成为一个安全、专业的社区。
+- Friendly, constructive feedback.
+- Offering and asking for help proactively.
+- Transparent collaboration that records key decisions.
+
+Thank you to everyone who helps keep the Soffio community safe and professional.
