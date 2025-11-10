@@ -164,6 +164,7 @@ fn snapshot_admin_tags_panel() {
             pinned: true,
             display_time: Some("2025-10-24T12:00:00Z".into()),
             display_time_kind: AdminPostTimeKind::Updated,
+            public_href: "http://localhost:3000/tags/rust".into(),
             edit_href: "/tags/111/edit".into(),
             pin_action: "/tags/111/pin".into(),
             unpin_action: "/tags/111/unpin".into(),

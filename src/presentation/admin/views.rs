@@ -283,6 +283,7 @@ pub struct AdminTagRowView {
     pub pinned: bool,
     pub display_time: Option<String>,
     pub display_time_kind: AdminPostTimeKind,
+    pub public_href: String,
     pub edit_href: String,
     pub pin_action: String,
     pub unpin_action: String,

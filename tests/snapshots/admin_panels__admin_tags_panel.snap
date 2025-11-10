@@ -120,7 +120,7 @@ expression: rendered
         
         <tr data-role="tag-row" data-tag-id="111">
           <td data-column="title">
-            <span>rust</span>
+            <a href="http://localhost:3000/tags/rust" target="_blank" rel="noopener" title="rust">rust</a>
           </td>
           <td data-column="slug">
             <span data-role="slug-value">rust</span>

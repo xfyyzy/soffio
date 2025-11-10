@@ -31,7 +31,7 @@
         {% for tag in content.tags %}
         <tr data-role="tag-row" data-tag-id="{{ tag.id }}">
           <td data-column="title">
-            <span>{{ tag.name }}</span>
+            <a href="{{ tag.public_href }}" target="_blank" rel="noopener" title="{{ tag.name }}">{{ tag.name }}</a>
           </td>
           <td data-column="slug">
             <span data-role="slug-value">{{ tag.slug }}</span>

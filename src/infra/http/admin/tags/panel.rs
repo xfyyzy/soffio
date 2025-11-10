@@ -25,6 +25,7 @@ pub(super) async fn build_tag_list_view(
 ) -> Result<admin_views::AdminTagListView, AdminTagError> {
     let settings = state.db.load_site_settings().await?;
     let admin_page_size = settings.admin_page_size.clamp(1, 100).max(1) as u32;
+    let public_site_url = normalize_public_site_url(&settings.public_site_url);
 
     let counts_filter = filter.clone();
     let list_filter = filter.clone();
@@ -47,15 +48,18 @@ pub(super) async fn build_tag_list_view(
             let display_time_source = record.updated_at.unwrap_or(record.created_at);
             let display_time = admin_views::format_timestamp(display_time_source, timezone);
             let id_str = record.id.to_string();
+            let slug = record.slug.clone();
+            let public_href = format!("{}tags/{}", public_site_url, slug);
             admin_views::AdminTagRowView {
                 id: id_str.clone(),
                 name: record.name,
-                slug: record.slug.clone(),
+                slug,
                 description: record.description,
                 usage_count: record.usage_count,
                 pinned: record.pinned,
                 display_time: Some(display_time),
                 display_time_kind: admin_views::AdminPostTimeKind::Updated,
+                public_href,
                 edit_href: format!("/tags/{id}/edit", id = id_str),
                 pin_action: format!("/tags/{id}/pin", id = id_str),
                 unpin_action: format!("/tags/{id}/unpin", id = id_str),
@@ -157,5 +161,13 @@ pub(super) fn apply_pagination_links(
         });
     } else {
         content.next_page_state = None;
+    }
+}
+
+fn normalize_public_site_url(url: &str) -> String {
+    if url.ends_with('/') {
+        url.to_string()
+    } else {
+        format!("{}/", url)
     }
 }
