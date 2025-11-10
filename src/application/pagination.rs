@@ -41,7 +41,6 @@ struct NavigationCursorPayload {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 struct TagCursorPayload {
     pinned: bool,
-    usage_count: i64,
     primary_time: OffsetDateTime,
     id: Uuid,
 }
@@ -93,7 +92,6 @@ pub struct NavigationCursor {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TagCursor {
     pinned: bool,
-    usage_count: i64,
     primary_time: OffsetDateTime,
     id: Uuid,
 }
@@ -271,10 +269,9 @@ impl NavigationCursor {
 
 impl TagCursor {
     /// Construct a cursor from a tag row.
-    pub fn new(pinned: bool, usage_count: i64, primary_time: OffsetDateTime, id: Uuid) -> Self {
+    pub fn new(pinned: bool, primary_time: OffsetDateTime, id: Uuid) -> Self {
         Self {
             pinned,
-            usage_count,
             primary_time,
             id,
         }
@@ -282,10 +279,6 @@ impl TagCursor {
 
     pub fn pinned(&self) -> bool {
         self.pinned
-    }
-
-    pub fn usage_count(&self) -> i64 {
-        self.usage_count
     }
 
     pub fn primary_time(&self) -> OffsetDateTime {
@@ -299,7 +292,6 @@ impl TagCursor {
     pub fn encode(&self) -> String {
         let payload = TagCursorPayload {
             pinned: self.pinned,
-            usage_count: self.usage_count,
             primary_time: self.primary_time,
             id: self.id,
         };
@@ -316,7 +308,6 @@ impl TagCursor {
             .map_err(|err| PaginationError::InvalidCursor(err.to_string()))?;
         Ok(Self {
             pinned: payload.pinned,
-            usage_count: payload.usage_count,
             primary_time: payload.primary_time,
             id: payload.id,
         })
@@ -507,12 +498,11 @@ mod tests {
     fn tag_cursor_round_trip() {
         let id = Uuid::new_v4();
         let primary_time = OffsetDateTime::now_utc();
-        let cursor = TagCursor::new(true, 42, primary_time, id);
+        let cursor = TagCursor::new(true, primary_time, id);
         let encoded = cursor.encode();
         let decoded = TagCursor::decode(&encoded).expect("decoded tag cursor");
 
         assert!(decoded.pinned());
-        assert_eq!(decoded.usage_count(), 42);
         assert_eq!(decoded.primary_time(), primary_time);
         assert_eq!(decoded.id(), id);
     }

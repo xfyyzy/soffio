@@ -212,13 +212,9 @@ impl TagsRepo for PostgresRepositories {
 
         if let Some(cursor) = page.cursor {
             qb.push(" AND (t.pinned, ");
-            Self::push_tag_usage_expr(&mut qb);
-            qb.push(", ");
             Self::push_tag_primary_time_expr(&mut qb);
             qb.push(", t.id) < (");
             qb.push_bind(cursor.pinned());
-            qb.push(", ");
-            qb.push_bind(cursor.usage_count());
             qb.push(", ");
             qb.push_bind(cursor.primary_time());
             qb.push(", ");
@@ -226,7 +222,7 @@ impl TagsRepo for PostgresRepositories {
             qb.push(") ");
         }
 
-        qb.push(" ORDER BY t.pinned DESC, usage_count DESC, primary_time DESC, t.id DESC ");
+        qb.push(" ORDER BY t.pinned DESC, primary_time DESC, t.id DESC ");
         qb.push(" LIMIT ");
         qb.push_bind(limit + 1);
 
@@ -245,12 +241,7 @@ impl TagsRepo for PostgresRepositories {
             let last_row = rows
                 .last()
                 .expect("list_admin_tags rows should be non-empty when truncated");
-            let cursor = TagCursor::new(
-                last_row.pinned,
-                last_row.usage_count,
-                last_row.primary_time,
-                last_row.id,
-            );
+            let cursor = TagCursor::new(last_row.pinned, last_row.primary_time, last_row.id);
             Some(cursor.encode())
         } else {
             None
@@ -433,18 +424,6 @@ impl TagsWriteRepo for PostgresRepositories {
 }
 
 impl PostgresRepositories {
-    fn push_tag_usage_expr<'q>(qb: &mut QueryBuilder<'q, Postgres>) {
-        qb.push(
-            "(SELECT COUNT(*) \
-             FROM post_tags pt \
-             INNER JOIN posts p \
-                ON p.id = pt.post_id \
-                AND p.status = 'published'::post_status \
-                AND p.published_at IS NOT NULL \
-             WHERE pt.tag_id = t.id)",
-        );
-    }
-
     fn push_tag_primary_time_expr<'q>(qb: &mut QueryBuilder<'q, Postgres>) {
         qb.push(TAG_PRIMARY_TIME_EXPR);
     }
