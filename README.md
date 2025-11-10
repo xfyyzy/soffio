@@ -2,7 +2,9 @@
 
 [![CI](https://github.com/xfyyzy/soffio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xfyyzy/soffio/actions/workflows/ci.yml)
 [![Release](https://github.com/xfyyzy/soffio/actions/workflows/release.yml/badge.svg)](https://github.com/xfyyzy/soffio/actions/workflows/release.yml)
-[![Rustc](https://img.shields.io/badge/rustc-1.91%2B-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/tools/install)
+[![Rust Edition](https://img.shields.io/badge/Rust%20Edition-2024-orange?logo=rust&logoColor=white)](https://doc.rust-lang.org/edition-guide/)
+[![Public Site](https://img.shields.io/website?url=https%3A%2F%2Fsoffio.xfyyzy.xyz&label=public%20site)](https://soffio.xfyyzy.xyz)
+[![Admin Site](https://img.shields.io/website?url=https%3A%2F%2Fadmin.soffio.xfyyzy.xyz&label=admin%20site)](https://admin.soffio.xfyyzy.xyz)
 
 English | [中文](README.zh.md)
 
