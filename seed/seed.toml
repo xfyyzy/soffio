@@ -19990,3 +19990,11 @@ destination_url = "https://github.com/xfyyzy/soffio"
 sort_order = 6
 open_in_new_tab = true
 visible = true
+
+[[navigation_items]]
+label = "Admin"
+destination_type = "external"
+destination_url = "https://admin.soffio.xfyyzy.xyz/"
+sort_order = 16
+open_in_new_tab = true
+visible = true

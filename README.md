@@ -1,8 +1,12 @@
 # Soffio
 
+[![CI](https://github.com/xfyyzy/soffio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xfyyzy/soffio/actions/workflows/ci.yml)
+[![Release](https://github.com/xfyyzy/soffio/actions/workflows/release.yml/badge.svg)](https://github.com/xfyyzy/soffio/actions/workflows/release.yml)
+[![Rustc](https://img.shields.io/badge/rustc-1.91%2B-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/tools/install)
+
 Soffio 是一套用 Rust 构建的内容发布平台，面向双端体验：公开站点提供静态渲染 + 增量交互的博客浏览，管理站点提供编辑与发布功能。核心由
 Axum、Askama、SQLx 构成。
-
+演示站点（整点重置）：
 - 公开站点：<https://soffio.xfyyzy.xyz>
 - 管理站点：<https://admin.soffio.xfyyzy.xyz>
 
