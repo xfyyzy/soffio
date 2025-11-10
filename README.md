@@ -4,77 +4,82 @@
 [![Release](https://github.com/xfyyzy/soffio/actions/workflows/release.yml/badge.svg)](https://github.com/xfyyzy/soffio/actions/workflows/release.yml)
 [![Rustc](https://img.shields.io/badge/rustc-1.91%2B-orange?logo=rust&logoColor=white)](https://www.rust-lang.org/tools/install)
 
-Soffio 是一个用 Rust 构建的内容发布平台：公开站点提供静态渲染 + 增量交互的阅读体验，管理站点面向编辑、排版与发布。核心技术栈为 Axum、Askama 与 SQLx，严格遵循领域/应用/基础设施分层（详见 `AGENTS.md`）。本仓库采用 BSD-2-Clause 许可。
+English | [中文](README.zh.md)
 
-## 演示环境
+Soffio is a Rust-powered publishing platform. The public site renders posts statically and sprinkles interactive widgets, while the admin console focuses on writing, editing, and releasing content. The stack centers on Axum, Askama, and SQLx, and the codebase enforces a domain/application/infra layering model (see `AGENTS.md`). Soffio is released under the BSD-2-Clause license.
 
-- 公开站点：<https://soffio.xfyyzy.xyz>
-- 管理站点：<https://admin.soffio.xfyyzy.xyz>
+## Demo Environments
 
-（演示数据按整点重置。）
+- Public site: <https://soffio.xfyyzy.xyz>
+- Admin site: <https://admin.soffio.xfyyzy.xyz>
 
-## 仓库布局
+The demo database resets at the top of every hour.
+
+## Repository Layout
 
 ```
 src/
-├── domain        # 领域模型与业务不变量
-├── application   # 用例服务、仓库接口、作业调度
-├── infra         # Postgres 仓库、HTTP 适配层、缓存、遥测
-├── presentation  # 视图模型、模板与布局
-├── util          # 附属工具（时区、标识符等）
-└── main.rs       # CLI/服务入口
+├── domain        # domain entities, invariants, value objects
+├── application   # use-case services, repo traits, job scheduling
+├── infra         # Postgres repos, HTTP adapters, cache, telemetry
+├── presentation  # view models, templates, layouts
+├── util          # supporting utilities (time zones, ids, etc.)
+└── main.rs       # CLI / service entry point
 ```
 
-## 依赖要求
+## Prerequisites
 
-- Rust 稳定版 ≥ 1.91（支持 2024 Edition）
-- PostgreSQL 18（默认连接 `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`）
+- Rust stable ≥ 1.91 (2024 Edition ready)
+- PostgreSQL 18 (default DSN `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`)
 - TypeScript Compiler 5.9.3
 
-## 快速开始
+## Quick Start
 
-1. **安装依赖**：确保以上三项均可用，并创建开发数据库 `soffio_dev`。
-2. **启动服务**：
+1. Install the prerequisites above and create the `soffio_dev` database.
+2. Launch the service:
    ```bash
    SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev cargo run --bin soffio
    ```
-3. **访问端口**：公共站点监听 `127.0.0.1:3000`，管理站点监听 `127.0.0.1:3001`；可通过 CLI 参数或环境变量覆盖。
+3. Browse the defaults:
+   - Public site at `http://127.0.0.1:3000`
+   - Admin site at `http://127.0.0.1:3001`
+   - Override addresses via CLI flags or environment variables when needed.
 
-## 核心运行时组件
+## Runtime Components
 
-- **HTTP 服务**：Axum 8，同进程内区分公开/管理监听；公共路由位于 `src/infra/http/public.rs`，管理路由位于 `src/infra/http/admin/`。
-- **数据库访问**：SQLx Postgres，仓库实现集中在 `src/infra/db`，接口定义在 `src/application/repos.rs`。
-- **缓存**：响应缓存由 `src/infra/cache.rs` 提供，预热逻辑在 `src/infra/cache_warmer.rs`。
-- **遥测**：`tracing` + `tracing-subscriber`，统一初始化入口 `src/infra/telemetry.rs`。
+- **HTTP services** — Axum 0.8 with separate listeners for public and admin traffic (`src/infra/http/public.rs` and `src/infra/http/admin/`).
+- **Database access** — SQLx (Postgres); concrete repos live in `src/infra/db`, while traits are defined in `src/application/repos.rs`.
+- **Caching** — response cache at `src/infra/cache.rs` plus a warmer in `src/infra/cache_warmer.rs`.
+- **Telemetry** — `tracing` + `tracing-subscriber`, bootstrapped via `src/infra/telemetry.rs`.
 
-## 开发工作流
+## Development Workflow
 
-1. 运行基础质量门槛：
+1. Run the baseline quality gates:
    ```bash
    cargo fmt --all
    cargo clippy --workspace --all-targets -- -D warnings
    cargo test --workspace --all-targets
    ```
-2. 参考 `CONTRIBUTING.md` 了解分支命名、提交模板与代码审查要求。
-3. 提交 PR 时遵循 `.github/PULL_REQUEST_TEMPLATE.md` 并确保 CI 全绿。
+2. Consult `CONTRIBUTING.md` for branching strategy, commit format, and review expectations.
+3. Follow `.github/PULL_REQUEST_TEMPLATE.md` and ensure CI stays green before merging.
 
-## 部署指南
+## Deployment
 
-生产部署建议使用 Docker（详见 [`docs/deploy/docker.md`](docs/deploy/docker.md)）。其他部署形态可参考该文档涉及的环境变量、卷挂载与健康检查逻辑。
+Production deployments are typically containerized. Refer to [`docs/deploy/docker.md`](docs/deploy/docker.md) for compose files, environment variables, health checks, and operational tips.
 
-## 发布与变更记录
+## Releases & Changelog
 
-- 所有 Release 说明记录在 `CHANGELOG.md`。
-- 每次发布务必附带：
-  1. 数据迁移脚本与兼容性提示；
-  2. 新增/变更配置项及默认值说明。
+- Every tagged release is documented in `CHANGELOG.md`.
+- Each release should ship with:
+  1. Migration scripts plus backward-compatibility notes.
+  2. A list of new/changed configuration keys and their defaults.
 
-## 支持、社区与安全
+## Support, Community & Security
 
-- 常见问题与支持渠道：`SUPPORT.md`
-- 漏洞披露流程：`SECURITY.md`
-- 行为准则：`CODE_OF_CONDUCT.md`
+- Support channels and FAQs: `SUPPORT.md`
+- Security disclosure process: `SECURITY.md`
+- Code of Conduct: `CODE_OF_CONDUCT.md`
 
-## 许可证
+## License
 
-BSD-2-Clause，详情参见 `LICENSE`。
+BSD-2-Clause — see `LICENSE` for the full text.
