@@ -6,6 +6,10 @@
 [![公开站点](https://img.shields.io/website?url=https%3A%2F%2Fsoffio.xfyyzy.xyz&label=%E5%85%AC%E5%BC%80%E7%AB%99%E7%82%B9)](https://soffio.xfyyzy.xyz)
 [![管理站点](https://img.shields.io/website?url=https%3A%2F%2Fadmin.soffio.xfyyzy.xyz&label=%E7%AE%A1%E7%90%86%E7%AB%99%E7%82%B9)](https://admin.soffio.xfyyzy.xyz)
 
+<p align="center">
+  <a href="https://www.producthunt.com/products/soffio?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-soffio" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1037444&theme=light&t=1763008766261" alt="Soffio - Rust&#0045;native&#0032;publishing&#0032;with&#0032;a&#0032;calm&#0044;&#0032;focused&#0032;admin | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+</p>
+
 [English](README.md) | 中文
 
 Soffio 是一套用 Rust 构建的内容发布平台，面向双端体验：公开站点提供静态渲染 + 增量交互的博客浏览，管理站点提供编辑与发布功能。核心由
