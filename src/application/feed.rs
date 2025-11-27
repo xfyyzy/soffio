@@ -292,7 +292,10 @@ impl FeedService {
             title: post.title,
             published: posts::format_human_date(date),
             iso_date: localized.to_rfc3339(),
-            tags: build_tag_badges(tags.iter().map(|tag| tag.slug.as_str())),
+            tags: build_tag_badges(
+                tags.iter()
+                    .map(|tag| (tag.slug.as_str(), tag.name.as_str())),
+            ),
             excerpt: post.excerpt,
             summary_html: post.summary_html,
             sections,
@@ -336,7 +339,10 @@ fn record_to_card(record: &PostRecord, tags: &[TagRecord], timezone: chrono_tz::
         excerpt: record.excerpt.clone(),
         iso_date: localized.to_rfc3339(),
         published: posts::format_human_date(date),
-        badges: build_tag_badges(tags.iter().map(|tag| tag.slug.as_str())),
+        badges: build_tag_badges(
+            tags.iter()
+                .map(|tag| (tag.slug.as_str(), tag.name.as_str())),
+        ),
         is_pinned: record.pinned,
     }
 }
@@ -548,7 +554,7 @@ fn build_tag_summaries(
         }
 
         summaries.push(views::TagSummary {
-            label: format!("#{}", views::title_case(&entry.name)),
+            label: format!("#{}", entry.name),
             path: format!("/tags/{}", entry.slug),
             count: usize::try_from(entry.count).unwrap_or(usize::MAX),
             is_active: active_tag.map(|tag| tag == entry.slug).unwrap_or(false),

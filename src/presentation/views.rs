@@ -325,18 +325,14 @@ pub struct PageMetaView {
     pub og_description: String,
 }
 
-pub fn build_tag_badges<T>(tags: T) -> Vec<TagBadge>
+pub fn build_tag_badges<'a, T>(tags: T) -> Vec<TagBadge>
 where
-    T: IntoIterator,
-    T::Item: AsRef<str>,
+    T: IntoIterator<Item = (&'a str, &'a str)>,
 {
     tags.into_iter()
-        .map(|value| {
-            let value = value.as_ref();
-            TagBadge {
-                value: value.to_string(),
-                label: format!("#{}", title_case(value)),
-            }
+        .map(|(value, name)| TagBadge {
+            value: value.to_string(),
+            label: format!("#{}", name),
         })
         .collect()
 }
