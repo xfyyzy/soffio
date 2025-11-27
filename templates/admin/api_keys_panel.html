@@ -1,11 +1,13 @@
-<section data-role="panel" aria-label="API keys">
-  <header>
-    <div>
-      <p class="eyebrow">Security</p>
-      <h1>{{ content.heading }}</h1>
-    </div>
-  </header>
+{% extends "admin/layouts/panel.html" %}
 
+{% block panel_id %}api-keys{% endblock %}
+
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{# toolbar left empty for now; creation form lives below as card #}
+{% block panel_toolbar %}{% endblock panel_toolbar %}
+
+{% block panel_controls %}
 {% match content.new_token %}
 {% when Some with (token) %}
   <div data-role="card" data-variant="highlight" style="margin-bottom: var(--space-4);">
@@ -13,8 +15,7 @@
     <p style="word-break: break-all;">{{ token }}</p>
     <p class="muted">Copy now — it won’t be shown again.</p>
   </div>
-{% when None %}
-{% endmatch %}
+{% when None %}{% endmatch %}
 
   <div data-role="card" style="margin-bottom: var(--space-4);">
     <form action="{{ content.create_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
@@ -32,72 +33,76 @@
           <input type="text" name="expires_at" placeholder="2025-12-31T23:59:59Z">
         </label>
       </div>
-      <div data-role="form-grid">
-        <fieldset>
-          <legend>Scopes</legend>
-          <div data-role="pill-group">
-            {% for scope in content.available_scopes %}
-            <label data-role="pill">
-              <input type="checkbox" name="scopes" value="{{ scope.value }}">
-              <span>{{ scope.label }}</span>
-            </label>
-            {% endfor %}
-          </div>
-        </fieldset>
-      </div>
+      <fieldset>
+        <legend>Scopes</legend>
+        <div data-role="pill-group">
+          {% for scope in content.available_scopes %}
+          <label data-role="pill">
+            <input type="checkbox" name="scopes" value="{{ scope.value }}">
+            <span>{{ scope.label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
       <div data-role="actions">
         <button type="submit" data-variant="primary">Create key</button>
       </div>
     </form>
   </div>
+{% endblock panel_controls %}
 
-  <div data-role="card">
-    <div data-role="table">
-      <div data-role="table-head">
-        <span>Name</span>
-        <span>Prefix</span>
-        <span>Scopes</span>
-        <span>Created</span>
-        <span>Last used</span>
-        <span>Status</span>
-        <span></span>
-      </div>
+{% block panel_content %}
+  <table data-role="publishable-table">
+    <thead>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Prefix</th>
+        <th scope="col">Scopes</th>
+        <th scope="col">Created</th>
+        <th scope="col">Last used</th>
+        <th scope="col">Status</th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
       {% for key in content.keys %}
-      <div data-role="table-row">
-        <span>{{ key.name }}</span>
-        <span><code>{{ key.prefix }}</code></span>
-        <span>
+      <tr>
+        <td>{{ key.name }}</td>
+        <td><code>{{ key.prefix }}</code></td>
+        <td>
+          <div data-role="badge-row">
           {% for scope in key.scopes %}
-          <span data-role="badge">{{ scope }}</span>
+            <span data-role="badge">{{ scope }}</span>
           {% endfor %}
-        </span>
-        <span>{{ key.created_at }}</span>
-        <span>
+          </div>
+        </td>
+        <td>{{ key.created_at }}</td>
+        <td>
           {% match key.last_used_at %}
-          {% when Some with (ts) %}{{ ts }}{% when None %}—{% endmatch %}
-        </span>
-        <span>
+          {% when Some with (ts) %}{{ ts }}{% when None %}<span data-role="muted">—</span>{% endmatch %}
+        </td>
+        <td>
           {% if key.revoked %}
           <span data-role="badge" data-variant="danger">revoked</span>
           {% else %}
           <span data-role="badge" data-variant="success">active</span>
           {% endif %}
-        </span>
-        <span data-role="actions">
-          <form action="{{ key.rotate_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
-            <button type="submit" data-variant="ghost">Rotate</button>
+        </td>
+        <td data-role="publishable-actions">
+          <form data-role="inline-form" action="{{ key.rotate_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
+            <button type="submit">Rotate</button>
           </form>
-          <form action="{{ key.revoke_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
-            <button type="submit" data-variant="danger" onclick="return confirm('Revoke this key?')">Revoke</button>
+          <form data-role="inline-form" action="{{ key.revoke_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]" onsubmit="return confirm('Revoke this key?');">
+            <button type="submit" data-variant="danger">Revoke</button>
           </form>
-        </span>
-      </div>
+        </td>
+      </tr>
       {% endfor %}
       {% if !content.has_keys %}
-      <div data-role="table-row">
-        <span>No API keys yet.</span>
-      </div>
+      <tr>
+        <td colspan="7">No API keys yet.</td>
+      </tr>
       {% endif %}
-    </div>
-  </div>
-</section>
+    </tbody>
+  </table>
+{% endblock panel_content %}
