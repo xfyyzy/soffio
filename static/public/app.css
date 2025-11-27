@@ -1,7 +1,18 @@
 content-panel[data-region="primary"] {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
   width: min(100%, var(--primary-content-width));
   max-width: var(--primary-content-width);
+}
+
+:root {
+  /* Shared offset so sticky sidebars stay aligned with the header height. */
+  --header-offset: 4.25rem;
+  --sidebar-padding: 1.25rem;
+  --sidebar-gap: 1rem;
+  --sidebar-radius: var(--radius-soft);
+  --sidebar-surface: var(--surface);
 }
 
 #feed-sentinel {
@@ -97,7 +108,7 @@ main[data-role="content"] {
   padding: 0;
 }
 
-:is(layout-frame[data-layout="split"], content-panel[data-region="primary"], post-grid) {
+:is(layout-frame[data-layout="split"], post-grid) {
   display: flex;
   flex-direction: column;
 }
@@ -106,25 +117,25 @@ layout-frame[data-layout="split"] {
   gap: var(--layout-split-gap);
 }
 
-:is(content-panel[data-region="primary"], post-grid) {
+:is(post-grid) {
   gap: 1.2rem;
 }
 
 :is(meta-column[data-region="meta"], filters-column[data-region="filters"]) {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--sidebar-gap);
   width: 100%;
   max-width: none;
 }
 
 :is(article[data-role="card"], meta-column[data-region="meta"] > [data-role="meta-card"], filters-column[data-region="filters"] :is(filter-panel[data-role="filter-group"], .filter-panel), [data-role="post-summary"], pre.syntax-highlight) {
-  border-radius: var(--radius-soft);
+  border-radius: var(--sidebar-radius);
 }
 
 :is(meta-column[data-region="meta"] > [data-role="meta-card"], filters-column[data-region="filters"] :is(filter-panel[data-role="filter-group"], .filter-panel)) {
-  padding: 1.25rem;
-  background-color: var(--surface);
+  padding: var(--sidebar-padding);
+  background-color: var(--sidebar-surface);
 }
 
 post-card {
@@ -255,23 +266,16 @@ button {
 
   :is(meta-column[data-region="meta"], filters-column[data-region="filters"]) {
     position: sticky;
-    top: 5.5rem;
+    top: var(--header-offset, 4.25rem);
     width: 100%;
     justify-self: stretch;
     align-self: start;
-  }
-
-  filters-column[data-region="filters"] {
     grid-column: 3;
   }
 
   content-panel[data-region="primary"] {
     grid-column: 2;
     grid-row: 1;
-  }
-
-  meta-column[data-region="meta"] {
-    grid-column: 3;
   }
 }
 
