@@ -63,6 +63,12 @@ struct UploadCursorPayload {
     id: Uuid,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+struct ApiKeyCursorPayload {
+    created_at: OffsetDateTime,
+    id: Uuid,
+}
+
 /// Cursor for paginating posts in public or administrative contexts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PostCursor {
@@ -113,6 +119,13 @@ pub struct AuditCursor {
 /// Cursor for paginating uploads in reverse chronological order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UploadCursor {
+    created_at: OffsetDateTime,
+    id: Uuid,
+}
+
+/// Cursor for paginating API keys ordered by created_at desc, then id desc.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ApiKeyCursor {
     created_at: OffsetDateTime,
     id: Uuid,
 }
@@ -417,6 +430,42 @@ impl UploadCursor {
             .decode(cursor)
             .map_err(|err| PaginationError::InvalidCursor(err.to_string()))?;
         let payload: UploadCursorPayload = serde_json::from_slice(&bytes)
+            .map_err(|err| PaginationError::InvalidCursor(err.to_string()))?;
+        Ok(Self {
+            created_at: payload.created_at,
+            id: payload.id,
+        })
+    }
+}
+
+impl ApiKeyCursor {
+    pub fn new(created_at: OffsetDateTime, id: Uuid) -> Self {
+        Self { created_at, id }
+    }
+
+    pub fn created_at(&self) -> OffsetDateTime {
+        self.created_at
+    }
+
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
+    pub fn encode(&self) -> String {
+        let payload = ApiKeyCursorPayload {
+            created_at: self.created_at,
+            id: self.id,
+        };
+        let serialized = serde_json::to_vec(&payload)
+            .expect("serializing api key cursor payload should succeed");
+        URL_SAFE_NO_PAD.encode(serialized)
+    }
+
+    pub fn decode(cursor: &str) -> Result<Self, PaginationError> {
+        let bytes = URL_SAFE_NO_PAD
+            .decode(cursor)
+            .map_err(|err| PaginationError::InvalidCursor(err.to_string()))?;
+        let payload: ApiKeyCursorPayload = serde_json::from_slice(&bytes)
             .map_err(|err| PaginationError::InvalidCursor(err.to_string()))?;
         Ok(Self {
             created_at: payload.created_at,

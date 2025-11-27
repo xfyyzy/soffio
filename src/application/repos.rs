@@ -7,8 +7,8 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::application::pagination::{
-    AuditCursor, CursorPage, JobCursor, NavigationCursor, PageCursor, PageRequest, PaginationError,
-    PostCursor, TagCursor, UploadCursor,
+    ApiKeyCursor, AuditCursor, CursorPage, JobCursor, NavigationCursor, PageCursor, PageRequest,
+    PaginationError, PostCursor, TagCursor, UploadCursor,
 };
 use crate::domain::api_keys::{ApiKeyRecord, ApiScope};
 use crate::domain::entities::{
@@ -518,11 +518,43 @@ pub struct UpdateApiKeySecretParams {
     pub new_hashed_secret: Vec<u8>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ApiKeyStatusFilter {
+    Active,
+    Revoked,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ApiKeyQueryFilter {
+    pub status: Option<ApiKeyStatusFilter>,
+    pub scope: Option<ApiScope>,
+    pub search: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ApiKeyPageRequest {
+    pub limit: u32,
+    pub cursor: Option<ApiKeyCursor>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ApiKeyListPage {
+    pub items: Vec<ApiKeyRecord>,
+    pub total: u64,
+    pub revoked: u64,
+    pub next_cursor: Option<ApiKeyCursor>,
+    pub scope_counts: Vec<(ApiScope, u64)>,
+}
+
 #[async_trait]
 pub trait ApiKeysRepo: Send + Sync {
     async fn create_key(&self, params: CreateApiKeyParams) -> Result<ApiKeyRecord, RepoError>;
 
-    async fn list_keys(&self) -> Result<Vec<ApiKeyRecord>, RepoError>;
+    async fn list_keys(
+        &self,
+        filter: &ApiKeyQueryFilter,
+        page: ApiKeyPageRequest,
+    ) -> Result<ApiKeyListPage, RepoError>;
 
     async fn find_by_prefix(&self, prefix: &str) -> Result<Option<ApiKeyRecord>, RepoError>;
 

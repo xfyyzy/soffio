@@ -2,8 +2,10 @@ use sqlx::query;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+use crate::application::pagination::ApiKeyCursor;
 use crate::application::repos::{
-    ApiKeysRepo, CreateApiKeyParams, RepoError, UpdateApiKeySecretParams,
+    ApiKeyListPage, ApiKeyPageRequest, ApiKeyQueryFilter, ApiKeyStatusFilter, ApiKeysRepo,
+    CreateApiKeyParams, RepoError, UpdateApiKeySecretParams,
 };
 use crate::domain::api_keys::{ApiKeyRecord, ApiScope};
 
@@ -82,20 +84,113 @@ impl ApiKeysRepo for PostgresRepositories {
         ApiKeyRecord::try_from(row)
     }
 
-    async fn list_keys(&self) -> Result<Vec<ApiKeyRecord>, RepoError> {
+    async fn list_keys(
+        &self,
+        filter: &ApiKeyQueryFilter,
+        page: ApiKeyPageRequest,
+    ) -> Result<ApiKeyListPage, RepoError> {
+        let (status_active, status_revoked) = match filter.status {
+            Some(ApiKeyStatusFilter::Active) => (true, false),
+            Some(ApiKeyStatusFilter::Revoked) => (false, true),
+            None => (false, false),
+        };
+
+        let scope_filter = filter.scope.as_ref().map(|s| s.as_str().to_string());
+        let search = filter
+            .search
+            .as_ref()
+            .map(|s| format!("%{}%", s.to_lowercase()));
+
+        let (cursor_created_at, cursor_id) = page
+            .cursor
+            .map(|c| (Some(c.created_at()), Some(c.id())))
+            .unwrap_or((None, None));
+
+        let limit = (page.limit as i64).clamp(1, 200);
+
         let rows = sqlx::query_as!(
             ApiKeyRow,
             r#"
             SELECT id, name, description, prefix, hashed_secret, scopes as "scopes: Vec<ApiScope>", expires_at, revoked_at, last_used_at, created_by, created_at
             FROM api_keys
+            WHERE
+                (($3::bool = FALSE AND $4::bool = FALSE) OR ($3 = TRUE AND revoked_at IS NULL) OR ($4 = TRUE AND revoked_at IS NOT NULL))
+                AND ($1::text IS NULL OR LOWER(name) LIKE $1 OR LOWER(prefix) LIKE $1 OR LOWER(COALESCE(description, '')) LIKE $1)
+                AND ($2::text IS NULL OR $2::api_scope = ANY(scopes))
+                AND ($5::timestamptz IS NULL OR (created_at, id) < ($5, $6))
             ORDER BY created_at DESC, id DESC
+            LIMIT $7
             "#,
+            search,
+            scope_filter,
+            status_active,
+            status_revoked,
+            cursor_created_at,
+            cursor_id,
+            limit + 1,
         )
         .fetch_all(self.pool())
         .await
         .map_err(RepoError::from_persistence)?;
 
-        rows.into_iter().map(ApiKeyRecord::try_from).collect()
+        let mut records: Vec<ApiKeyRecord> = rows
+            .into_iter()
+            .map(ApiKeyRecord::try_from)
+            .collect::<Result<_, _>>()?;
+
+        let next_cursor = if records.len() as i64 > limit {
+            let last = records.pop().expect("exists");
+            Some(ApiKeyCursor::new(last.created_at, last.id))
+        } else {
+            None
+        };
+
+        let scope_filter_for_counts = scope_filter.clone();
+
+        let total_row = sqlx::query!(
+            r#"
+            SELECT
+              COUNT(*)::bigint AS "total!: i64",
+              COUNT(*) FILTER (WHERE revoked_at IS NOT NULL)::bigint AS "revoked!: i64"
+            FROM api_keys
+            WHERE
+                (($3::bool = FALSE AND $4::bool = FALSE) OR ($3 = TRUE AND revoked_at IS NULL) OR ($4 = TRUE AND revoked_at IS NOT NULL))
+                AND ($1::text IS NULL OR LOWER(name) LIKE $1 OR LOWER(prefix) LIKE $1 OR LOWER(COALESCE(description, '')) LIKE $1)
+                AND ($2::text IS NULL OR $2::api_scope = ANY(scopes))
+            "#,
+            search,
+            scope_filter_for_counts,
+            status_active,
+            status_revoked,
+        )
+        .fetch_one(self.pool())
+        .await
+        .map_err(RepoError::from_persistence)?;
+
+        let scope_rows = sqlx::query!(
+            r#"
+            SELECT unnest(scopes) as "scope!: ApiScope", COUNT(*)::bigint as "count!: i64"
+            FROM api_keys
+            GROUP BY 1
+            ORDER BY 1
+            "#
+        )
+        .fetch_all(self.pool())
+        .await
+        .map_err(RepoError::from_persistence)?;
+
+        let scope_counts = scope_rows
+            .into_iter()
+            .map(|r| (r.scope, r.count as u64))
+            .collect();
+
+        Ok(ApiKeyListPage {
+            items: records,
+            total: total_row.total as u64,
+            revoked: total_row.revoked as u64,
+            next_cursor,
+            scope_counts,
+        })
     }
 
     async fn find_by_prefix(&self, prefix: &str) -> Result<Option<ApiKeyRecord>, RepoError> {

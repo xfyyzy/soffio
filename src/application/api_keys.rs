@@ -7,7 +7,8 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::application::repos::{
-    ApiKeysRepo, CreateApiKeyParams, RepoError, UpdateApiKeySecretParams,
+    ApiKeyPageRequest, ApiKeyQueryFilter, ApiKeysRepo, CreateApiKeyParams, RepoError,
+    UpdateApiKeySecretParams,
 };
 use crate::domain::api_keys::{ApiKeyRecord, ApiScope};
 
@@ -130,7 +131,29 @@ impl ApiKeyService {
     }
 
     pub async fn list(&self) -> Result<Vec<ApiKeyRecord>, ApiKeyError> {
-        self.repo.list_keys().await.map_err(ApiKeyError::from)
+        let page = self
+            .repo
+            .list_keys(
+                &ApiKeyQueryFilter::default(),
+                ApiKeyPageRequest {
+                    limit: 100,
+                    cursor: None,
+                },
+            )
+            .await
+            .map_err(ApiKeyError::from)?;
+        Ok(page.items)
+    }
+
+    pub async fn list_page(
+        &self,
+        filter: &ApiKeyQueryFilter,
+        page: ApiKeyPageRequest,
+    ) -> Result<crate::application::repos::ApiKeyListPage, ApiKeyError> {
+        self.repo
+            .list_keys(filter, page)
+            .await
+            .map_err(ApiKeyError::from)
     }
 
     pub async fn authenticate(&self, token: &str) -> Result<ApiPrincipal, ApiAuthError> {

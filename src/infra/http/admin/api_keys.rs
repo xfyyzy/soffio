@@ -9,13 +9,16 @@ use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use uuid::Uuid;
 
 use crate::application::api_keys::{ApiKeyError, ApiKeyIssued, IssueApiKeyCommand};
-use crate::application::repos::SettingsRepo;
+use crate::application::pagination::ApiKeyCursor;
+use crate::application::repos::{
+    ApiKeyPageRequest, ApiKeyQueryFilter, ApiKeyStatusFilter, SettingsRepo,
+};
 use crate::domain::api_keys::ApiScope;
+use crate::infra::http::admin::pagination::{self, CursorState};
 use crate::infra::http::admin::selectors::API_KEYS_PANEL;
 use crate::infra::http::admin::shared::{Toast, push_toasts};
 use crate::presentation::admin::views as admin_views;
 use crate::presentation::views::render_template_response;
-use base64::Engine;
 use datastar::prelude::ElementPatchMode;
 use std::str::FromStr;
 
@@ -310,11 +313,37 @@ async fn build_panel_view(
         .map_err(ApiKeyHttpError::from_repo)?;
     let timezone = settings.timezone;
 
-    let mut keys: Vec<_> = state
+    let query_filter = ApiKeyQueryFilter {
+        status: match filters.status.as_deref() {
+            Some("active") => Some(ApiKeyStatusFilter::Active),
+            Some("revoked") => Some(ApiKeyStatusFilter::Revoked),
+            _ => None,
+        },
+        scope: filters
+            .scope
+            .as_deref()
+            .and_then(|s| ApiScope::from_str(s).ok()),
+        search: filters.search.clone(),
+    };
+
+    let cursor_state = CursorState::new(filters.cursor.clone(), filters.trail.clone());
+    let cursor = cursor_state
+        .decode_with(ApiKeyCursor::decode, "admin_api_keys")
+        .map_err(ApiKeyHttpError::from_http)?;
+
+    let page_req = ApiKeyPageRequest {
+        limit: settings.admin_page_size as u32,
+        cursor,
+    };
+
+    let page = state
         .api_keys
-        .list()
+        .list_page(&query_filter, page_req)
         .await
-        .map_err(ApiKeyHttpError::from_api)?
+        .map_err(ApiKeyHttpError::from_api)?;
+
+    let keys: Vec<_> = page
+        .items
         .into_iter()
         .map(|key| admin_views::AdminApiKeyRowView {
             id: key.id.to_string(),
@@ -335,79 +364,45 @@ async fn build_panel_view(
         })
         .collect();
 
-    // filtering
-    if let Some(status) = filters.status.as_deref() {
-        match status {
-            "revoked" => keys.retain(|k| k.revoked),
-            "active" => keys.retain(|k| !k.revoked),
-            _ => {}
-        }
-    }
-    if let Some(scope) = filters.scope.as_deref() {
-        keys.retain(|k| k.scopes.iter().any(|s| s == scope));
-    }
-    if let Some(search) = filters.search.as_deref().map(str::to_lowercase) {
-        keys.retain(|k| {
-            let hay = format!(
-                "{} {} {}",
-                k.name.to_lowercase(),
-                k.prefix.to_lowercase(),
-                k.description.clone().unwrap_or_default().to_lowercase()
-            );
-            hay.contains(&search)
-        });
-    }
-
-    let total_count = keys.len() as u64;
-    let revoked_count = keys.iter().filter(|k| k.revoked).count() as u64;
+    let total_count = page.total;
+    let revoked_count = page.revoked;
     let new_token = issued.as_ref().map(|i| i.token.clone());
     let has_keys = !keys.is_empty();
 
-    // scope filter options
-    let mut scope_counts: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
-    for key in &keys {
-        for scope in &key.scopes {
-            *scope_counts.entry(scope.clone()).or_insert(0) += 1;
+    let mut previous_history = cursor_state.clone_history();
+    let previous_token = previous_history.pop();
+    let previous_page_state = previous_token.map(|token| {
+        let prev_cursor_value = pagination::decode_cursor_token(&token);
+        let prev_trail = pagination::join_cursor_history(&previous_history);
+        admin_views::AdminApiKeyPaginationState {
+            cursor: prev_cursor_value,
+            trail: prev_trail,
         }
-    }
-    let mut scope_filter_options: Vec<admin_views::AdminPostTagOption> = scope_counts
+    });
+
+    let next_page_state = page.next_cursor.map(|c| {
+        let mut next_history = cursor_state.clone_history();
+        next_history.push(pagination::encode_cursor_token(
+            cursor_state.current_token_ref(),
+        ));
+        let next_trail = pagination::join_cursor_history(&next_history);
+        admin_views::AdminApiKeyPaginationState {
+            cursor: Some(c.encode()),
+            trail: next_trail,
+        }
+    });
+
+    // scope filter options from aggregated counts
+    let mut scope_filter_options: Vec<admin_views::AdminPostTagOption> = page
+        .scope_counts
         .iter()
         .map(|(scope, count)| admin_views::AdminPostTagOption {
-            slug: scope.clone(),
-            name: scope.clone(),
+            slug: scope.as_str().to_string(),
+            name: scope.as_str().to_string(),
             count: *count,
         })
         .collect();
     scope_filter_options.sort_by(|a, b| a.name.cmp(&b.name));
-
-    // pagination
-    let page_size = settings.admin_page_size.max(1) as usize;
-    let offset = decode_offset(filters.cursor.as_deref())?;
-    let page_keys = keys
-        .iter()
-        .skip(offset)
-        .take(page_size)
-        .cloned()
-        .collect::<Vec<_>>();
-    let next_cursor = if offset + page_size < keys.len() {
-        Some(encode_offset(offset + page_size))
-    } else {
-        None
-    };
-    let prev_cursor = if offset >= page_size {
-        Some(encode_offset(offset.saturating_sub(page_size)))
-    } else {
-        None
-    };
-
-    let previous_page_state = prev_cursor.map(|cursor| admin_views::AdminApiKeyPaginationState {
-        cursor: Some(cursor),
-        trail: filters.trail.clone(),
-    });
-    let next_page_state = next_cursor.map(|cursor| admin_views::AdminApiKeyPaginationState {
-        cursor: Some(cursor),
-        trail: filters.trail.clone(),
-    });
 
     let filters_view = build_status_filters(filters.status.as_deref(), total_count, revoked_count);
     let status_filter_active = filters_view
@@ -419,7 +414,7 @@ async fn build_panel_view(
 
     Ok(admin_views::AdminApiKeyListView {
         heading: "API keys".to_string(),
-        keys: page_keys,
+        keys,
         create_action: "/api-keys/create".to_string(),
         new_key_href: "/api-keys/new".to_string(),
         panel_action: "/api-keys/panel".to_string(),
@@ -472,25 +467,6 @@ fn build_status_filters(
         is_active: active == Some("revoked"),
     });
     filters
-}
-
-fn encode_offset(offset: usize) -> String {
-    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(offset.to_string())
-}
-
-fn decode_offset(raw: Option<&str>) -> Result<usize, ApiKeyHttpError> {
-    match raw {
-        None => Ok(0),
-        Some(value) => {
-            let decoded = base64::engine::general_purpose::URL_SAFE_NO_PAD
-                .decode(value)
-                .map_err(|_| ApiKeyHttpError::bad_request("Invalid cursor"))?;
-            let s = String::from_utf8(decoded)
-                .map_err(|_| ApiKeyHttpError::bad_request("Invalid cursor"))?;
-            s.parse::<usize>()
-                .map_err(|_| ApiKeyHttpError::bad_request("Invalid cursor"))
-        }
-    }
 }
 
 async fn load_chrome(state: &AdminState) -> Result<admin_views::AdminChrome, ApiKeyHttpError> {
