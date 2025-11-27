@@ -15,6 +15,7 @@ use crate::infra::http::admin::selectors::API_KEYS_PANEL;
 use crate::infra::http::admin::shared::{Toast, push_toasts};
 use crate::presentation::admin::views as admin_views;
 use crate::presentation::views::render_template_response;
+use base64::Engine;
 use datastar::prelude::ElementPatchMode;
 use std::str::FromStr;
 
@@ -26,6 +27,7 @@ pub struct ApiKeyFilters {
     pub search: Option<String>,
     pub scope: Option<String>,
     pub cursor: Option<String>,
+    pub trail: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -44,6 +46,17 @@ pub struct ApiKeyIdForm {
     pub search: Option<String>,
     pub scope: Option<String>,
     pub cursor: Option<String>,
+    pub trail: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Default, Clone)]
+pub struct ApiKeyPanelForm {
+    pub status: Option<String>,
+    pub search: Option<String>,
+    pub scope: Option<String>,
+    pub cursor: Option<String>,
+    pub trail: Option<String>,
+    pub clear: Option<String>,
 }
 
 pub async fn admin_api_keys(
@@ -52,6 +65,73 @@ pub async fn admin_api_keys(
 ) -> Response {
     match build_page(&state, None, &filters, &[]).await {
         Ok(response) => response,
+        Err(err) => err.into_response(),
+    }
+}
+
+pub async fn admin_api_keys_panel(
+    State(state): State<AdminState>,
+    Form(form): Form<ApiKeyPanelForm>,
+) -> Response {
+    let filters = if form.clear.is_some() {
+        ApiKeyFilters::default()
+    } else {
+        ApiKeyFilters {
+            status: form.status,
+            search: form.search,
+            scope: form.scope,
+            cursor: form.cursor,
+            trail: form.trail,
+        }
+    };
+
+    match build_stream(&state, None, &filters, &[]).await {
+        Ok(stream) => stream,
+        Err(err) => err.into_response(),
+    }
+}
+
+pub async fn admin_api_key_new(State(state): State<AdminState>) -> Response {
+    match build_new_page(&state, None, StatusCode::OK).await {
+        Ok(resp) => resp,
+        Err(err) => err.into_response(),
+    }
+}
+
+pub async fn admin_api_key_new_submit(
+    State(state): State<AdminState>,
+    Form(form): Form<CreateApiKeyForm>,
+) -> Response {
+    let scopes = match parse_scopes(&form.scopes) {
+        Ok(scopes) if !scopes.is_empty() => scopes,
+        _ => {
+            return ApiKeyHttpError::bad_request("At least one scope is required").into_response();
+        }
+    };
+
+    let expires_at = match parse_optional_time(form.expires_at.as_deref()) {
+        Ok(value) => value,
+        Err(err) => return err.into_response(),
+    };
+
+    let actor = "admin:api-keys";
+    let issued = match state
+        .api_keys
+        .issue(IssueApiKeyCommand {
+            name: form.name,
+            description: form.description,
+            scopes,
+            expires_at,
+            created_by: actor.to_string(),
+        })
+        .await
+    {
+        Ok(issued) => issued,
+        Err(err) => return ApiKeyHttpError::from_api(err).into_response(),
+    };
+
+    match build_new_page(&state, Some(issued), StatusCode::CREATED).await {
+        Ok(resp) => resp,
         Err(err) => err.into_response(),
     }
 }
@@ -119,6 +199,7 @@ pub async fn admin_api_key_revoke(
         search: form.search,
         scope: form.scope,
         cursor: form.cursor,
+        trail: form.trail,
     };
 
     match build_stream(&state, None, &filters, &[Toast::success("Key revoked")]).await {
@@ -146,6 +227,7 @@ pub async fn admin_api_key_rotate(
         search: form.search,
         scope: form.scope,
         cursor: form.cursor,
+        trail: form.trail,
     };
 
     match build_stream(
@@ -173,6 +255,27 @@ async fn build_page(
         view: admin_views::AdminLayout::new(chrome, panel),
     };
     Ok(render_template_response(template, StatusCode::OK))
+}
+
+async fn build_new_page(
+    state: &AdminState,
+    issued: Option<ApiKeyIssued>,
+    status: StatusCode,
+) -> Result<Response, ApiKeyHttpError> {
+    let chrome = load_chrome(state).await?;
+    let view = admin_views::AdminApiKeyNewView {
+        heading: "New API key".to_string(),
+        form_action: "/api-keys/new".to_string(),
+        name: None,
+        description: None,
+        expires_at: None,
+        available_scopes: scope_options(),
+        new_token: issued.map(|i| i.token),
+    };
+
+    let layout = admin_views::AdminLayout::new(chrome, view);
+    let template = admin_views::AdminApiKeyNewTemplate { view: layout };
+    Ok(render_template_response(template, status))
 }
 
 async fn build_stream(
@@ -207,7 +310,7 @@ async fn build_panel_view(
         .map_err(ApiKeyHttpError::from_repo)?;
     let timezone = settings.timezone;
 
-    let keys: Vec<_> = state
+    let mut keys: Vec<_> = state
         .api_keys
         .list()
         .await
@@ -232,40 +335,111 @@ async fn build_panel_view(
         })
         .collect();
 
+    // filtering
+    if let Some(status) = filters.status.as_deref() {
+        match status {
+            "revoked" => keys.retain(|k| k.revoked),
+            "active" => keys.retain(|k| !k.revoked),
+            _ => {}
+        }
+    }
+    if let Some(scope) = filters.scope.as_deref() {
+        keys.retain(|k| k.scopes.iter().any(|s| s == scope));
+    }
+    if let Some(search) = filters.search.as_deref().map(str::to_lowercase) {
+        keys.retain(|k| {
+            let hay = format!(
+                "{} {} {}",
+                k.name.to_lowercase(),
+                k.prefix.to_lowercase(),
+                k.description.clone().unwrap_or_default().to_lowercase()
+            );
+            hay.contains(&search)
+        });
+    }
+
+    let total_count = keys.len() as u64;
+    let revoked_count = keys.iter().filter(|k| k.revoked).count() as u64;
     let new_token = issued.as_ref().map(|i| i.token.clone());
     let has_keys = !keys.is_empty();
 
-    let filters = build_status_filters(filters.status.as_deref(), keys.len() as u64);
-    let status_filter_active = filters
+    // scope filter options
+    let mut scope_counts: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
+    for key in &keys {
+        for scope in &key.scopes {
+            *scope_counts.entry(scope.clone()).or_insert(0) += 1;
+        }
+    }
+    let mut scope_filter_options: Vec<admin_views::AdminPostTagOption> = scope_counts
+        .iter()
+        .map(|(scope, count)| admin_views::AdminPostTagOption {
+            slug: scope.clone(),
+            name: scope.clone(),
+            count: *count,
+        })
+        .collect();
+    scope_filter_options.sort_by(|a, b| a.name.cmp(&b.name));
+
+    // pagination
+    let page_size = settings.admin_page_size.max(1) as usize;
+    let offset = decode_offset(filters.cursor.as_deref())?;
+    let page_keys = keys
+        .iter()
+        .skip(offset)
+        .take(page_size)
+        .cloned()
+        .collect::<Vec<_>>();
+    let next_cursor = if offset + page_size < keys.len() {
+        Some(encode_offset(offset + page_size))
+    } else {
+        None
+    };
+    let prev_cursor = if offset >= page_size {
+        Some(encode_offset(offset.saturating_sub(page_size)))
+    } else {
+        None
+    };
+
+    let previous_page_state = prev_cursor.map(|cursor| admin_views::AdminApiKeyPaginationState {
+        cursor: Some(cursor),
+        trail: filters.trail.clone(),
+    });
+    let next_page_state = next_cursor.map(|cursor| admin_views::AdminApiKeyPaginationState {
+        cursor: Some(cursor),
+        trail: filters.trail.clone(),
+    });
+
+    let filters_view = build_status_filters(filters.status.as_deref(), total_count, revoked_count);
+    let status_filter_active = filters_view
         .iter()
         .find(|f| f.is_active)
         .and_then(|f| f.status_key.clone());
 
-    let pagination_state = None;
+    let status_filters = filters_view;
 
     Ok(admin_views::AdminApiKeyListView {
         heading: "API keys".to_string(),
-        keys,
+        keys: page_keys,
         create_action: "/api-keys/create".to_string(),
         new_key_href: "/api-keys/new".to_string(),
-        panel_action: "/api-keys".to_string(),
-        filters,
+        panel_action: "/api-keys/panel".to_string(),
+        filters: status_filters,
         active_status_key: status_filter_active,
         filter_search: filters.search.clone(),
         filter_scope: filters.scope.clone(),
-        filter_tag: None,
+        filter_tag: filters.scope.clone(),
         filter_month: None,
-        tag_filter_enabled: false,
+        tag_filter_enabled: true,
         month_filter_enabled: false,
-        tag_filter_label: "Tag".to_string(),
-        tag_filter_all_label: "All tags".to_string(),
-        tag_filter_field: "tag".to_string(),
-        tag_options: Vec::new(),
+        tag_filter_label: "Scope".to_string(),
+        tag_filter_all_label: "All scopes".to_string(),
+        tag_filter_field: "scope".to_string(),
+        tag_options: scope_filter_options,
         month_options: Vec::new(),
         cursor_param: filters.cursor.clone(),
-        trail: None,
-        previous_page_state: pagination_state.clone(),
-        next_page_state: pagination_state,
+        trail: filters.trail.clone(),
+        previous_page_state,
+        next_page_state,
         available_scopes: scope_options(),
         new_token,
         has_keys,
@@ -275,7 +449,9 @@ async fn build_panel_view(
 fn build_status_filters(
     active: Option<&str>,
     total_count: u64,
+    revoked_count: u64,
 ) -> Vec<admin_views::AdminApiKeyStatusFilterView> {
+    let active_count = total_count.saturating_sub(revoked_count);
     let mut filters = Vec::new();
     filters.push(admin_views::AdminApiKeyStatusFilterView {
         status_key: None,
@@ -284,12 +460,37 @@ fn build_status_filters(
         is_active: active.is_none(),
     });
     filters.push(admin_views::AdminApiKeyStatusFilterView {
+        status_key: Some("active".to_string()),
+        label: "Active".to_string(),
+        count: active_count,
+        is_active: active == Some("active"),
+    });
+    filters.push(admin_views::AdminApiKeyStatusFilterView {
         status_key: Some("revoked".to_string()),
         label: "Revoked".to_string(),
-        count: 0,
+        count: revoked_count,
         is_active: active == Some("revoked"),
     });
     filters
+}
+
+fn encode_offset(offset: usize) -> String {
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(offset.to_string())
+}
+
+fn decode_offset(raw: Option<&str>) -> Result<usize, ApiKeyHttpError> {
+    match raw {
+        None => Ok(0),
+        Some(value) => {
+            let decoded = base64::engine::general_purpose::URL_SAFE_NO_PAD
+                .decode(value)
+                .map_err(|_| ApiKeyHttpError::bad_request("Invalid cursor"))?;
+            let s = String::from_utf8(decoded)
+                .map_err(|_| ApiKeyHttpError::bad_request("Invalid cursor"))?;
+            s.parse::<usize>()
+                .map_err(|_| ApiKeyHttpError::bad_request("Invalid cursor"))
+        }
+    }
 }
 
 async fn load_chrome(state: &AdminState) -> Result<admin_views::AdminChrome, ApiKeyHttpError> {

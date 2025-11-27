@@ -957,6 +957,29 @@ pub struct AdminApiKeysPanelTemplate {
     pub content: AdminApiKeyListView,
 }
 
+#[derive(Clone)]
+pub struct AdminApiKeyNewView {
+    pub heading: String,
+    pub form_action: String,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub expires_at: Option<String>,
+    pub available_scopes: Vec<AdminApiScopeOption>,
+    pub new_token: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_key_new.html")]
+pub struct AdminApiKeyNewTemplate {
+    pub view: AdminLayout<AdminApiKeyNewView>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_key_new_panel.html")]
+pub struct AdminApiKeyNewPanelTemplate {
+    pub content: AdminApiKeyNewView,
+}
+
 #[derive(Template)]
 #[template(path = "admin/page_edit.html")]
 pub struct AdminPageEditTemplate {

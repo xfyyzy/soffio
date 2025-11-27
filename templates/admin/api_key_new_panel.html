@@ -1,0 +1,50 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}api-key-new{% endblock %}
+{% block panel_heading %}New API key{% endblock %}
+
+{% block panel_toolbar %}{% endblock panel_toolbar %}
+
+{% block panel_controls %}
+{% if let Some(token) = content.new_token %}
+  <div data-role="card" data-variant="highlight">
+    <p><strong>New key</strong></p>
+    <p style="word-break: break-all;">{{ token }}</p>
+    <p class="muted">Copy now — it won’t be shown again.</p>
+  </div>
+{% endif %}
+{% endblock panel_controls %}
+
+{% block panel_content %}
+  <form method="post" action="{{ content.form_action }}">
+    <div data-role="form-grid">
+      <label>
+        <span>Name</span>
+        <input type="text" name="name" value="{% if let Some(v) = &content.name %}{{ v }}{% endif %}" required>
+      </label>
+      <label>
+        <span>Description</span>
+        <input type="text" name="description" value="{% if let Some(v) = &content.description %}{{ v }}{% endif %}" placeholder="Optional purpose">
+      </label>
+      <label>
+        <span>Expires at (RFC3339)</span>
+        <input type="text" name="expires_at" value="{% if let Some(v) = &content.expires_at %}{{ v }}{% endif %}" placeholder="2025-12-31T23:59:59Z">
+      </label>
+    </div>
+    <fieldset>
+      <legend>Scopes</legend>
+      <div data-role="pill-group">
+        {% for scope in content.available_scopes %}
+        <label data-role="pill">
+          <input type="checkbox" name="scopes" value="{{ scope.value }}">
+          <span>{{ scope.label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <div data-role="actions">
+      <button type="submit" data-variant="primary">Create key</button>
+      <a href="/api-keys" data-role="secondary">Back to list</a>
+    </div>
+  </form>
+{% endblock panel_content %}
