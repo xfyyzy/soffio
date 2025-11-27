@@ -70,6 +70,10 @@ src/
 
 1. Run the baseline quality gates:
    ```bash
+   # point DATABASE_URL to your writable instance; SQLX_TEST_DATABASE_URL is used by `#[sqlx::test]` to create temp DBs
+   export DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev
+   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/postgres
+
    cargo fmt --all
    cargo clippy --workspace --all-targets -- -D warnings
    cargo test --workspace --all-targets

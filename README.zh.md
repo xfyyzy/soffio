@@ -72,6 +72,10 @@ src/
 
 1. 运行格式化与静态检查：
    ```bash
+   # 请配置可写数据库；SQLX_TEST_DATABASE_URL 供 `#[sqlx::test]` 创建临时库
+   export DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev
+   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/postgres
+
    cargo fmt --all
    cargo clippy --workspace --all-targets -- -D warnings
    cargo test --workspace --all-targets
