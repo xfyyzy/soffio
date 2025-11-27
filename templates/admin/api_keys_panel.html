@@ -1,54 +1,16 @@
 {% extends "admin/layouts/panel.html" %}
 
 {% block panel_id %}api-keys{% endblock %}
+{% block panel_heading %}API keys{% endblock %}
 
-{% block panel_heading %}{{ content.heading }}{% endblock %}
-
-{# toolbar left empty for now; creation form lives below as card #}
-{% block panel_toolbar %}{% endblock panel_toolbar %}
+{% block panel_toolbar %}
+      <a href="{{ content.new_key_href }}">New API key</a>
+{% endblock panel_toolbar %}
 
 {% block panel_controls %}
-{% match content.new_token %}
-{% when Some with (token) %}
-  <div data-role="card" data-variant="highlight" style="margin-bottom: var(--space-4);">
-    <p><strong>New key</strong></p>
-    <p style="word-break: break-all;">{{ token }}</p>
-    <p class="muted">Copy now — it won’t be shown again.</p>
-  </div>
-{% when None %}{% endmatch %}
-
-  <div data-role="card" style="margin-bottom: var(--space-4);">
-    <form action="{{ content.create_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
-      <div data-role="form-grid">
-        <label>
-          <span>Name</span>
-          <input type="text" name="name" required placeholder="CI token">
-        </label>
-        <label>
-          <span>Description</span>
-          <input type="text" name="description" placeholder="Optional purpose">
-        </label>
-        <label>
-          <span>Expires at (RFC3339)</span>
-          <input type="text" name="expires_at" placeholder="2025-12-31T23:59:59Z">
-        </label>
-      </div>
-      <fieldset>
-        <legend>Scopes</legend>
-        <div data-role="pill-group">
-          {% for scope in content.available_scopes %}
-          <label data-role="pill">
-            <input type="checkbox" name="scopes" value="{{ scope.value }}">
-            <span>{{ scope.label }}</span>
-          </label>
-          {% endfor %}
-        </div>
-      </fieldset>
-      <div data-role="actions">
-        <button type="submit" data-variant="primary">Create key</button>
-      </div>
-    </form>
-  </div>
+{% let panel_action = content.panel_action %}
+{% include "admin/partials/status_tabs.html" %}
+{% include "admin/partials/filter_form.html" %}
 {% endblock panel_controls %}
 
 {% block panel_content %}
@@ -66,7 +28,7 @@
     </thead>
     <tbody>
       {% for key in content.keys %}
-      <tr>
+      <tr data-role="api-key-row" data-key-id="{{ key.id }}">
         <td>{{ key.name }}</td>
         <td><code>{{ key.prefix }}</code></td>
         <td>
@@ -78,31 +40,43 @@
         </td>
         <td>{{ key.created_at }}</td>
         <td>
-          {% match key.last_used_at %}
-          {% when Some with (ts) %}{{ ts }}{% when None %}<span data-role="muted">—</span>{% endmatch %}
+          {% if let Some(ts) = key.last_used_at %}
+            {{ ts }}
+          {% else %}
+            <span data-role="muted">—</span>
+          {% endif %}
         </td>
         <td>
           {% if key.revoked %}
-          <span data-role="badge" data-variant="danger">revoked</span>
+            <span data-role="badge" data-variant="danger">revoked</span>
           {% else %}
-          <span data-role="badge" data-variant="success">active</span>
+            <span data-role="badge" data-variant="success">active</span>
           {% endif %}
         </td>
         <td data-role="publishable-actions">
-          <form data-role="inline-form" action="{{ key.rotate_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
+          <form data-role="inline-form" method="post" action="{{ key.rotate_action }}"
+                data-on-submit__prevent="(@post(`{{ key.rotate_action }}`, { contentType: 'form' }))">
+            <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
+            <input type="hidden" name="status" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
+            <input type="hidden" name="search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
+            <input type="hidden" name="scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
             <button type="submit">Rotate</button>
           </form>
-          <form data-role="inline-form" action="{{ key.revoke_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]" onsubmit="return confirm('Revoke this key?');">
+          <form data-role="inline-form" method="post" action="{{ key.revoke_action }}"
+                data-on-submit__prevent="(@post(`{{ key.revoke_action }}`, { contentType: 'form' }))">
+            <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
+            <input type="hidden" name="status" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
+            <input type="hidden" name="search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
+            <input type="hidden" name="scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
             <button type="submit" data-variant="danger">Revoke</button>
           </form>
         </td>
       </tr>
       {% endfor %}
       {% if !content.has_keys %}
-      <tr>
-        <td colspan="7">No API keys yet.</td>
-      </tr>
+      <tr><td colspan="7">No API keys yet.</td></tr>
       {% endif %}
     </tbody>
   </table>
+{% include "admin/partials/pagination.html" %}
 {% endblock panel_content %}

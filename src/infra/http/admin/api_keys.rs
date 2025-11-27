@@ -1,6 +1,6 @@
 use askama::Template;
 use axum::{
-    extract::{Form, State},
+    extract::{Form, Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
 };
@@ -20,6 +20,14 @@ use std::str::FromStr;
 
 use super::AdminState;
 
+#[derive(Debug, Deserialize, Default, Clone)]
+pub struct ApiKeyFilters {
+    pub status: Option<String>,
+    pub search: Option<String>,
+    pub scope: Option<String>,
+    pub cursor: Option<String>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateApiKeyForm {
     pub name: String,
@@ -32,10 +40,17 @@ pub struct CreateApiKeyForm {
 #[derive(Debug, Deserialize)]
 pub struct ApiKeyIdForm {
     pub id: String,
+    pub status: Option<String>,
+    pub search: Option<String>,
+    pub scope: Option<String>,
+    pub cursor: Option<String>,
 }
 
-pub async fn admin_api_keys(State(state): State<AdminState>) -> Response {
-    match build_page(&state, None, &[]).await {
+pub async fn admin_api_keys(
+    State(state): State<AdminState>,
+    Query(filters): Query<ApiKeyFilters>,
+) -> Response {
+    match build_page(&state, None, &filters, &[]).await {
         Ok(response) => response,
         Err(err) => err.into_response(),
     }
@@ -73,7 +88,14 @@ pub async fn admin_api_key_create(
         Err(err) => return ApiKeyHttpError::from_api(err).into_response(),
     };
 
-    match build_stream(&state, Some(issued), &[Toast::success("API key created")]).await {
+    match build_stream(
+        &state,
+        Some(issued),
+        &ApiKeyFilters::default(),
+        &[Toast::success("API key created")],
+    )
+    .await
+    {
         Ok(stream) => stream,
         Err(err) => err.into_response(),
     }
@@ -92,7 +114,14 @@ pub async fn admin_api_key_revoke(
         return ApiKeyHttpError::from_api(err).into_response();
     }
 
-    match build_stream(&state, None, &[Toast::success("Key revoked")]).await {
+    let filters = ApiKeyFilters {
+        status: form.status,
+        search: form.search,
+        scope: form.scope,
+        cursor: form.cursor,
+    };
+
+    match build_stream(&state, None, &filters, &[Toast::success("Key revoked")]).await {
         Ok(stream) => stream,
         Err(err) => err.into_response(),
     }
@@ -112,7 +141,21 @@ pub async fn admin_api_key_rotate(
         Err(err) => return ApiKeyHttpError::from_api(err).into_response(),
     };
 
-    match build_stream(&state, Some(issued), &[Toast::success("Key rotated")]).await {
+    let filters = ApiKeyFilters {
+        status: form.status,
+        search: form.search,
+        scope: form.scope,
+        cursor: form.cursor,
+    };
+
+    match build_stream(
+        &state,
+        Some(issued),
+        &filters,
+        &[Toast::success("Key rotated")],
+    )
+    .await
+    {
         Ok(stream) => stream,
         Err(err) => err.into_response(),
     }
@@ -121,9 +164,10 @@ pub async fn admin_api_key_rotate(
 async fn build_page(
     state: &AdminState,
     issued: Option<ApiKeyIssued>,
+    filters: &ApiKeyFilters,
     _toasts: &[Toast],
 ) -> Result<Response, ApiKeyHttpError> {
-    let panel = build_panel_view(state, issued.as_ref()).await?;
+    let panel = build_panel_view(state, filters, issued.as_ref()).await?;
     let chrome = load_chrome(state).await?;
     let template = admin_views::AdminApiKeysTemplate {
         view: admin_views::AdminLayout::new(chrome, panel),
@@ -134,9 +178,10 @@ async fn build_page(
 async fn build_stream(
     state: &AdminState,
     issued: Option<ApiKeyIssued>,
+    filters: &ApiKeyFilters,
     toasts: &[Toast],
 ) -> Result<Response, ApiKeyHttpError> {
-    let panel = build_panel_view(state, issued.as_ref()).await?;
+    let panel = build_panel_view(state, filters, issued.as_ref()).await?;
     let panel_html = render_panel_html(&panel)?;
 
     let mut stream = crate::application::stream::StreamBuilder::new();
@@ -152,6 +197,7 @@ async fn build_stream(
 
 async fn build_panel_view(
     state: &AdminState,
+    filters: &ApiKeyFilters,
     issued: Option<&ApiKeyIssued>,
 ) -> Result<admin_views::AdminApiKeyListView, ApiKeyHttpError> {
     let settings = state
@@ -189,14 +235,61 @@ async fn build_panel_view(
     let new_token = issued.as_ref().map(|i| i.token.clone());
     let has_keys = !keys.is_empty();
 
+    let filters = build_status_filters(filters.status.as_deref(), keys.len() as u64);
+    let status_filter_active = filters
+        .iter()
+        .find(|f| f.is_active)
+        .and_then(|f| f.status_key.clone());
+
+    let pagination_state = None;
+
     Ok(admin_views::AdminApiKeyListView {
         heading: "API keys".to_string(),
         keys,
         create_action: "/api-keys/create".to_string(),
+        new_key_href: "/api-keys/new".to_string(),
+        panel_action: "/api-keys".to_string(),
+        filters,
+        active_status_key: status_filter_active,
+        filter_search: filters.search.clone(),
+        filter_scope: filters.scope.clone(),
+        filter_tag: None,
+        filter_month: None,
+        tag_filter_enabled: false,
+        month_filter_enabled: false,
+        tag_filter_label: "Tag".to_string(),
+        tag_filter_all_label: "All tags".to_string(),
+        tag_filter_field: "tag".to_string(),
+        tag_options: Vec::new(),
+        month_options: Vec::new(),
+        cursor_param: filters.cursor.clone(),
+        trail: None,
+        previous_page_state: pagination_state.clone(),
+        next_page_state: pagination_state,
         available_scopes: scope_options(),
         new_token,
         has_keys,
     })
+}
+
+fn build_status_filters(
+    active: Option<&str>,
+    total_count: u64,
+) -> Vec<admin_views::AdminApiKeyStatusFilterView> {
+    let mut filters = Vec::new();
+    filters.push(admin_views::AdminApiKeyStatusFilterView {
+        status_key: None,
+        label: "All".to_string(),
+        count: total_count,
+        is_active: active.is_none(),
+    });
+    filters.push(admin_views::AdminApiKeyStatusFilterView {
+        status_key: Some("revoked".to_string()),
+        label: "Revoked".to_string(),
+        count: 0,
+        is_active: active == Some("revoked"),
+    });
+    filters
 }
 
 async fn load_chrome(state: &AdminState) -> Result<admin_views::AdminChrome, ApiKeyHttpError> {

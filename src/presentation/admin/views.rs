@@ -903,10 +903,43 @@ pub struct AdminApiKeyRowView {
 }
 
 #[derive(Clone)]
+pub struct AdminApiKeyStatusFilterView {
+    pub status_key: Option<String>,
+    pub label: String,
+    pub count: u64,
+    pub is_active: bool,
+}
+
+#[derive(Clone)]
+pub struct AdminApiKeyPaginationState {
+    pub cursor: Option<String>,
+    pub trail: Option<String>,
+}
+
+#[derive(Clone)]
 pub struct AdminApiKeyListView {
     pub heading: String,
     pub keys: Vec<AdminApiKeyRowView>,
     pub create_action: String,
+    pub new_key_href: String,
+    pub panel_action: String,
+    pub filters: Vec<AdminApiKeyStatusFilterView>,
+    pub active_status_key: Option<String>,
+    pub filter_search: Option<String>,
+    pub filter_scope: Option<String>,
+    pub filter_tag: Option<String>,
+    pub filter_month: Option<String>,
+    pub tag_filter_enabled: bool,
+    pub month_filter_enabled: bool,
+    pub tag_filter_label: String,
+    pub tag_filter_all_label: String,
+    pub tag_filter_field: String,
+    pub tag_options: Vec<AdminPostTagOption>,
+    pub month_options: Vec<AdminPostMonthOption>,
+    pub cursor_param: Option<String>,
+    pub trail: Option<String>,
+    pub previous_page_state: Option<AdminApiKeyPaginationState>,
+    pub next_page_state: Option<AdminApiKeyPaginationState>,
     pub available_scopes: Vec<AdminApiScopeOption>,
     pub new_token: Option<String>,
     pub has_keys: bool,
