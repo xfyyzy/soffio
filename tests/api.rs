@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use sqlx::PgPool;
 use time::OffsetDateTime;
 use tokio::sync::Mutex;
 
@@ -32,8 +33,6 @@ use soffio::infra::http::api::handlers;
 use soffio::infra::http::api::models::*;
 use soffio::infra::http::api::state::ApiState;
 use soffio::infra::uploads::UploadStorage;
-
-const TEST_DATABASE_URL: &str = "postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev";
 
 #[derive(Default)]
 struct ImmediateJobsRepo {
@@ -98,14 +97,8 @@ impl JobsRepo for ImmediateJobsRepo {
     }
 }
 
-async fn build_state() -> (ApiState, String) {
-    let http_pool = PostgresRepositories::connect(TEST_DATABASE_URL, 8)
-        .await
-        .unwrap();
-    PostgresRepositories::run_migrations(&http_pool)
-        .await
-        .unwrap();
-    let repos = Arc::new(PostgresRepositories::new(http_pool));
+async fn build_state(pool: PgPool) -> (ApiState, String) {
+    let repos = Arc::new(PostgresRepositories::new(pool));
 
     let posts_repo: Arc<dyn PostsRepo> = repos.clone();
     let posts_write_repo: Arc<dyn PostsWriteRepo> = repos.clone();
@@ -219,9 +212,9 @@ async fn build_state() -> (ApiState, String) {
     (api_state, issued.token)
 }
 
-#[tokio::test]
-async fn api_can_create_and_list_post_via_handlers() {
-    let (state, token) = build_state().await;
+#[sqlx::test(migrations = "./migrations")]
+async fn api_can_create_and_list_post_via_handlers(pool: PgPool) {
+    let (state, token) = build_state(pool).await;
     let principal = state.api_keys.authenticate(&token).await.unwrap();
     let post_payload = PostCreateRequest {
         title: "handler-post".into(),
