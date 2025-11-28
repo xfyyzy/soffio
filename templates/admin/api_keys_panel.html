@@ -2,7 +2,7 @@
 
 {% let panel_action = content.panel_action %}
 {% block panel_id %}api-keys{% endblock %}
-{% block panel_heading %}API keys{% endblock %}
+{% block panel_heading %}{{ content.heading }}{% endblock %}
 
 {% block panel_toolbar %}
       <a href="{{ content.new_key_href }}">New API key</a>
@@ -19,12 +19,12 @@
   <table data-role="publishable-table">
     <thead>
       <tr>
-        <th scope="col">Name</th>
-        <th scope="col">Prefix</th>
-        <th scope="col">Scopes</th>
-        <th scope="col">Created</th>
-        <th scope="col">Last used</th>
-        <th scope="col">Status</th>
+        <th scope="col" data-column="name">Name</th>
+        <th scope="col" data-column="prefix">Prefix</th>
+        <th scope="col" data-column="scopes">Scopes</th>
+        <th scope="col" data-column="created">Created</th>
+        <th scope="col" data-column="last-used">Last used</th>
+        <th scope="col" data-column="status">Status</th>
         <th scope="col">Actions</th>
       </tr>
     </thead>
@@ -48,29 +48,27 @@
             <span data-role="muted">—</span>
           {% endif %}
         </td>
-        <td>
-          {% if key.revoked %}
-            <span data-role="badge" data-variant="danger">revoked</span>
-          {% else %}
-            <span data-role="badge" data-variant="success">active</span>
-          {% endif %}
+        <td data-column="status">
+          <status-badge data-status="{% if key.revoked %}revoked{% else %}active{% endif %}">
+            {% if key.revoked %}Revoked{% else %}Active{% endif %}
+          </status-badge>
         </td>
         <td data-role="publishable-actions">
           <form data-role="inline-form" method="post" action="{{ key.rotate_action }}"
                 data-on-submit__prevent="(@post(`{{ key.rotate_action }}`, { contentType: 'form' }))">
             <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
-            <input type="hidden" name="status" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
-            <input type="hidden" name="search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
-            <input type="hidden" name="scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
+            <input type="hidden" name="status_filter" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
+            <input type="hidden" name="filter_search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
+            <input type="hidden" name="filter_scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
             <input type="hidden" name="trail" value="{% if let Some(v) = &content.trail %}{{ v }}{% endif %}">
             <button type="submit">Rotate</button>
           </form>
           <form data-role="inline-form" method="post" action="{{ key.revoke_action }}"
                 data-on-submit__prevent="(@post(`{{ key.revoke_action }}`, { contentType: 'form' }))">
             <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
-            <input type="hidden" name="status" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
-            <input type="hidden" name="search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
-            <input type="hidden" name="scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
+            <input type="hidden" name="status_filter" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
+            <input type="hidden" name="filter_search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
+            <input type="hidden" name="filter_scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
             <input type="hidden" name="trail" value="{% if let Some(v) = &content.trail %}{{ v }}{% endif %}">
             <button type="submit" data-variant="danger">Revoke</button>
           </form>

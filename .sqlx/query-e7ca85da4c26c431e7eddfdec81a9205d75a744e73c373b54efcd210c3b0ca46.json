@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT unnest(scopes) as \"scope!: ApiScope\", COUNT(*)::bigint as \"count!: i64\"\n            FROM api_keys\n            GROUP BY 1\n            ORDER BY 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "scope!: ApiScope",
+        "type_info": {
+          "Custom": {
+            "name": "api_scope",
+            "kind": {
+              "Enum": [
+                "content_read",
+                "content_write",
+                "tag_write",
+                "navigation_write",
+                "upload_write",
+                "settings_write",
+                "jobs_read",
+                "audit_read"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "count!: i64",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "e7ca85da4c26c431e7eddfdec81a9205d75a744e73c373b54efcd210c3b0ca46"
+}

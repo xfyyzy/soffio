@@ -45,9 +45,9 @@ pub struct CreateApiKeyForm {
 #[derive(Debug, Deserialize)]
 pub struct ApiKeyIdForm {
     pub id: String,
-    pub status: Option<String>,
-    pub search: Option<String>,
-    pub scope: Option<String>,
+    pub status_filter: Option<String>,
+    pub filter_search: Option<String>,
+    pub filter_scope: Option<String>,
     pub cursor: Option<String>,
     pub trail: Option<String>,
 }
@@ -198,9 +198,9 @@ pub async fn admin_api_key_revoke(
     }
 
     let filters = ApiKeyFilters {
-        status: form.status,
-        search: form.search,
-        scope: form.scope,
+        status: form.status_filter,
+        search: form.filter_search,
+        scope: form.filter_scope,
         cursor: form.cursor,
         trail: form.trail,
     };
@@ -226,9 +226,9 @@ pub async fn admin_api_key_rotate(
     };
 
     let filters = ApiKeyFilters {
-        status: form.status,
-        search: form.search,
-        scope: form.scope,
+        status: form.status_filter,
+        search: form.filter_search,
+        scope: form.filter_scope,
         cursor: form.cursor,
         trail: form.trail,
     };
