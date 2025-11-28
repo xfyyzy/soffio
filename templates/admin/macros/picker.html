@@ -1,15 +1,18 @@
 {# Chip toggle form for picker components #}
 {% macro chip(toggle_action, state_field, state_value, id_field, id_value,
-              role_prefix, is_selected, label, secondary, secondary_prefix, secondary_role, show_count, count) -%}
-<form method="post" action="{{ toggle_action }}" data-role="{{ role_prefix }}-toggle"
+              picker_type, is_selected, label, secondary, secondary_prefix,
+              show_secondary, show_count, count) -%}
+<form method="post" action="{{ toggle_action }}" data-role="chip-toggle" data-picker-type="{{ picker_type }}"
   data-on-submit__prevent="(@post(`{{ toggle_action }}`, { contentType: 'form' }))">
   <input type="hidden" name="{{ state_field }}" value="{{ state_value }}">
   <input type="hidden" name="{{ id_field }}" value="{{ id_value }}">
-  <button type="submit" data-role="{{ role_prefix }}-chip" data-selected="{{ is_selected }}" aria-pressed="{{ is_selected }}">
-    <span data-role="{{ role_prefix }}-chip-label">{{ label }}</span>
-    <span data-role="{{ role_prefix }}-chip-{{ secondary_role }}">{{ secondary_prefix }}{{ secondary }}</span>
+  <button type="submit" data-role="chip" data-selected="{{ is_selected }}" aria-pressed="{{ is_selected }}">
+    <span data-role="chip-label">{{ label }}</span>
+    {%- if show_secondary %}
+    <span data-role="chip-secondary">{{ secondary_prefix }}{{ secondary }}</span>
+    {%- endif %}
     {%- if show_count %}
-    <span data-role="{{ role_prefix }}-chip-count">{{ count }}</span>
+    <span data-role="chip-count">{{ count }}</span>
     {%- endif %}
   </button>
 </form>

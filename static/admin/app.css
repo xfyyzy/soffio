@@ -627,43 +627,43 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
   margin: 0;
 }
 
-[data-role="tag-picker"] {
+[data-role="picker"] {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   margin-bottom: 2rem;
 }
 
-[data-role="tag-picker-header"] {
+[data-role="picker-header"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-[data-role="tag-picker-title"] {
+[data-role="picker-title"] {
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
 }
 
-[data-role="tag-subtitle"] {
+[data-role="picker-subtitle"] {
   font-size: 0.9rem;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
 }
 
-[data-role="tag-chip-list"],
-[data-role="tag-chip-grid"] {
+[data-role="chip-list"],
+[data-role="chip-grid"] {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-[data-role="tag-chip-grid"] {
+[data-role="chip-grid"] {
   align-items: flex-start;
 }
 
-[data-role="tag-chip"] {
+[data-role="chip"] {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -678,18 +678,18 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-[data-role="tag-chip"][data-selected="true"] {
+[data-role="chip"][data-selected="true"] {
   background-color: rgba(11, 87, 208, 0.18);
   color: var(--accent);
   border-color: rgba(11, 87, 208, 0.35);
 }
 
-[data-role="tag-chip"]:focus-visible {
+[data-role="chip"]:focus-visible {
   outline: 2px solid var(--border-strong);
   outline-offset: 2px;
 }
 
-[data-role="tag-chip-count"] {
+[data-role="chip-count"] {
   font-size: 0.75rem;
   font-weight: 500;
   padding: 0.1rem 0.4rem;
@@ -698,16 +698,12 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
   color: var(--text-secondary);
 }
 
-[data-role="tag-chip"][data-selected="true"] [data-role="tag-chip-count"] {
+[data-role="chip"][data-selected="true"] [data-role="chip-count"] {
   background-color: rgba(11, 87, 208, 0.12);
   color: var(--accent);
 }
 
-[data-role="tag-hidden"] {
-  display: none;
-}
-
-[data-role="tag-picker-hint"] {
+[data-role="picker-hint"] {
   font-size: 0.8rem;
   color: var(--text-faint);
 }

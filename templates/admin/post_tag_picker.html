@@ -1,32 +1,32 @@
 {% import "admin/macros/picker.html" as picker_macro %}
 
-<section data-role="tag-picker">
-  <header data-role="tag-picker-header">
-    <h3 data-role="tag-picker-title">Tags</h3>
+<section data-role="picker" data-picker-type="tag">
+  <header data-role="picker-header">
+    <h3 data-role="picker-title">Tags</h3>
     {% if picker.selected.is_empty() %}
-    <span data-role="tag-picker-hint">Choose tags to help readers find this post.</span>
+    <span data-role="picker-hint">Choose tags to help readers find this post.</span>
     {% endif %}
   </header>
-  <div data-role="tag-selected">
-    <h4 data-role="tag-subtitle">Selected</h4>
+  <div data-role="picker-selected">
+    <h4 data-role="picker-subtitle">Selected</h4>
     {% if picker.selected.is_empty() %}
     <p data-role="muted">No tags selected</p>
     {% else %}
-    <div data-role="tag-chip-list">
+    <div data-role="chip-list">
       {% for tag in picker.selected %}
-      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", tag.id, "tag", "true", tag.name, tag.slug, "#", "slug", false, 0) %}
+      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", tag.id, "tag", "true", tag.name, tag.slug, "#", true, false, 0) %}
       {% endfor %}
     </div>
     {% endif %}
   </div>
-  <div data-role="tag-options">
-    <h4 data-role="tag-subtitle">Available</h4>
+  <div data-role="picker-options">
+    <h4 data-role="picker-subtitle">Available</h4>
     {% if picker.options.is_empty() %}
     <p data-role="muted">No tags available</p>
     {% else %}
-    <div data-role="tag-chip-grid">
+    <div data-role="chip-grid">
       {% for option in picker.options %}
-      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", option.id, "tag", option.is_selected, option.name, option.slug, "#", "slug", true, option.usage_count) %}
+      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", option.id, "tag", option.is_selected, option.name, option.slug, "#", true, true, option.usage_count) %}
       {% endfor %}
     </div>
     {% endif %}

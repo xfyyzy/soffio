@@ -12,9 +12,9 @@ pub const TAGS_PANEL: &str = "[data-admin-panel=\"tags\"]";
 pub const UPLOADS_PANEL: &str = "[data-admin-panel=\"uploads\"]";
 pub const API_KEYS_PANEL: &str = "[data-admin-panel=\"api-keys\"]";
 
-pub const TAG_PICKER: &str = "[data-role=\"tag-picker\"]";
+pub const TAG_PICKER: &str = "[data-role=\"picker\"][data-picker-type=\"tag\"]";
 pub const TAG_SELECTION_STORE: &str = "[data-role=\"tag-selection-store\"]";
 
-pub const SCOPE_PICKER: &str = "[data-role=\"scope-picker\"]";
+pub const SCOPE_PICKER: &str = "[data-role=\"picker\"][data-picker-type=\"scope\"]";
 
 pub const UPLOAD_QUEUE_BODY: &str = "[data-role=\"upload-queue-body\"]";

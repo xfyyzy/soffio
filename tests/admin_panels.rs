@@ -727,7 +727,7 @@ fn snapshot_admin_api_keys_panel() {
 #[test]
 fn snapshot_admin_api_key_new_panel() {
     let content = AdminApiKeyNewView {
-        heading: "New API key".into(),
+        heading: "Create API key".into(),
         form_action: "/api-keys/new".into(),
         name: None,
         description: None,

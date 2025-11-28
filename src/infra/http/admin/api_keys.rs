@@ -314,7 +314,7 @@ async fn build_new_page(
 ) -> Result<Response, ApiKeyHttpError> {
     let chrome = load_chrome(state).await?;
     let view = admin_views::AdminApiKeyNewView {
-        heading: "New API key".to_string(),
+        heading: "Create API key".to_string(),
         form_action: "/api-keys/new".to_string(),
         name: None,
         description: None,
