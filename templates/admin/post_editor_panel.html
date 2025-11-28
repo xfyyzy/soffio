@@ -1,8 +1,11 @@
-<section data-role="panel">
-  <header data-role="panel-header">
-    <h2 data-role="panel-title">{{ content.heading }}</h2>
-  </header>
-  <div data-role="panel-body">
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}post-editor{% endblock %}
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}{% endblock panel_toolbar %}
+
+{% block panel_content %}
     {% let picker = content.tag_picker.clone() %}
     <form id="post-editor-form" data-role="post-editor" method="post" action="{{ content.form_action }}"
       {% if content.enable_live_submit %}data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))"{% endif %}>
@@ -51,5 +54,4 @@
     <div data-role="form-actions">
       <button type="submit" form="post-editor-form">{{ content.submit_label }}</button>
     </div>
-  </div>
-</section>
+{% endblock panel_content %}

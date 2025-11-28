@@ -961,6 +961,7 @@ pub struct AdminApiKeysPanelTemplate {
 pub struct AdminApiKeyNewView {
     pub heading: String,
     pub form_action: String,
+    pub back_href: String,
     pub name: Option<String>,
     pub description: Option<String>,
     pub expires_at: Option<String>,

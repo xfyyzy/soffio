@@ -1,0 +1,61 @@
+---
+source: tests/admin_panels.rs
+expression: rendered
+---
+<section data-role="panel" data-admin-panel="api-key-new">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">New API key</h2>
+  </header>
+  <div data-role="panel-body">
+
+    <div data-role="panel-toolbar"></div>
+
+
+
+
+
+  <form method="post" action="/api-keys/new"
+        data-on-submit__prevent="(@post(`/api-keys/new`, { contentType: 'form' }))">
+    <div data-role="form-grid">
+      <label>
+        <span>Name</span>
+        <input type="text" name="name" value="" required>
+      </label>
+      <label>
+        <span>Description</span>
+        <input type="text" name="description" value="" placeholder="Optional purpose">
+      </label>
+      <label>
+        <span>Expires at (RFC3339)</span>
+        <input type="text" name="expires_at" value="" placeholder="2025-12-31T23:59:59Z">
+      </label>
+    </div>
+    <fieldset>
+      <legend>Scopes</legend>
+      <div data-role="pill-group">
+        
+        <label data-role="pill">
+          <input type="checkbox" name="scopes" value="content_read">
+          <span>Content read</span>
+        </label>
+        
+        <label data-role="pill">
+          <input type="checkbox" name="scopes" value="content_write">
+          <span>Content write</span>
+        </label>
+        
+        <label data-role="pill">
+          <input type="checkbox" name="scopes" value="tag_write">
+          <span>Tag write</span>
+        </label>
+        
+      </div>
+    </fieldset>
+    <div data-role="actions">
+      <button type="submit" data-variant="primary">Create key</button>
+      <a href="/api-keys" data-role="secondary">Back to list</a>
+    </div>
+  </form>
+
+  </div>
+</section>

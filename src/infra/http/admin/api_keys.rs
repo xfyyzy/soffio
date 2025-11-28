@@ -269,6 +269,7 @@ async fn build_new_page(
     let view = admin_views::AdminApiKeyNewView {
         heading: "New API key".to_string(),
         form_action: "/api-keys/new".to_string(),
+        back_href: "/api-keys".to_string(),
         name: None,
         description: None,
         expires_at: None,

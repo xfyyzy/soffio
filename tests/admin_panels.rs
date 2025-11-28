@@ -724,3 +724,34 @@ fn snapshot_admin_api_keys_panel() {
     let rendered = template.render().unwrap();
     assert_snapshot!("admin_api_keys_panel", rendered);
 }
+
+#[test]
+fn snapshot_admin_api_key_new_panel() {
+    let content = AdminApiKeyNewView {
+        heading: "New API key".into(),
+        form_action: "/api-keys/new".into(),
+        back_href: "/api-keys".into(),
+        name: None,
+        description: None,
+        expires_at: None,
+        available_scopes: vec![
+            AdminApiScopeOption {
+                value: "content_read".into(),
+                label: "Content read".into(),
+            },
+            AdminApiScopeOption {
+                value: "content_write".into(),
+                label: "Content write".into(),
+            },
+            AdminApiScopeOption {
+                value: "tag_write".into(),
+                label: "Tag write".into(),
+            },
+        ],
+        new_token: None,
+    };
+
+    let template = AdminApiKeyNewPanelTemplate { content };
+    let rendered = template.render().unwrap();
+    assert_snapshot!("admin_api_key_new_panel", rendered);
+}
