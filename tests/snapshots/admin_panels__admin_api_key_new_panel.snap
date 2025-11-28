@@ -15,7 +15,7 @@ expression: rendered
 
 
   
-  <form id="api-key-form" method="post" action="/api-keys/new"
+  <form id="api-key-form" data-role="api-key-editor" method="post" action="/api-keys/new"
         data-on-submit__prevent="(@post(`/api-keys/new`, { contentType: 'form' }))">
     <label>
       <span>Name</span>

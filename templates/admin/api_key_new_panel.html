@@ -17,7 +17,7 @@
 
 {% block panel_content %}
   {% let picker = content.scope_picker.clone() %}
-  <form id="api-key-form" method="post" action="{{ content.form_action }}"
+  <form id="api-key-form" data-role="api-key-editor" method="post" action="{{ content.form_action }}"
         data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
     <label>
       <span>Name</span>

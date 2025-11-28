@@ -467,6 +467,7 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
 [data-role="page-editor"],
 [data-role="tag-editor"],
 [data-role="navigation-editor"],
+[data-role="api-key-editor"],
 [data-role="post-create-form"],
 [data-role="page-create-form"],
 [data-role="tag-create-form"],
@@ -481,6 +482,7 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
 [data-role="page-editor"] label,
 [data-role="tag-editor"] label,
 [data-role="navigation-editor"] label,
+[data-role="api-key-editor"] label,
 [data-role="post-create-form"] label,
 [data-role="page-create-form"] label,
 [data-role="tag-create-form"] label,
@@ -499,6 +501,9 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
 [data-role="navigation-editor"] input,
 [data-role="navigation-editor"] textarea,
 [data-role="navigation-editor"] select,
+[data-role="api-key-editor"] input,
+[data-role="api-key-editor"] textarea,
+[data-role="api-key-editor"] select,
 [data-role="page-editor"] select,
 [data-role="post-editor"] select {
   padding: 0.65rem;
@@ -511,6 +516,7 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
 [data-role="page-editor"] button,
 [data-role="tag-editor"] button,
 [data-role="navigation-editor"] button,
+[data-role="api-key-editor"] button,
 [data-role="post-create-form"] button,
 [data-role="page-create-form"] button,
 [data-role="tag-create-form"] button,
