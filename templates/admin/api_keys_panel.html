@@ -31,17 +31,17 @@
     <tbody>
       {% for key in content.keys %}
       <tr data-role="api-key-row" data-key-id="{{ key.id }}">
-        <td>{{ key.name }}</td>
-        <td><code>{{ key.prefix }}</code></td>
-        <td>
+        <td data-column="name">{{ key.name }}</td>
+        <td data-column="prefix"><code>{{ key.prefix }}</code></td>
+        <td data-column="scopes">
           <div data-role="badge-row">
           {% for scope in key.scopes %}
             <span data-role="badge">{{ scope }}</span>
           {% endfor %}
           </div>
         </td>
-        <td>{{ key.created_at }}</td>
-        <td>
+        <td data-column="created">{{ key.created_at }}</td>
+        <td data-column="last-used">
           {% if let Some(ts) = key.last_used_at %}
             {{ ts }}
           {% else %}
@@ -54,24 +54,7 @@
           </status-badge>
         </td>
         <td data-role="publishable-actions">
-          <form data-role="inline-form" method="post" action="{{ key.rotate_action }}"
-                data-on-submit__prevent="(@post(`{{ key.rotate_action }}`, { contentType: 'form' }))">
-            <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
-            <input type="hidden" name="status_filter" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
-            <input type="hidden" name="filter_search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
-            <input type="hidden" name="filter_scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
-            <input type="hidden" name="trail" value="{% if let Some(v) = &content.trail %}{{ v }}{% endif %}">
-            <button type="submit">Rotate</button>
-          </form>
-          <form data-role="inline-form" method="post" action="{{ key.revoke_action }}"
-                data-on-submit__prevent="(@post(`{{ key.revoke_action }}`, { contentType: 'form' }))">
-            <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
-            <input type="hidden" name="status_filter" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
-            <input type="hidden" name="filter_search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
-            <input type="hidden" name="filter_scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
-            <input type="hidden" name="trail" value="{% if let Some(v) = &content.trail %}{{ v }}{% endif %}">
-            <button type="submit" data-variant="danger">Revoke</button>
-          </form>
+{% include "admin/partials/api_key_row_actions.html" %}
         </td>
       </tr>
       {% endfor %}

@@ -1,0 +1,221 @@
+---
+source: tests/admin_panels.rs
+expression: rendered
+---
+<section data-role="panel" data-admin-panel="api-keys">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">API keys</h2>
+  </header>
+  <div data-role="panel-body">
+
+    <div data-role="panel-toolbar">
+      <a href="/api-keys/new">New API key</a>
+</div>
+
+
+
+    <status-filters role="list">
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+          
+          
+          <input type="hidden" name="search" value="test">
+          
+          
+          
+          <input type="hidden" name="tag" value="content_read">
+          
+          
+          
+          <button type="submit" data-role="status-filter" data-state="active">
+            All (5)
+          </button>
+        </form>
+      </status-filter>
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+          
+          <input type="hidden" name="status" value="active">
+          
+          
+          <input type="hidden" name="search" value="test">
+          
+          
+          
+          <input type="hidden" name="tag" value="content_read">
+          
+          
+          
+          <button type="submit" data-role="status-filter">
+            Active (4)
+          </button>
+        </form>
+      </status-filter>
+      
+      <status-filter role="listitem">
+        <form data-role="status-filter-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+          
+          <input type="hidden" name="status" value="revoked">
+          
+          
+          <input type="hidden" name="search" value="test">
+          
+          
+          
+          <input type="hidden" name="tag" value="content_read">
+          
+          
+          
+          <button type="submit" data-role="status-filter">
+            Revoked (1)
+          </button>
+        </form>
+      </status-filter>
+      
+    </status-filters>
+    <form data-role="filter-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+      
+      
+      
+      
+      
+      <label>
+        <span>Scope</span>
+        <select name="scope">
+          <option value="" >All scopes</option>
+          
+          <option value="content_read" selected>content_read (3)</option>
+          
+          <option value="content_write" >content_write (2)</option>
+          
+        </select>
+      </label>
+      
+      
+      <label>
+        <span>Search</span>
+        <input type="text" name="search" value="test">
+      </label>
+      <div data-role="filter-actions">
+        <button type="submit">Apply Filters</button>
+        
+        <button type="submit" name="clear" value="1" data-role="secondary">Clear</button>
+        
+      </div>
+    </form>
+
+
+
+  <table data-role="publishable-table">
+    <thead>
+      <tr>
+        <th scope="col" data-column="name">Name</th>
+        <th scope="col" data-column="prefix">Prefix</th>
+        <th scope="col" data-column="scopes">Scopes</th>
+        <th scope="col" data-column="created">Created</th>
+        <th scope="col" data-column="last-used">Last used</th>
+        <th scope="col" data-column="status">Status</th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr data-role="api-key-row" data-key-id="00000000-0000-0000-0000-000000000000">
+        <td data-column="name">test-key</td>
+        <td data-column="prefix"><code>sk_abc123</code></td>
+        <td data-column="scopes">
+          <div data-role="badge-row">
+          
+            <span data-role="badge">content_read</span>
+          
+            <span data-role="badge">content_write</span>
+          
+          </div>
+        </td>
+        <td data-column="created">2025-10-24T12:00:00Z</td>
+        <td data-column="last-used">
+          
+            2025-10-25T09:00:00Z
+          
+        </td>
+        <td data-column="status">
+          <status-badge data-status="active">
+            Active
+          </status-badge>
+        </td>
+        <td data-role="publishable-actions">
+              <div data-role="row-actions">
+                <form data-role="inline-form" method="post" action="/api-keys/00000000-0000-0000-0000-000000000000/rotate"
+                      data-on-submit__prevent="(@post(`/api-keys/00000000-0000-0000-0000-000000000000/rotate`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="00000000-0000-0000-0000-000000000000">
+                  <input type="hidden" name="cursor" value="cursor-token">
+                  <input type="hidden" name="status_filter" value="">
+                  <input type="hidden" name="filter_search" value="test">
+                  <input type="hidden" name="filter_scope" value="content_read">
+                  <input type="hidden" name="trail" value="~">
+                  <button type="submit">Rotate</button>
+                </form>
+                
+                <form data-role="inline-form" method="post" action="/api-keys/00000000-0000-0000-0000-000000000000/revoke"
+                      data-on-submit__prevent="(@post(`/api-keys/00000000-0000-0000-0000-000000000000/revoke`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="00000000-0000-0000-0000-000000000000">
+                  <input type="hidden" name="cursor" value="cursor-token">
+                  <input type="hidden" name="status_filter" value="">
+                  <input type="hidden" name="filter_search" value="test">
+                  <input type="hidden" name="filter_scope" value="content_read">
+                  <input type="hidden" name="trail" value="~">
+                  <button type="submit" data-variant="danger">Revoke</button>
+                </form>
+                
+              </div>
+        </td>
+      </tr>
+      
+      
+    </tbody>
+  </table>
+    <nav data-role="pagination">
+      <form data-role="pagination-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+        
+        
+        <input type="hidden" name="search" value="test">
+        
+        
+        
+        <input type="hidden" name="tag" value="content_read">
+        
+        
+        
+        
+          
+          
+          <button type="submit" data-role="prev">Previous</button>
+        
+      </form>
+      <form data-role="pagination-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+        
+        
+        <input type="hidden" name="search" value="test">
+        
+        
+        
+        <input type="hidden" name="tag" value="content_read">
+        
+        
+        
+        
+          
+          <input type="hidden" name="cursor" value="next-cursor">
+          
+          
+          <input type="hidden" name="trail" value="~.cursor-token">
+          
+          <button type="submit" data-role="next">Next</button>
+        
+      </form>
+    </nav>
+
+  </div>
+</section>

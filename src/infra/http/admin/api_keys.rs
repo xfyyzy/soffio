@@ -447,26 +447,26 @@ fn build_status_filters(
     revoked_count: u64,
 ) -> Vec<admin_views::AdminApiKeyStatusFilterView> {
     let active_count = total_count.saturating_sub(revoked_count);
-    let mut filters = Vec::new();
-    filters.push(admin_views::AdminApiKeyStatusFilterView {
-        status_key: None,
-        label: "All".to_string(),
-        count: total_count,
-        is_active: active.is_none(),
-    });
-    filters.push(admin_views::AdminApiKeyStatusFilterView {
-        status_key: Some("active".to_string()),
-        label: "Active".to_string(),
-        count: active_count,
-        is_active: active == Some("active"),
-    });
-    filters.push(admin_views::AdminApiKeyStatusFilterView {
-        status_key: Some("revoked".to_string()),
-        label: "Revoked".to_string(),
-        count: revoked_count,
-        is_active: active == Some("revoked"),
-    });
-    filters
+    vec![
+        admin_views::AdminApiKeyStatusFilterView {
+            status_key: None,
+            label: "All".to_string(),
+            count: total_count,
+            is_active: active.is_none(),
+        },
+        admin_views::AdminApiKeyStatusFilterView {
+            status_key: Some("active".to_string()),
+            label: "Active".to_string(),
+            count: active_count,
+            is_active: active == Some("active"),
+        },
+        admin_views::AdminApiKeyStatusFilterView {
+            status_key: Some("revoked".to_string()),
+            label: "Revoked".to_string(),
+            count: revoked_count,
+            is_active: active == Some("revoked"),
+        },
+    ]
 }
 
 async fn load_chrome(state: &AdminState) -> Result<admin_views::AdminChrome, ApiKeyHttpError> {

@@ -16,7 +16,8 @@
 {% endblock panel_controls %}
 
 {% block panel_content %}
-  <form method="post" action="{{ content.form_action }}">
+  <form method="post" action="{{ content.form_action }}"
+        data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
     <div data-role="form-grid">
       <label>
         <span>Name</span>

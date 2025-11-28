@@ -4,6 +4,7 @@ info:
   version: "0.1.0"
   description: |
     Authenticated JSON API exposed by the public Soffio service.
+    All endpoints require Bearer token authentication using an API key.
 servers:
   - url: http://127.0.0.1:3000
 security:
@@ -13,7 +14,7 @@ components:
     ApiKeyAuth:
       type: http
       scheme: bearer
-      bearerFormat: API key
+      bearerFormat: API key (sk_prefix_secret)
   schemas:
     Post:
       type: object
@@ -29,6 +30,9 @@ components:
           type: string
         body_markdown:
           type: string
+        summary_markdown:
+          type: string
+          nullable: true
         status:
           type: string
           enum: [draft, published, archived, error]
@@ -37,7 +41,22 @@ components:
         published_at:
           type: string
           format: date-time
-      required: [id, slug, title, excerpt, body_markdown, status, pinned]
+          nullable: true
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, slug, title, excerpt, body_markdown, status, pinned, created_at, updated_at]
     Page:
       type: object
       properties:
@@ -53,36 +72,231 @@ components:
         status:
           type: string
           enum: [draft, published, archived, error]
-      required: [id, slug, title, body_markdown, status]
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, slug, title, body_markdown, status, created_at, updated_at]
     Tag:
       type: object
       properties:
-        id: {type: string, format: uuid}
-        name: {type: string}
-        slug: {type: string}
-        pinned: {type: boolean}
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        pinned:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, name, slug, pinned, created_at, updated_at]
     NavigationItem:
       type: object
       properties:
-        id: {type: string, format: uuid}
-        label: {type: string}
-        destination_type: {type: string, enum: [internal, external]}
-        destination_url: {type: string}
-        sort_order: {type: integer}
-        visible: {type: boolean}
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        destination_type:
+          type: string
+          enum: [internal, external]
+        destination_url:
+          type: string
+          nullable: true
+        destination_page_id:
+          type: string
+          format: uuid
+          nullable: true
+        sort_order:
+          type: integer
+        visible:
+          type: boolean
+        open_in_new_tab:
+          type: boolean
+      required: [id, label, destination_type, sort_order, visible, open_in_new_tab]
+    Upload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        content_type:
+          type: string
+        size_bytes:
+          type: integer
+        checksum:
+          type: string
+        stored_path:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required: [id, filename, content_type, size_bytes, checksum, stored_path, created_at]
+    SiteSettings:
+      type: object
+      properties:
+        brand_title:
+          type: string
+        brand_href:
+          type: string
+        footer_copy:
+          type: string
+        homepage_size:
+          type: integer
+        admin_page_size:
+          type: integer
+        show_tag_aggregations:
+          type: boolean
+        show_month_aggregations:
+          type: boolean
+        tag_filter_limit:
+          type: integer
+        month_filter_limit:
+          type: integer
+        timezone:
+          type: string
+        meta_title:
+          type: string
+        meta_description:
+          type: string
+        og_title:
+          type: string
+        og_description:
+          type: string
+        public_site_url:
+          type: string
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        job_type:
+          type: string
+        state:
+          type: string
+          enum: [pending, running, done, failed, cancelled]
+        attempts:
+          type: integer
+        max_attempts:
+          type: integer
+        run_at:
+          type: string
+          format: date-time
+        done_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_error:
+          type: string
+          nullable: true
+    AuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        actor:
+          type: string
+        action:
+          type: string
+        entity:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CursorPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {}
+        next_cursor:
+          type: string
+          nullable: true
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        hint:
+          type: string
+          nullable: true
+      required: [code, message]
 paths:
   /api/v1/posts:
     get:
       summary: List posts
+      description: Returns paginated list of posts. Requires content_read scope.
       parameters:
         - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, published, archived, error]
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: tag
+          schema:
+            type: string
+        - in: query
+          name: month
+          schema:
+            type: string
+        - in: query
           name: cursor
-          schema: {type: string}
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
       responses:
         "200":
-          description: Post page
+          description: Paginated post list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CursorPage'
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden - missing required scope
     post:
       summary: Create post
+      description: Creates a new post. Requires content_write scope.
       requestBody:
         required: true
         content:
@@ -91,21 +305,108 @@ paths:
               type: object
               required: [title, excerpt, body_markdown]
               properties:
-                title: {type: string}
-                excerpt: {type: string}
-                body_markdown: {type: string}
-                status: {type: string, enum: [draft, published, archived, error]}
+                title:
+                  type: string
+                excerpt:
+                  type: string
+                body_markdown:
+                  type: string
+                summary_markdown:
+                  type: string
+                status:
+                  type: string
+                  enum: [draft, published, archived, error]
+                pinned:
+                  type: boolean
+                scheduled_at:
+                  type: string
+                  format: date-time
+                published_at:
+                  type: string
+                  format: date-time
+                archived_at:
+                  type: string
+                  format: date-time
       responses:
         "201":
-          description: Created
-  /api/v1/posts/{id}/status:
-    post:
-      summary: Update post status
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        "400":
+          description: Invalid request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+  /api/v1/posts/{slug}:
+    get:
+      summary: Get post by slug
+      description: Returns a single post. Requires content_read scope.
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        "404":
+          description: Post not found
+  /api/v1/posts/{id}:
+    put:
+      summary: Update post content
+      description: Updates post content fields. Requires content_write scope.
       parameters:
         - in: path
           name: id
           required: true
-          schema: {type: string, format: uuid}
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slug:
+                  type: string
+                title:
+                  type: string
+                excerpt:
+                  type: string
+                body_markdown:
+                  type: string
+                summary_markdown:
+                  type: string
+                pinned:
+                  type: boolean
+      responses:
+        "200":
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+  /api/v1/posts/{id}/status:
+    post:
+      summary: Update post status
+      description: Updates post status and timestamps. Requires content_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -114,16 +415,80 @@ paths:
               type: object
               required: [status]
               properties:
-                status: {type: string}
+                status:
+                  type: string
+                  enum: [draft, published, archived, error]
+                scheduled_at:
+                  type: string
+                  format: date-time
+                published_at:
+                  type: string
+                  format: date-time
+                archived_at:
+                  type: string
+                  format: date-time
       responses:
-        "200": {description: Updated}
+        "200":
+          description: Status updated
+  /api/v1/posts/{id}/tags:
+    put:
+      summary: Replace post tags
+      description: Replaces all tags on a post. Requires content_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tag_ids]
+              properties:
+                tag_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        "204":
+          description: Tags replaced
   /api/v1/pages:
     get:
       summary: List pages
+      description: Returns paginated list of pages. Requires content_read scope.
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, published, archived, error]
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: month
+          schema:
+            type: string
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
       responses:
-        "200": {description: Page list}
+        "200":
+          description: Page list
     post:
       summary: Create page
+      description: Creates a new page. Requires content_write scope.
       requestBody:
         required: true
         content:
@@ -132,17 +497,131 @@ paths:
               type: object
               required: [title, body_markdown]
               properties:
-                title: {type: string}
-                body_markdown: {type: string}
-                status: {type: string}
+                title:
+                  type: string
+                body_markdown:
+                  type: string
+                status:
+                  type: string
+                  enum: [draft, published, archived, error]
+                scheduled_at:
+                  type: string
+                  format: date-time
+                published_at:
+                  type: string
+                  format: date-time
+                archived_at:
+                  type: string
+                  format: date-time
       responses:
-        "201": {description: Created}
+        "201":
+          description: Created
+  /api/v1/pages/{slug}:
+    get:
+      summary: Get page by slug
+      description: Returns a single page. Requires content_read scope.
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Page details
+        "404":
+          description: Page not found
+  /api/v1/pages/{id}:
+    put:
+      summary: Update page content
+      description: Updates page content. Requires content_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slug:
+                  type: string
+                title:
+                  type: string
+                body_markdown:
+                  type: string
+      responses:
+        "200":
+          description: Page updated
+  /api/v1/pages/{id}/status:
+    post:
+      summary: Update page status
+      description: Updates page status. Requires content_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                scheduled_at:
+                  type: string
+                  format: date-time
+                published_at:
+                  type: string
+                  format: date-time
+                archived_at:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Status updated
   /api/v1/tags:
     get:
       summary: List tags
-      responses: {"200": {description: Tag list}}
+      description: Returns paginated list of tags. Requires content_read scope.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: month
+          schema:
+            type: string
+        - in: query
+          name: pinned
+          schema:
+            type: boolean
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tag list
     post:
       summary: Create tag
+      description: Creates a new tag. Requires tag_write scope.
       requestBody:
         required: true
         content:
@@ -151,15 +630,84 @@ paths:
               type: object
               required: [name]
               properties:
-                name: {type: string}
+                name:
+                  type: string
+                description:
+                  type: string
+                pinned:
+                  type: boolean
       responses:
-        "201": {description: Created}
+        "201":
+          description: Created
+  /api/v1/tags/{id}:
+    put:
+      summary: Update tag
+      description: Updates a tag. Requires tag_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                pinned:
+                  type: boolean
+      responses:
+        "200":
+          description: Tag updated
+    delete:
+      summary: Delete tag
+      description: Deletes a tag. Requires tag_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          description: Tag in use
   /api/v1/navigation:
     get:
       summary: List navigation items
-      responses: {"200": {description: Navigation list}}
+      description: Returns navigation items. Requires content_read scope.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: visible
+          schema:
+            type: boolean
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Navigation list
     post:
       summary: Create navigation item
+      description: Creates navigation item. Requires navigation_write scope.
       requestBody:
         required: true
         content:
@@ -168,40 +716,250 @@ paths:
               type: object
               required: [label, destination_type, sort_order]
               properties:
-                label: {type: string}
-                destination_type: {type: string}
-                destination_url: {type: string}
-                sort_order: {type: integer}
+                label:
+                  type: string
+                destination_type:
+                  type: string
+                  enum: [internal, external]
+                destination_page_id:
+                  type: string
+                  format: uuid
+                destination_url:
+                  type: string
+                sort_order:
+                  type: integer
+                visible:
+                  type: boolean
+                open_in_new_tab:
+                  type: boolean
       responses:
-        "201": {description: Created}
+        "201":
+          description: Created
+  /api/v1/navigation/{id}:
+    put:
+      summary: Update navigation item
+      description: Updates navigation item. Requires navigation_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                destination_type:
+                  type: string
+                destination_page_id:
+                  type: string
+                  format: uuid
+                destination_url:
+                  type: string
+                sort_order:
+                  type: integer
+                visible:
+                  type: boolean
+                open_in_new_tab:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+    delete:
+      summary: Delete navigation item
+      description: Deletes navigation item. Requires navigation_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
   /api/v1/uploads:
     get:
       summary: List uploads
-      responses: {"200": {description: Upload list}}
+      description: Returns paginated list of uploads. Requires content_read scope.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: content_type
+          schema:
+            type: string
+        - in: query
+          name: month
+          schema:
+            type: string
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Upload list
     post:
       summary: Upload file
+      description: Uploads a file. Requires upload_write scope.
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required: [file]
               properties:
                 file:
                   type: string
                   format: binary
       responses:
-        "201": {description: Uploaded}
+        "201":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+  /api/v1/uploads/{id}:
+    delete:
+      summary: Delete upload
+      description: Deletes an upload. Requires upload_write scope.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Upload not found
   /api/v1/site/settings:
     get:
       summary: Get site settings
-      responses: {"200": {description: Settings}}
+      description: Returns site settings. Requires content_read scope.
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteSettings'
     patch:
       summary: Update settings
+      description: Partially updates settings. Requires settings_write scope.
       requestBody:
         content:
           application/json:
             schema:
               type: object
+              properties:
+                brand_title:
+                  type: string
+                brand_href:
+                  type: string
+                footer_copy:
+                  type: string
+                homepage_size:
+                  type: integer
+                admin_page_size:
+                  type: integer
+                show_tag_aggregations:
+                  type: boolean
+                show_month_aggregations:
+                  type: boolean
+                tag_filter_limit:
+                  type: integer
+                month_filter_limit:
+                  type: integer
+                timezone:
+                  type: string
+                meta_title:
+                  type: string
+                meta_description:
+                  type: string
+                og_title:
+                  type: string
+                og_description:
+                  type: string
+                public_site_url:
+                  type: string
       responses:
-        "200": {description: Updated}
+        "200":
+          description: Updated
+  /api/v1/jobs:
+    get:
+      summary: List jobs
+      description: Returns paginated job list. Requires jobs_read scope.
+      parameters:
+        - in: query
+          name: state
+          schema:
+            type: string
+            enum: [pending, running, done, failed, cancelled]
+        - in: query
+          name: job_type
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job list
+  /api/v1/audit:
+    get:
+      summary: List audit logs
+      description: Returns paginated audit log. Requires audit_read scope.
+      parameters:
+        - in: query
+          name: actor
+          schema:
+            type: string
+        - in: query
+          name: action
+          schema:
+            type: string
+        - in: query
+          name: entity_type
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit log entries
