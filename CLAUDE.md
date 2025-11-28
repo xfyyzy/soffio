@@ -77,7 +77,31 @@ Fall back to plain `cargo`/POSIX tools only if necessary.
 
 ---
 
-## 3) Repository Boundaries & Layout
+## 3) Development Environment
+
+**Database**
+
+Development database is managed by Docker Compose:
+
+```bash
+docker compose -f docker-compose-dev.yml up -d
+```
+
+Connection URL: `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`
+
+**SQLx**
+
+Prefer compile-time checked macros (`sqlx::query!`, `sqlx::query_as!`, `sqlx::query_scalar!`) over runtime functions (`sqlx::query`, `sqlx::query_as`). For complex dynamic queries, `QueryBuilder` is acceptable.
+
+After modifying queries, regenerate compile-time checked query metadata:
+
+```bash
+cargo sqlx prepare --workspace --database-url postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev -- --all-targets
+```
+
+---
+
+## 4) Repository Boundaries & Layout
 
 Adopt/assume the following layers; **do not** cross them implicitly:
 
@@ -93,17 +117,20 @@ Rules:
 
 ---
 
-## 4) Operating Loop (plan → change → verify → deliver)
+## 5) Operating Loop (plan → change → verify → deliver)
 
-### 4.1 Plan (Context first, minimal scope)
+### 5.1 Plan (Context first, minimal scope)
 
+- **Pattern reuse first:** Before designing a solution, search the codebase for existing patterns solving similar problems. Ensure consistent solutions for identical problems. Always prefer reusing shared code over duplicating logic. If shared code doesn't fit your need, extend it rather than reimplementing.
+- **Research when uncertain:** When facing complex problems or lacking information, proactively use web search to find solutions or verify uncertain details. Combine search results with extended thinking for deeper analysis.
+- **Confirm before executing:** Always present your proposed approach first and wait for user confirmation before implementation.
 - Locate targets with zero-cost discovery (`rg`, `fd`, glob patterns)
 - Preview before editing — read and understand the full context
 - Draft a **Minimal Change Plan**: files, functions, invariants, tests to add/adjust
 - Use extended thinking to evaluate alternatives when multiple approaches exist
 - If ambiguity blocks correctness, ask precise questions; otherwise proceed conservatively and record assumptions
 
-### 4.2 Change (Small, explicit, reversible)
+### 5.2 Change (Small, explicit, reversible)
 
 - Keep diffs tight and focused on a single concern
 - Adding deps:
@@ -111,7 +138,7 @@ Rules:
   `cargo upgrade --incompatible` (ensure latest version)
   Do **not** raise MSRV; keep `rust-version` pinned in `Cargo.toml` unless explicitly approved
 
-### 4.3 Verify (gate everything; stop on first failure)
+### 5.3 Verify (gate everything; stop on first failure)
 
 Run the sequence below:
 
@@ -126,13 +153,13 @@ Run the sequence below:
    `cargo outdated -wR` (report only; do not upgrade unless asked)
 5. **Macros (if touched)** — `cargo expand -p <crate> --lib` and sanity-scan the output
 
-### 4.4 Deliver (clear, auditable)
+### 5.4 Deliver (clear, auditable)
 
-Use a single atomic commit when possible. Use the template in §9.
+Use a single atomic commit when possible. Use the template in §10.
 
 ---
 
-## 5) Idiomatic Rust Rules (enforced)
+## 6) Idiomatic Rust Rules (enforced)
 
 **Types & invariants**
 
@@ -176,7 +203,7 @@ Use a single atomic commit when possible. Use the template in §9.
 
 ---
 
-## 6) Dependency Policy (security, minimalism, MSRV)
+## 7) Dependency Policy (security, minimalism, MSRV)
 
 - Prefer the standard library and existing utilities before adding a new crate.
 - **Add** deps only when necessary; with minimal features; `cargo upgrade --incompatible` (ensure latest version)
@@ -186,7 +213,7 @@ Use a single atomic commit when possible. Use the template in §9.
 
 ---
 
-## 7) Observability (structured, minimal, safe)
+## 8) Observability (structured, minimal, safe)
 
 - Emit structured logs at **edge** boundaries; do not log secrets or PII.
 - On every new error path, include: `op`, `target`, `correlation_id`, `elapsed_ms`, `result`, `error_code?`, `hint?`.
@@ -195,7 +222,7 @@ Use a single atomic commit when possible. Use the template in §9.
 
 ---
 
-## 8) Code Review Checklist (Claude-specific)
+## 9) Code Review Checklist (Claude-specific)
 
 Before proposing any change, verify:
 
@@ -209,7 +236,7 @@ Before proposing any change, verify:
 
 ---
 
-## 9) Templates (commit)
+## 10) Templates (commit)
 
 **Commit message**
 
@@ -224,7 +251,7 @@ Tests: <added/updated tests; feature matrix?>
 
 ---
 
-## 10) Clarifications, Escalation & Stop Rules
+## 11) Clarifications, Escalation & Stop Rules
 
 - Ask when necessary for correctness. Provide: the proposed minimal diff, the invariant at risk, and the decision
   needed.
