@@ -1,0 +1,44 @@
+<section data-role="scope-picker">
+  <header data-role="scope-picker-header">
+    <h3 data-role="scope-picker-title">Scopes</h3>
+    {% if content.scope_picker.selected.is_empty() %}
+    <span data-role="scope-picker-hint">Select permissions for this API key.</span>
+    {% endif %}
+  </header>
+  <div data-role="scope-selected">
+    <h4 data-role="scope-subtitle">Selected</h4>
+    {% if content.scope_picker.selected.is_empty() %}
+    <p data-role="muted">No scopes selected</p>
+    {% else %}
+    <div data-role="scope-chip-list">
+      {% for scope in content.scope_picker.selected %}
+      <button type="button" data-role="scope-chip" data-selected="true" aria-pressed="true"
+        onclick="this.closest('section').querySelector(`input[value='{{ scope.value }}']`).click()">
+        <span data-role="scope-chip-label">{{ scope.label }}</span>
+        <span data-role="scope-chip-value">{{ scope.value }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div data-role="scope-options">
+    <h4 data-role="scope-subtitle">Available</h4>
+    {% if content.scope_picker.available.is_empty() %}
+    <p data-role="muted">All scopes selected</p>
+    {% else %}
+    <div data-role="scope-chip-grid">
+      {% for scope in content.scope_picker.available %}
+      <label data-role="scope-chip" data-selected="false">
+        <input type="checkbox" name="scopes" value="{{ scope.value }}" form="api-key-form" hidden>
+        <span data-role="scope-chip-label">{{ scope.label }}</span>
+        <span data-role="scope-chip-value">{{ scope.value }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {# Hidden inputs to preserve already selected scopes #}
+  {% for scope in content.scope_picker.selected %}
+  <input type="checkbox" name="scopes" value="{{ scope.value }}" form="api-key-form" checked hidden>
+  {% endfor %}
+</section>

@@ -5,7 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde::Deserialize;
-use time::{OffsetDateTime, format_description::well_known::Rfc3339};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::application::api_keys::{ApiKeyError, ApiKeyIssued, IssueApiKeyCommand};
@@ -39,7 +39,7 @@ pub struct CreateApiKeyForm {
     pub description: Option<String>,
     #[serde(default)]
     pub scopes: Vec<String>,
-    pub expires_at: Option<String>,
+    pub expires_in: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -112,10 +112,7 @@ pub async fn admin_api_key_new_submit(
         }
     };
 
-    let expires_at = match parse_optional_time(form.expires_at.as_deref()) {
-        Ok(value) => value,
-        Err(err) => return err.into_response(),
-    };
+    let expires_at = parse_expires_in(form.expires_in.as_deref());
 
     let actor = "admin:api-keys";
     let issued = match state
@@ -150,10 +147,7 @@ pub async fn admin_api_key_create(
         }
     };
 
-    let expires_at = match parse_optional_time(form.expires_at.as_deref()) {
-        Ok(value) => value,
-        Err(err) => return err.into_response(),
-    };
+    let expires_at = parse_expires_in(form.expires_in.as_deref());
 
     let actor = "admin:api-keys";
     let issued = match state
@@ -269,11 +263,10 @@ async fn build_new_page(
     let view = admin_views::AdminApiKeyNewView {
         heading: "New API key".to_string(),
         form_action: "/api-keys/new".to_string(),
-        back_href: "/api-keys".to_string(),
         name: None,
         description: None,
-        expires_at: None,
-        available_scopes: scope_options(),
+        expires_in_options: expires_in_options(None),
+        scope_picker: build_scope_picker(&[]),
         new_token: issued.map(|i| i.token),
     };
 
@@ -368,7 +361,6 @@ async fn build_panel_view(
     let total_count = page.total;
     let revoked_count = page.revoked;
     let new_token = issued.as_ref().map(|i| i.token.clone());
-    let has_keys = !keys.is_empty();
 
     let mut previous_history = cursor_state.clone_history();
     let previous_token = previous_history.pop();
@@ -438,7 +430,6 @@ async fn build_panel_view(
         next_page_state,
         available_scopes: scope_options(),
         new_token,
-        has_keys,
     })
 }
 
@@ -500,17 +491,6 @@ fn parse_scopes(values: &[String]) -> Result<Vec<ApiScope>, ApiKeyHttpError> {
     Ok(scopes)
 }
 
-fn parse_optional_time(value: Option<&str>) -> Result<Option<OffsetDateTime>, ApiKeyHttpError> {
-    match value {
-        Some(raw) => OffsetDateTime::parse(raw, &Rfc3339)
-            .map(Some)
-            .map_err(|err| {
-                ApiKeyHttpError::bad_request_with_hint("Invalid expires_at", err.to_string())
-            }),
-        None => Ok(None),
-    }
-}
-
 fn scope_options() -> Vec<admin_views::AdminApiScopeOption> {
     vec![
         ("content_read", "Content read"),
@@ -530,6 +510,55 @@ fn scope_options() -> Vec<admin_views::AdminApiScopeOption> {
     .collect()
 }
 
+fn expires_in_options(selected: Option<&str>) -> Vec<admin_views::AdminApiKeyExpiresInOption> {
+    vec![
+        ("", "Never expires"),
+        ("30d", "30 days"),
+        ("90d", "90 days"),
+        ("180d", "180 days"),
+        ("1y", "1 year"),
+    ]
+    .into_iter()
+    .map(|(value, label)| admin_views::AdminApiKeyExpiresInOption {
+        value: value.to_string(),
+        label: label.to_string(),
+        selected: selected == Some(value) || (selected.is_none() && value.is_empty()),
+    })
+    .collect()
+}
+
+fn build_scope_picker(selected_scopes: &[String]) -> admin_views::AdminApiKeyScopePickerView {
+    let all_scopes = scope_options();
+    let selected: Vec<admin_views::AdminApiScopeOption> = all_scopes
+        .iter()
+        .filter(|s| selected_scopes.contains(&s.value))
+        .cloned()
+        .collect();
+    let available: Vec<admin_views::AdminApiScopeOption> = all_scopes
+        .iter()
+        .filter(|s| !selected_scopes.contains(&s.value))
+        .cloned()
+        .collect();
+    admin_views::AdminApiKeyScopePickerView {
+        selected,
+        available,
+        selected_values: selected_scopes.to_vec(),
+    }
+}
+
+fn parse_expires_in(value: Option<&str>) -> Option<OffsetDateTime> {
+    use time::Duration;
+    let now = OffsetDateTime::now_utc();
+    match value {
+        None | Some("") => None, // Never expires
+        Some("30d") => Some(now + Duration::days(30)),
+        Some("90d") => Some(now + Duration::days(90)),
+        Some("180d") => Some(now + Duration::days(180)),
+        Some("1y") => Some(now + Duration::days(365)),
+        _ => None, // Unknown value, treat as never expires
+    }
+}
+
 #[derive(Debug)]
 struct ApiKeyHttpError(ApiErrorKind);
 
@@ -542,10 +571,6 @@ enum ApiErrorKind {
 impl ApiKeyHttpError {
     fn bad_request(message: &'static str) -> Self {
         Self(ApiErrorKind::BadRequest(message, None))
-    }
-
-    fn bad_request_with_hint(message: &'static str, hint: String) -> Self {
-        Self(ApiErrorKind::BadRequest(message, Some(hint)))
     }
 
     fn from_api(err: ApiKeyError) -> Self {

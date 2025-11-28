@@ -1,7 +1,7 @@
 {% extends "admin/layouts/panel.html" %}
 
 {% block panel_id %}api-key-new{% endblock %}
-{% block panel_heading %}New API key{% endblock %}
+{% block panel_heading %}{{ content.heading }}{% endblock %}
 
 {% block panel_toolbar %}{% endblock panel_toolbar %}
 
@@ -10,42 +10,33 @@
   <div data-role="card" data-variant="highlight">
     <p><strong>New key</strong></p>
     <p style="word-break: break-all;">{{ token }}</p>
-    <p class="muted">Copy now — it won’t be shown again.</p>
+    <p class="muted">Copy now — it won't be shown again.</p>
   </div>
 {% endif %}
 {% endblock panel_controls %}
 
 {% block panel_content %}
-  <form method="post" action="{{ content.form_action }}"
+  <form id="api-key-form" method="post" action="{{ content.form_action }}"
         data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
-    <div data-role="form-grid">
-      <label>
-        <span>Name</span>
-        <input type="text" name="name" value="{% if let Some(v) = &content.name %}{{ v }}{% endif %}" required>
-      </label>
-      <label>
-        <span>Description</span>
-        <input type="text" name="description" value="{% if let Some(v) = &content.description %}{{ v }}{% endif %}" placeholder="Optional purpose">
-      </label>
-      <label>
-        <span>Expires at (RFC3339)</span>
-        <input type="text" name="expires_at" value="{% if let Some(v) = &content.expires_at %}{{ v }}{% endif %}" placeholder="2025-12-31T23:59:59Z">
-      </label>
-    </div>
-    <fieldset>
-      <legend>Scopes</legend>
-      <div data-role="pill-group">
-        {% for scope in content.available_scopes %}
-        <label data-role="pill">
-          <input type="checkbox" name="scopes" value="{{ scope.value }}">
-          <span>{{ scope.label }}</span>
-        </label>
+    <label>
+      <span>Name</span>
+      <input type="text" name="name" value="{% if let Some(v) = &content.name %}{{ v }}{% endif %}" required>
+    </label>
+    <label>
+      <span>Description</span>
+      <textarea name="description" rows="3" placeholder="Optional purpose">{% if let Some(v) = &content.description %}{{ v }}{% endif %}</textarea>
+    </label>
+    <label>
+      <span>Expires in</span>
+      <select name="expires_in">
+        {% for option in content.expires_in_options %}
+        <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
         {% endfor %}
-      </div>
-    </fieldset>
-    <div data-role="actions">
-      <button type="submit" data-variant="primary">Create key</button>
-      <a href="{{ content.back_href }}" data-role="secondary">Back to list</a>
-    </div>
+      </select>
+    </label>
   </form>
+  {% include "admin/api_key_scope_picker.html" %}
+  <div data-role="form-actions">
+    <button type="submit" form="api-key-form">Create key</button>
+  </div>
 {% endblock panel_content %}

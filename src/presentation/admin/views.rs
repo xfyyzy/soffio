@@ -942,7 +942,6 @@ pub struct AdminApiKeyListView {
     pub next_page_state: Option<AdminApiKeyPaginationState>,
     pub available_scopes: Vec<AdminApiScopeOption>,
     pub new_token: Option<String>,
-    pub has_keys: bool,
 }
 
 #[derive(Template)]
@@ -958,14 +957,27 @@ pub struct AdminApiKeysPanelTemplate {
 }
 
 #[derive(Clone)]
+pub struct AdminApiKeyExpiresInOption {
+    pub value: String,
+    pub label: String,
+    pub selected: bool,
+}
+
+#[derive(Clone)]
+pub struct AdminApiKeyScopePickerView {
+    pub selected: Vec<AdminApiScopeOption>,
+    pub available: Vec<AdminApiScopeOption>,
+    pub selected_values: Vec<String>,
+}
+
+#[derive(Clone)]
 pub struct AdminApiKeyNewView {
     pub heading: String,
     pub form_action: String,
-    pub back_href: String,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub expires_at: Option<String>,
-    pub available_scopes: Vec<AdminApiScopeOption>,
+    pub expires_in_options: Vec<AdminApiKeyExpiresInOption>,
+    pub scope_picker: AdminApiKeyScopePickerView,
     pub new_token: Option<String>,
 }
 

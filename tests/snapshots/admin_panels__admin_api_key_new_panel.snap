@@ -14,48 +14,74 @@ expression: rendered
 
 
 
-  <form method="post" action="/api-keys/new"
+  <form id="api-key-form" method="post" action="/api-keys/new"
         data-on-submit__prevent="(@post(`/api-keys/new`, { contentType: 'form' }))">
-    <div data-role="form-grid">
-      <label>
-        <span>Name</span>
-        <input type="text" name="name" value="" required>
-      </label>
-      <label>
-        <span>Description</span>
-        <input type="text" name="description" value="" placeholder="Optional purpose">
-      </label>
-      <label>
-        <span>Expires at (RFC3339)</span>
-        <input type="text" name="expires_at" value="" placeholder="2025-12-31T23:59:59Z">
-      </label>
-    </div>
-    <fieldset>
-      <legend>Scopes</legend>
-      <div data-role="pill-group">
+    <label>
+      <span>Name</span>
+      <input type="text" name="name" value="" required>
+    </label>
+    <label>
+      <span>Description</span>
+      <textarea name="description" rows="3" placeholder="Optional purpose"></textarea>
+    </label>
+    <label>
+      <span>Expires in</span>
+      <select name="expires_in">
         
-        <label data-role="pill">
-          <input type="checkbox" name="scopes" value="content_read">
-          <span>Content read</span>
-        </label>
+        <option value="" selected>Never expires</option>
         
-        <label data-role="pill">
-          <input type="checkbox" name="scopes" value="content_write">
-          <span>Content write</span>
-        </label>
+        <option value="30d" >30 days</option>
         
-        <label data-role="pill">
-          <input type="checkbox" name="scopes" value="tag_write">
-          <span>Tag write</span>
-        </label>
+        <option value="90d" >90 days</option>
         
-      </div>
-    </fieldset>
-    <div data-role="actions">
-      <button type="submit" data-variant="primary">Create key</button>
-      <a href="/api-keys" data-role="secondary">Back to list</a>
-    </div>
+      </select>
+    </label>
   </form>
+  <section data-role="scope-picker">
+  <header data-role="scope-picker-header">
+    <h3 data-role="scope-picker-title">Scopes</h3>
+    
+    <span data-role="scope-picker-hint">Select permissions for this API key.</span>
+    
+  </header>
+  <div data-role="scope-selected">
+    <h4 data-role="scope-subtitle">Selected</h4>
+    
+    <p data-role="muted">No scopes selected</p>
+    
+  </div>
+  <div data-role="scope-options">
+    <h4 data-role="scope-subtitle">Available</h4>
+    
+    <div data-role="scope-chip-grid">
+      
+      <label data-role="scope-chip" data-selected="false">
+        <input type="checkbox" name="scopes" value="content_read" form="api-key-form" hidden>
+        <span data-role="scope-chip-label">Content read</span>
+        <span data-role="scope-chip-value">content_read</span>
+      </label>
+      
+      <label data-role="scope-chip" data-selected="false">
+        <input type="checkbox" name="scopes" value="content_write" form="api-key-form" hidden>
+        <span data-role="scope-chip-label">Content write</span>
+        <span data-role="scope-chip-value">content_write</span>
+      </label>
+      
+      <label data-role="scope-chip" data-selected="false">
+        <input type="checkbox" name="scopes" value="tag_write" form="api-key-form" hidden>
+        <span data-role="scope-chip-label">Tag write</span>
+        <span data-role="scope-chip-value">tag_write</span>
+      </label>
+      
+    </div>
+    
+  </div>
+  
+  
+</section>
+  <div data-role="form-actions">
+    <button type="submit" form="api-key-form">Create key</button>
+  </div>
 
   </div>
 </section>

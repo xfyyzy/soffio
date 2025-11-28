@@ -717,7 +717,6 @@ fn snapshot_admin_api_keys_panel() {
             },
         ],
         new_token: None,
-        has_keys: true,
     };
 
     let template = AdminApiKeysPanelTemplate { content };
@@ -730,24 +729,43 @@ fn snapshot_admin_api_key_new_panel() {
     let content = AdminApiKeyNewView {
         heading: "New API key".into(),
         form_action: "/api-keys/new".into(),
-        back_href: "/api-keys".into(),
         name: None,
         description: None,
-        expires_at: None,
-        available_scopes: vec![
-            AdminApiScopeOption {
-                value: "content_read".into(),
-                label: "Content read".into(),
+        expires_in_options: vec![
+            AdminApiKeyExpiresInOption {
+                value: "".into(),
+                label: "Never expires".into(),
+                selected: true,
             },
-            AdminApiScopeOption {
-                value: "content_write".into(),
-                label: "Content write".into(),
+            AdminApiKeyExpiresInOption {
+                value: "30d".into(),
+                label: "30 days".into(),
+                selected: false,
             },
-            AdminApiScopeOption {
-                value: "tag_write".into(),
-                label: "Tag write".into(),
+            AdminApiKeyExpiresInOption {
+                value: "90d".into(),
+                label: "90 days".into(),
+                selected: false,
             },
         ],
+        scope_picker: AdminApiKeyScopePickerView {
+            selected: Vec::new(),
+            available: vec![
+                AdminApiScopeOption {
+                    value: "content_read".into(),
+                    label: "Content read".into(),
+                },
+                AdminApiScopeOption {
+                    value: "content_write".into(),
+                    label: "Content write".into(),
+                },
+                AdminApiScopeOption {
+                    value: "tag_write".into(),
+                    label: "Tag write".into(),
+                },
+            ],
+            selected_values: Vec::new(),
+        },
         new_token: None,
     };
 
