@@ -439,7 +439,7 @@ impl<C> PageRequest<C> {
 }
 
 /// Cursor-aware page result.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CursorPage<T> {
     pub items: Vec<T>,
     pub next_cursor: Option<String>,

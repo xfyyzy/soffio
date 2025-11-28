@@ -37,7 +37,7 @@ bytes = "1.11.0"
 lol_html = "2.7"
 http-body-util = "0.1"
 sha2 = "0.10"
-chrono-tz = "0.10.4"
+chrono-tz = { version = "0.10.4", features = ["serde"] }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 futures = "0.3"
 axum-extra = { version = "0.12.1", features = ["multipart"] }
@@ -47,9 +47,11 @@ toml = { version = "0.9", features = ["parse", "display"] }
 hex = "0.4"
 dashmap = "6.1"
 tempfile = "3.23"
+subtle = "2.5"
 
 [dev-dependencies]
 insta = { version = "1.43", features = ["glob"] }
+tower = "0.5"
 
 [build-dependencies]
 walkdir = "2"

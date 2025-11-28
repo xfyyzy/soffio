@@ -1,5 +1,6 @@
 //! Postgres-backed repository implementations.
 
+mod api_keys;
 mod audit;
 mod jobs;
 mod navigation;

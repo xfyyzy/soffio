@@ -1,0 +1,8 @@
+{% extends "admin/shell.html" %}
+
+{% block content %}
+{% let content = view.content %}
+<admin-content data-admin-panel="api-keys" data-admin-content>
+  {% include "admin/api_keys_panel.html" %}
+</admin-content>
+{% endblock %}

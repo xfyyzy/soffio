@@ -90,6 +90,17 @@ window_seconds = 60
 # CLI: --rate-limit-max-requests
 max_requests = 180
 
+[api_rate_limit]
+# Window size (seconds) for headless API keys.
+# Env: SOFFIO__API_RATE_LIMIT__WINDOW_SECONDS
+# CLI: --api-rate-limit-window-seconds
+window_seconds = 60
+
+# Maximum requests per key within the window.
+# Env: SOFFIO__API_RATE_LIMIT__MAX_REQUESTS
+# CLI: --api-rate-limit-max-requests
+max_requests = 120
+
 [scheduler]
 # Background job cadence in seconds.
 # Env: SOFFIO__SCHEDULER__CADENCE_SECONDS

@@ -24,6 +24,8 @@ const DEFAULT_GRACEFUL_SHUTDOWN_SECS: u64 = 30;
 const DEFAULT_UPLOAD_DIR: &str = "uploads";
 const DEFAULT_RATE_LIMIT_WINDOW_SECS: u64 = 60;
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS: u64 = 180;
+const DEFAULT_API_RATE_LIMIT_WINDOW_SECS: u64 = 60;
+const DEFAULT_API_RATE_LIMIT_MAX_REQUESTS: u64 = 120;
 const DEFAULT_SCHEDULER_CADENCE_SECS: u64 = 300;
 const DEFAULT_UPLOAD_REQUEST_LIMIT_BYTES: u64 = 10 * 1024 * 1024;
 const DEFAULT_DB_HTTP_MAX_CONNECTIONS: u32 = 8;
@@ -211,6 +213,14 @@ pub struct ServeOverrides {
     #[arg(long = "rate-limit-max-requests", value_name = "COUNT")]
     pub rate_limit_max_requests: Option<u64>,
 
+    /// Override the API rate limit window size.
+    #[arg(long = "api-rate-limit-window-seconds", value_name = "SECONDS")]
+    pub api_rate_limit_window_seconds: Option<u64>,
+
+    /// Override the API rate limit request ceiling.
+    #[arg(long = "api-rate-limit-max-requests", value_name = "COUNT")]
+    pub api_rate_limit_max_requests: Option<u64>,
+
     /// Override the background scheduler cadence.
     #[arg(long = "scheduler-cadence-seconds", value_name = "SECONDS")]
     pub scheduler_cadence_seconds: Option<u64>,
@@ -256,6 +266,7 @@ pub struct Settings {
     pub uploads: UploadSettings,
     pub cache: CacheSettings,
     pub rate_limit: RateLimitSettings,
+    pub api_rate_limit: ApiRateLimitSettings,
     pub scheduler: SchedulerSettings,
 }
 
@@ -320,6 +331,12 @@ pub struct RateLimitSettings {
 }
 
 #[derive(Debug, Clone)]
+pub struct ApiRateLimitSettings {
+    pub window_seconds: NonZeroU32,
+    pub max_requests: NonZeroU32,
+}
+
+#[derive(Debug, Clone)]
 pub struct SchedulerSettings {
     pub cadence: Duration,
 }
@@ -377,6 +394,7 @@ struct RawSettings {
     uploads: RawUploadSettings,
     cache: RawCacheSettings,
     rate_limit: RawRateLimitSettings,
+    api_rate_limit: RawApiRateLimitSettings,
     scheduler: RawSchedulerSettings,
 }
 
@@ -429,6 +447,12 @@ impl RawSettings {
         }
         if let Some(max) = overrides.rate_limit_max_requests {
             self.rate_limit.max_requests = Some(max);
+        }
+        if let Some(window) = overrides.api_rate_limit_window_seconds {
+            self.api_rate_limit.window_seconds = Some(window);
+        }
+        if let Some(max) = overrides.api_rate_limit_max_requests {
+            self.api_rate_limit.max_requests = Some(max);
         }
         if let Some(cadence) = overrides.scheduler_cadence_seconds {
             self.scheduler.cadence_seconds = Some(cadence);
@@ -487,6 +511,7 @@ impl Settings {
             uploads,
             cache,
             rate_limit,
+            api_rate_limit,
             scheduler,
         } = raw;
 
@@ -498,6 +523,7 @@ impl Settings {
         let uploads = build_upload_settings(uploads)?;
         let cache = build_cache_settings(cache);
         let rate_limit = build_rate_limit_settings(rate_limit)?;
+        let api_rate_limit = build_api_rate_limit_settings(api_rate_limit)?;
         let scheduler = build_scheduler_settings(scheduler)?;
 
         Ok(Self {
@@ -509,6 +535,7 @@ impl Settings {
             uploads,
             cache,
             rate_limit,
+            api_rate_limit,
             scheduler,
         })
     }
@@ -718,6 +745,25 @@ fn build_rate_limit_settings(
     })
 }
 
+fn build_api_rate_limit_settings(
+    rate_limit: RawApiRateLimitSettings,
+) -> Result<ApiRateLimitSettings, LoadError> {
+    let window_seconds_val = rate_limit
+        .window_seconds
+        .unwrap_or(DEFAULT_API_RATE_LIMIT_WINDOW_SECS);
+    let window_seconds = non_zero_u32(window_seconds_val, "api_rate_limit.window_seconds")?;
+
+    let max_requests_val = rate_limit
+        .max_requests
+        .unwrap_or(DEFAULT_API_RATE_LIMIT_MAX_REQUESTS);
+    let max_requests = non_zero_u32(max_requests_val, "api_rate_limit.max_requests")?;
+
+    Ok(ApiRateLimitSettings {
+        window_seconds,
+        max_requests,
+    })
+}
+
 fn build_scheduler_settings(
     scheduler: RawSchedulerSettings,
 ) -> Result<SchedulerSettings, LoadError> {
@@ -796,6 +842,13 @@ struct RawRenderSettings {
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(default)]
 struct RawRateLimitSettings {
+    window_seconds: Option<u64>,
+    max_requests: Option<u64>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
+struct RawApiRateLimitSettings {
     window_seconds: Option<u64>,
     max_requests: Option<u64>,
 }

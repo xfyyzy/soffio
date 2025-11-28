@@ -1,0 +1,107 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE api_keys\n            SET prefix = $1,\n                hashed_secret = $2,\n                revoked_at = NULL,\n                expires_at = NULL,\n                last_used_at = NULL,\n                created_at = now()\n            WHERE id = $3\n            RETURNING id, name, description, prefix, hashed_secret, scopes as \"scopes: Vec<ApiScope>\", expires_at, revoked_at, last_used_at, created_by, created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "prefix",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "hashed_secret",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 5,
+        "name": "scopes: Vec<ApiScope>",
+        "type_info": {
+          "Custom": {
+            "name": "api_scope[]",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "api_scope",
+                  "kind": {
+                    "Enum": [
+                      "content_read",
+                      "content_write",
+                      "tag_write",
+                      "navigation_write",
+                      "upload_write",
+                      "settings_write",
+                      "jobs_read",
+                      "audit_read"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "revoked_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "last_used_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_by",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Bytea",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "86d8f9f5ad801362e13a9e3a549498bfe77c3571fae857c5c4d2657b19aba9ba"
+}

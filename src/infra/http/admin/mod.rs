@@ -1,3 +1,4 @@
+mod api_keys;
 mod audit;
 mod cache;
 mod dashboard;
@@ -140,6 +141,16 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/jobs/{id}/retry", post(jobs::admin_job_retry))
         .route("/jobs/{id}/cancel", post(jobs::admin_job_cancel))
         .route("/audit", get(audit::admin_audit))
+        .route("/api-keys", get(api_keys::admin_api_keys))
+        .route("/api-keys/create", post(api_keys::admin_api_key_create))
+        .route(
+            "/api-keys/{id}/revoke",
+            post(api_keys::admin_api_key_revoke),
+        )
+        .route(
+            "/api-keys/{id}/rotate",
+            post(api_keys::admin_api_key_rotate),
+        )
         .route("/_health/db", get(health::admin_health))
         .route("/cache/invalidate", post(cache::invalidate_cache))
         .route("/static/admin/{*path}", get(assets::serve_admin))

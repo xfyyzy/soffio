@@ -473,6 +473,7 @@ checksum = "a6139a8597ed92cf816dfb33f5dd6cf0bb93a6adc938f11039f371bc5bcd26c3"
 dependencies = [
  "chrono",
  "phf 0.12.1",
+ "serde",
 ]
 
 [[package]]
@@ -2744,12 +2745,14 @@ dependencies = [
  "sha2",
  "slug",
  "sqlx",
+ "subtle",
  "syntect",
  "tempfile",
  "thiserror 2.0.17",
  "time",
  "tokio",
  "toml",
+ "tower",
  "tracing",
  "tracing-error",
  "tracing-subscriber",

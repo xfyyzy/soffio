@@ -881,6 +881,49 @@ pub struct AdminPostTagSelectionStoreTemplate {
     pub picker: AdminPostTagPickerView,
 }
 
+#[derive(Clone)]
+pub struct AdminApiScopeOption {
+    pub value: String,
+    pub label: String,
+}
+
+#[derive(Clone)]
+pub struct AdminApiKeyRowView {
+    pub id: String,
+    pub name: String,
+    pub prefix: String,
+    pub scopes: Vec<String>,
+    pub created_at: String,
+    pub last_used_at: Option<String>,
+    pub expires_at: Option<String>,
+    pub revoked: bool,
+    pub description: Option<String>,
+    pub revoke_action: String,
+    pub rotate_action: String,
+}
+
+#[derive(Clone)]
+pub struct AdminApiKeyListView {
+    pub heading: String,
+    pub keys: Vec<AdminApiKeyRowView>,
+    pub create_action: String,
+    pub available_scopes: Vec<AdminApiScopeOption>,
+    pub new_token: Option<String>,
+    pub has_keys: bool,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_keys.html")]
+pub struct AdminApiKeysTemplate {
+    pub view: AdminLayout<AdminApiKeyListView>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_keys_panel.html")]
+pub struct AdminApiKeysPanelTemplate {
+    pub content: AdminApiKeyListView,
+}
+
 #[derive(Template)]
 #[template(path = "admin/page_edit.html")]
 pub struct AdminPageEditTemplate {

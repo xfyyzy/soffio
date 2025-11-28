@@ -37,7 +37,7 @@ use crate::{
 };
 
 use super::{
-    DATASTAR_REQUEST_HEADER, db_health_response,
+    DATASTAR_REQUEST_HEADER, RouterState, db_health_response,
     middleware::{cache_public_responses, log_responses},
 };
 
@@ -51,8 +51,9 @@ pub struct HttpState {
     pub upload_storage: Arc<UploadStorage>,
 }
 
-pub fn build_router(state: HttpState) -> Router {
-    let cache = state.cache.clone();
+pub fn build_router(state: RouterState) -> Router<RouterState> {
+    let http_state = state.http.clone();
+    let cache = http_state.cache.clone();
 
     let cached_routes = Router::new()
         .route("/", get(index))

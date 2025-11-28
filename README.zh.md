@@ -60,6 +60,14 @@ src/
 - **缓存**：响应缓存由 `src/infra/cache.rs` 提供，预热器在 `src/infra/cache_warmer.rs`。
 - **日志与追踪**：`tracing`, `tracing-subscriber`，统一入口 `src/infra/telemetry.rs`。
 
+## 无头 API
+
+- 基础路径：公共监听上的 `/api/v1`。
+- 认证：`Authorization: Bearer <api_key>`，密钥仅在管理后台的“API keys”页面展示一次，操作指南见 [`docs/admin/api-keys.md`](docs/admin/api-keys.md)。
+- 权限：通过 scope 控制（`content_read`, `content_write`, `tag_write`, `navigation_write`, `upload_write`, `settings_write`, `jobs_read`, `audit_read`）。
+- 限流：独立配置 `api_rate_limit`（默认 60 秒内 120 次/密钥）。
+- 规范：参见 [`docs/api/openapi.yaml`](docs/api/openapi.yaml)。
+
 ## 开发工作流
 
 1. 运行格式化与静态检查：

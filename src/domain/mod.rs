@@ -1,5 +1,6 @@
 //! Domain layer types and invariants.
 
+pub mod api_keys;
 pub mod entities;
 pub mod error;
 pub mod navigation;

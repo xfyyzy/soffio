@@ -25,7 +25,7 @@ jobs:
         with:
           cache-on-failure: true
 
-      - name: Lint & Test (Alpine musl)
+      - name: Lint, Spec Check & Test (Alpine musl)
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/work" \
@@ -37,7 +37,8 @@ jobs:
               apk update && \
               apk add --no-cache bash binutils build-base ca-certificates clang cmake curl git libstdc++ nodejs npm pkgconf python3 && \
               rustup component add rustfmt clippy && \
-              npm install --global --unsafe-perm typescript@latest && \
+              npm install --global --unsafe-perm typescript@latest @apidevtools/swagger-cli && \
+              swagger-cli validate docs/api/openapi.yaml && \
               cargo fmt --all -- --check && \
               cargo check --workspace --all-targets && \
               cargo clippy --workspace --all-targets -- -D warnings && \

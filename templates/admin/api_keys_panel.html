@@ -1,0 +1,103 @@
+<section data-role="panel" aria-label="API keys">
+  <header>
+    <div>
+      <p class="eyebrow">Security</p>
+      <h1>{{ content.heading }}</h1>
+    </div>
+  </header>
+
+{% match content.new_token %}
+{% when Some with (token) %}
+  <div data-role="card" data-variant="highlight" style="margin-bottom: var(--space-4);">
+    <p><strong>New key</strong></p>
+    <p style="word-break: break-all;">{{ token }}</p>
+    <p class="muted">Copy now — it won’t be shown again.</p>
+  </div>
+{% when None %}
+{% endmatch %}
+
+  <div data-role="card" style="margin-bottom: var(--space-4);">
+    <form action="{{ content.create_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
+      <div data-role="form-grid">
+        <label>
+          <span>Name</span>
+          <input type="text" name="name" required placeholder="CI token">
+        </label>
+        <label>
+          <span>Description</span>
+          <input type="text" name="description" placeholder="Optional purpose">
+        </label>
+        <label>
+          <span>Expires at (RFC3339)</span>
+          <input type="text" name="expires_at" placeholder="2025-12-31T23:59:59Z">
+        </label>
+      </div>
+      <div data-role="form-grid">
+        <fieldset>
+          <legend>Scopes</legend>
+          <div data-role="pill-group">
+            {% for scope in content.available_scopes %}
+            <label data-role="pill">
+              <input type="checkbox" name="scopes" value="{{ scope.value }}">
+              <span>{{ scope.label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      </div>
+      <div data-role="actions">
+        <button type="submit" data-variant="primary">Create key</button>
+      </div>
+    </form>
+  </div>
+
+  <div data-role="card">
+    <div data-role="table">
+      <div data-role="table-head">
+        <span>Name</span>
+        <span>Prefix</span>
+        <span>Scopes</span>
+        <span>Created</span>
+        <span>Last used</span>
+        <span>Status</span>
+        <span></span>
+      </div>
+      {% for key in content.keys %}
+      <div data-role="table-row">
+        <span>{{ key.name }}</span>
+        <span><code>{{ key.prefix }}</code></span>
+        <span>
+          {% for scope in key.scopes %}
+          <span data-role="badge">{{ scope }}</span>
+          {% endfor %}
+        </span>
+        <span>{{ key.created_at }}</span>
+        <span>
+          {% match key.last_used_at %}
+          {% when Some with (ts) %}{{ ts }}{% when None %}—{% endmatch %}
+        </span>
+        <span>
+          {% if key.revoked %}
+          <span data-role="badge" data-variant="danger">revoked</span>
+          {% else %}
+          <span data-role="badge" data-variant="success">active</span>
+          {% endif %}
+        </span>
+        <span data-role="actions">
+          <form action="{{ key.rotate_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
+            <button type="submit" data-variant="ghost">Rotate</button>
+          </form>
+          <form action="{{ key.revoke_action }}" method="post" data-datastar-target="[data-admin-panel=&quot;api-keys&quot;]">
+            <button type="submit" data-variant="danger" onclick="return confirm('Revoke this key?')">Revoke</button>
+          </form>
+        </span>
+      </div>
+      {% endfor %}
+      {% if !content.has_keys %}
+      <div data-role="table-row">
+        <span>No API keys yet.</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>

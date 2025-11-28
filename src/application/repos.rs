@@ -1,6 +1,7 @@
 //! Repository traits describing persistence adapters.
 
 use async_trait::async_trait;
+use serde::Serialize;
 use thiserror::Error;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -9,6 +10,7 @@ use crate::application::pagination::{
     AuditCursor, CursorPage, JobCursor, NavigationCursor, PageCursor, PageRequest, PaginationError,
     PostCursor, TagCursor, UploadCursor,
 };
+use crate::domain::api_keys::{ApiKeyRecord, ApiScope};
 use crate::domain::entities::{
     AuditLogRecord, JobRecord, NavigationItemRecord, PageRecord, PostRecord, PostSectionRecord,
     SiteSettingsRecord, TagRecord, UploadRecord,
@@ -456,7 +458,7 @@ pub trait JobsRepo: Send + Sync {
     ) -> Result<CursorPage<JobRecord>, RepoError>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TagWithCount {
     pub id: Uuid,
     pub slug: String,
@@ -465,7 +467,7 @@ pub struct TagWithCount {
     pub count: i64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TagListRecord {
     pub id: Uuid,
     pub slug: String,
@@ -496,4 +498,44 @@ pub struct UploadMonthCount {
     pub key: String,
     pub label: String,
     pub count: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct CreateApiKeyParams {
+    pub name: String,
+    pub description: Option<String>,
+    pub prefix: String,
+    pub hashed_secret: Vec<u8>,
+    pub scopes: Vec<ApiScope>,
+    pub expires_at: Option<OffsetDateTime>,
+    pub created_by: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateApiKeySecretParams {
+    pub id: Uuid,
+    pub new_prefix: String,
+    pub new_hashed_secret: Vec<u8>,
+}
+
+#[async_trait]
+pub trait ApiKeysRepo: Send + Sync {
+    async fn create_key(&self, params: CreateApiKeyParams) -> Result<ApiKeyRecord, RepoError>;
+
+    async fn list_keys(&self) -> Result<Vec<ApiKeyRecord>, RepoError>;
+
+    async fn find_by_prefix(&self, prefix: &str) -> Result<Option<ApiKeyRecord>, RepoError>;
+
+    async fn revoke_key(&self, id: Uuid, revoked_at: OffsetDateTime) -> Result<(), RepoError>;
+
+    async fn update_secret(
+        &self,
+        params: UpdateApiKeySecretParams,
+    ) -> Result<ApiKeyRecord, RepoError>;
+
+    async fn update_last_used(
+        &self,
+        id: Uuid,
+        last_used_at: OffsetDateTime,
+    ) -> Result<(), RepoError>;
 }

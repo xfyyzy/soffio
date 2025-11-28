@@ -58,6 +58,14 @@ src/
 - **Caching** — response cache at `src/infra/cache.rs` plus a warmer in `src/infra/cache_warmer.rs`.
 - **Telemetry** — `tracing` + `tracing-subscriber`, bootstrapped via `src/infra/telemetry.rs`.
 
+## Headless API
+
+- Base path: `/api/v1` on the public listener.
+- Auth: `Authorization: Bearer <api_key>` (obtain/manage keys in the admin UI under “API keys”; keys are shown once). Admin workflow documented in [`docs/admin/api-keys.md`](docs/admin/api-keys.md).
+- Scopes control access (`content_read`, `content_write`, `tag_write`, `navigation_write`, `upload_write`, `settings_write`, `jobs_read`, `audit_read`).
+- Rate limit: configured separately via `api_rate_limit` (defaults 120 req / 60s per key).
+- Specification: [`docs/api/openapi.yaml`](docs/api/openapi.yaml).
+
 ## Development Workflow
 
 1. Run the baseline quality gates:

@@ -1,0 +1,207 @@
+openapi: 3.1.0
+info:
+  title: Soffio Headless API
+  version: "0.1.0"
+  description: |
+    Authenticated JSON API exposed by the public Soffio service.
+servers:
+  - url: http://127.0.0.1:3000
+security:
+  - ApiKeyAuth: []
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+  schemas:
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        excerpt:
+          type: string
+        body_markdown:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived, error]
+        pinned:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+      required: [id, slug, title, excerpt, body_markdown, status, pinned]
+    Page:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        body_markdown:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, archived, error]
+      required: [id, slug, title, body_markdown, status]
+    Tag:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        slug: {type: string}
+        pinned: {type: boolean}
+    NavigationItem:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        label: {type: string}
+        destination_type: {type: string, enum: [internal, external]}
+        destination_url: {type: string}
+        sort_order: {type: integer}
+        visible: {type: boolean}
+paths:
+  /api/v1/posts:
+    get:
+      summary: List posts
+      parameters:
+        - in: query
+          name: cursor
+          schema: {type: string}
+      responses:
+        "200":
+          description: Post page
+    post:
+      summary: Create post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, excerpt, body_markdown]
+              properties:
+                title: {type: string}
+                excerpt: {type: string}
+                body_markdown: {type: string}
+                status: {type: string, enum: [draft, published, archived, error]}
+      responses:
+        "201":
+          description: Created
+  /api/v1/posts/{id}/status:
+    post:
+      summary: Update post status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: {type: string}
+      responses:
+        "200": {description: Updated}
+  /api/v1/pages:
+    get:
+      summary: List pages
+      responses:
+        "200": {description: Page list}
+    post:
+      summary: Create page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, body_markdown]
+              properties:
+                title: {type: string}
+                body_markdown: {type: string}
+                status: {type: string}
+      responses:
+        "201": {description: Created}
+  /api/v1/tags:
+    get:
+      summary: List tags
+      responses: {"200": {description: Tag list}}
+    post:
+      summary: Create tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: {type: string}
+      responses:
+        "201": {description: Created}
+  /api/v1/navigation:
+    get:
+      summary: List navigation items
+      responses: {"200": {description: Navigation list}}
+    post:
+      summary: Create navigation item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label, destination_type, sort_order]
+              properties:
+                label: {type: string}
+                destination_type: {type: string}
+                destination_url: {type: string}
+                sort_order: {type: integer}
+      responses:
+        "201": {description: Created}
+  /api/v1/uploads:
+    get:
+      summary: List uploads
+      responses: {"200": {description: Upload list}}
+    post:
+      summary: Upload file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201": {description: Uploaded}
+  /api/v1/site/settings:
+    get:
+      summary: Get site settings
+      responses: {"200": {description: Settings}}
+    patch:
+      summary: Update settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200": {description: Updated}
