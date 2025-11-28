@@ -62,6 +62,12 @@ pub struct ApiKeyPanelForm {
     pub clear: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ScopeToggleForm {
+    pub scope_id: String,
+    pub scope_state: Option<String>,
+}
+
 pub async fn admin_api_keys(
     State(state): State<AdminState>,
     Query(filters): Query<ApiKeyFilters>,
@@ -238,6 +244,53 @@ pub async fn admin_api_key_rotate(
         Ok(stream) => stream,
         Err(err) => err.into_response(),
     }
+}
+
+pub async fn admin_api_key_scopes_toggle(
+    State(_state): State<AdminState>,
+    Form(form): Form<ScopeToggleForm>,
+) -> Response {
+    let mut selected = parse_scope_state(&form.scope_state);
+
+    if let Some(index) = selected.iter().position(|s| *s == form.scope_id) {
+        selected.remove(index);
+    } else {
+        selected.push(form.scope_id);
+    }
+
+    render_scope_picker_response(&selected)
+}
+
+fn parse_scope_state(state: &Option<String>) -> Vec<String> {
+    state
+        .as_deref()
+        .map(|raw| {
+            raw.split(',')
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn render_scope_picker_response(selected_scopes: &[String]) -> Response {
+    use crate::infra::http::admin::selectors::SCOPE_PICKER;
+
+    let picker = build_scope_picker(selected_scopes);
+    let template = admin_views::AdminApiKeyScopePickerTemplate { picker };
+
+    let html = match template.render() {
+        Ok(html) => html,
+        Err(err) => {
+            return ApiKeyHttpError::from_template(err, "admin::api_keys::scope_picker")
+                .into_response();
+        }
+    };
+
+    let mut stream = crate::application::stream::StreamBuilder::new();
+    stream.push_patch(html, SCOPE_PICKER, ElementPatchMode::Replace);
+    stream.into_response()
 }
 
 async fn build_page(
@@ -540,6 +593,7 @@ fn build_scope_picker(selected_scopes: &[String]) -> admin_views::AdminApiKeySco
         .cloned()
         .collect();
     admin_views::AdminApiKeyScopePickerView {
+        toggle_action: "/api-keys/new/scopes/toggle".to_string(),
         selected,
         available,
         selected_values: selected_scopes.to_vec(),

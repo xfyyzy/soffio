@@ -1,3 +1,5 @@
+{% import "admin/macros/picker.html" as picker_macro %}
+
 <section data-role="tag-picker">
   <header data-role="tag-picker-header">
     <h3 data-role="tag-picker-title">Tags</h3>
@@ -12,15 +14,7 @@
     {% else %}
     <div data-role="tag-chip-list">
       {% for tag in picker.selected %}
-      <form method="post" action="{{ picker.toggle_action }}" data-role="tag-toggle"
-        data-on-submit__prevent="(@post(`{{ picker.toggle_action }}`, { contentType: 'form' }))">
-        <input type="hidden" name="tag_state" value="{{ picker.selected_tag_ids | join(",") }}">
-        <input type="hidden" name="tag_id" value="{{ tag.id }}">
-        <button type="submit" data-role="tag-chip" data-selected="true" aria-pressed="true">
-          <span data-role="tag-chip-label">{{ tag.name }}</span>
-          <span data-role="tag-chip-slug">#{{ tag.slug }}</span>
-        </button>
-      </form>
+      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", tag.id, "tag", "true", tag.name, tag.slug, "#", "slug", false, 0) %}
       {% endfor %}
     </div>
     {% endif %}
@@ -32,18 +26,7 @@
     {% else %}
     <div data-role="tag-chip-grid">
       {% for option in picker.options %}
-      <form method="post" action="{{ picker.toggle_action }}" data-role="tag-toggle"
-        data-on-submit__prevent="(@post(`{{ picker.toggle_action }}`, { contentType: 'form' }))">
-        <input type="hidden" name="tag_state" value="{{ picker.selected_tag_ids | join(",") }}">
-        <input type="hidden" name="tag_id" value="{{ option.id }}">
-        <button type="submit" data-role="tag-chip"
-          data-selected="{% if option.is_selected %}true{% else %}false{% endif %}"
-          aria-pressed="{% if option.is_selected %}true{% else %}false{% endif %}">
-          <span data-role="tag-chip-label">{{ option.name }}</span>
-          <span data-role="tag-chip-slug">#{{ option.slug }}</span>
-          <span data-role="tag-chip-count">{{ option.usage_count }}</span>
-        </button>
-      </form>
+      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", option.id, "tag", option.is_selected, option.name, option.slug, "#", "slug", true, option.usage_count) %}
       {% endfor %}
     </div>
     {% endif %}

@@ -15,4 +15,6 @@ pub const API_KEYS_PANEL: &str = "[data-admin-panel=\"api-keys\"]";
 pub const TAG_PICKER: &str = "[data-role=\"tag-picker\"]";
 pub const TAG_SELECTION_STORE: &str = "[data-role=\"tag-selection-store\"]";
 
+pub const SCOPE_PICKER: &str = "[data-role=\"scope-picker\"]";
+
 pub const UPLOAD_QUEUE_BODY: &str = "[data-role=\"upload-queue-body\"]";

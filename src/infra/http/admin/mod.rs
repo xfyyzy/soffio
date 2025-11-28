@@ -149,6 +149,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
             get(api_keys::admin_api_key_new).post(api_keys::admin_api_key_new_submit),
         )
         .route(
+            "/api-keys/new/scopes/toggle",
+            post(api_keys::admin_api_key_scopes_toggle),
+        )
+        .route(
             "/api-keys/{id}/revoke",
             post(api_keys::admin_api_key_revoke),
         )

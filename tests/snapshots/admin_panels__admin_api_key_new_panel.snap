@@ -14,6 +14,7 @@ expression: rendered
 
 
 
+  
   <form id="api-key-form" method="post" action="/api-keys/new"
         data-on-submit__prevent="(@post(`/api-keys/new`, { contentType: 'form' }))">
     <label>
@@ -37,7 +38,9 @@ expression: rendered
       </select>
     </label>
   </form>
-  <section data-role="scope-picker">
+  
+
+<section data-role="scope-picker">
   <header data-role="scope-picker-header">
     <h3 data-role="scope-picker-title">Scopes</h3>
     
@@ -55,29 +58,39 @@ expression: rendered
     
     <div data-role="scope-chip-grid">
       
-      <label data-role="scope-chip" data-selected="false">
-        <input type="checkbox" name="scopes" value="content_read" form="api-key-form" hidden>
-        <span data-role="scope-chip-label">Content read</span>
-        <span data-role="scope-chip-value">content_read</span>
-      </label>
+      <form method="post" action="/api-keys/new/scopes/toggle" data-role="scope-toggle"
+  data-on-submit__prevent="(@post(`/api-keys/new/scopes/toggle`, { contentType: 'form' }))">
+  <input type="hidden" name="scope_state" value="">
+  <input type="hidden" name="scope_id" value="content_read">
+  <button type="submit" data-role="scope-chip" data-selected="false" aria-pressed="false">
+    <span data-role="scope-chip-label">Content read</span>
+    <span data-role="scope-chip-value">content_read</span>
+  </button>
+</form>
       
-      <label data-role="scope-chip" data-selected="false">
-        <input type="checkbox" name="scopes" value="content_write" form="api-key-form" hidden>
-        <span data-role="scope-chip-label">Content write</span>
-        <span data-role="scope-chip-value">content_write</span>
-      </label>
+      <form method="post" action="/api-keys/new/scopes/toggle" data-role="scope-toggle"
+  data-on-submit__prevent="(@post(`/api-keys/new/scopes/toggle`, { contentType: 'form' }))">
+  <input type="hidden" name="scope_state" value="">
+  <input type="hidden" name="scope_id" value="content_write">
+  <button type="submit" data-role="scope-chip" data-selected="false" aria-pressed="false">
+    <span data-role="scope-chip-label">Content write</span>
+    <span data-role="scope-chip-value">content_write</span>
+  </button>
+</form>
       
-      <label data-role="scope-chip" data-selected="false">
-        <input type="checkbox" name="scopes" value="tag_write" form="api-key-form" hidden>
-        <span data-role="scope-chip-label">Tag write</span>
-        <span data-role="scope-chip-value">tag_write</span>
-      </label>
+      <form method="post" action="/api-keys/new/scopes/toggle" data-role="scope-toggle"
+  data-on-submit__prevent="(@post(`/api-keys/new/scopes/toggle`, { contentType: 'form' }))">
+  <input type="hidden" name="scope_state" value="">
+  <input type="hidden" name="scope_id" value="tag_write">
+  <button type="submit" data-role="scope-chip" data-selected="false" aria-pressed="false">
+    <span data-role="scope-chip-label">Tag write</span>
+    <span data-role="scope-chip-value">tag_write</span>
+  </button>
+</form>
       
     </div>
     
   </div>
-  
-  
 </section>
   <div data-role="form-actions">
     <button type="submit" form="api-key-form">Create key</button>

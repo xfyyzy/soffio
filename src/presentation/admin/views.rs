@@ -965,6 +965,7 @@ pub struct AdminApiKeyExpiresInOption {
 
 #[derive(Clone)]
 pub struct AdminApiKeyScopePickerView {
+    pub toggle_action: String,
     pub selected: Vec<AdminApiScopeOption>,
     pub available: Vec<AdminApiScopeOption>,
     pub selected_values: Vec<String>,
@@ -991,6 +992,12 @@ pub struct AdminApiKeyNewTemplate {
 #[template(path = "admin/api_key_new_panel.html")]
 pub struct AdminApiKeyNewPanelTemplate {
     pub content: AdminApiKeyNewView,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_key_scope_picker.html")]
+pub struct AdminApiKeyScopePickerTemplate {
+    pub picker: AdminApiKeyScopePickerView,
 }
 
 #[derive(Template)]

@@ -749,6 +749,7 @@ fn snapshot_admin_api_key_new_panel() {
             },
         ],
         scope_picker: AdminApiKeyScopePickerView {
+            toggle_action: "/api-keys/new/scopes/toggle".into(),
             selected: Vec::new(),
             available: vec![
                 AdminApiScopeOption {
