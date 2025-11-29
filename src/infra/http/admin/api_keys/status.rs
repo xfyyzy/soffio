@@ -1,10 +1,8 @@
 use axum::http::StatusCode;
 
 use crate::{
-    application::error::HttpError,
-    application::repos::ApiKeyStatusFilter,
-    domain::api_keys::ApiKeyStatus,
-    presentation::admin::views as admin_views,
+    application::error::HttpError, application::repos::ApiKeyStatusFilter,
+    domain::api_keys::ApiKeyStatus, presentation::admin::views as admin_views,
 };
 
 /// Parse API key status filter from query/form value.

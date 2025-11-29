@@ -18,7 +18,7 @@ use crate::{
 use super::{
     editor::scope_options,
     errors::ApiKeyHttpError,
-    status::{api_key_status_filters, ApiKeyStatusCounts},
+    status::{ApiKeyStatusCounts, api_key_status_filters},
 };
 
 pub async fn build_panel_view(
@@ -192,10 +192,7 @@ pub fn render_created_panel_html(
 }
 
 /// Build API key query filter with proper normalization.
-pub fn build_api_key_filter(
-    scope: Option<&str>,
-    search: Option<&str>,
-) -> ApiKeyQueryFilter {
+pub fn build_api_key_filter(scope: Option<&str>, search: Option<&str>) -> ApiKeyQueryFilter {
     ApiKeyQueryFilter {
         status: None, // Status is handled separately via parse_api_key_status
         scope: normalize_filter_value(scope).and_then(|s| ApiScope::from_str(&s).ok()),

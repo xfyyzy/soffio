@@ -1,4 +1,7 @@
-use axum::{http::StatusCode, response::{IntoResponse, Response}};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 
 use crate::application::api_keys::ApiKeyError;
 

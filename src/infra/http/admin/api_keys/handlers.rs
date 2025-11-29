@@ -13,10 +13,10 @@ use crate::{
     },
     domain::api_keys::ApiScope,
     infra::http::admin::{
+        AdminState,
         pagination::CursorState,
         selectors::{API_KEYS_PANEL, SCOPE_PICKER, SCOPE_SELECTION_STORE},
         shared::{Toast, push_toasts},
-        AdminState,
     },
     presentation::{admin::views as admin_views, views::render_template_response},
 };
@@ -282,13 +282,10 @@ async fn build_page(
     filters: &ApiKeyFilters,
     _toasts: &[Toast],
 ) -> Result<Response, ApiKeyHttpError> {
-    let status_filter = parse_api_key_status(filters.status.as_deref())
-        .map_err(ApiKeyHttpError::from_http)?;
+    let status_filter =
+        parse_api_key_status(filters.status.as_deref()).map_err(ApiKeyHttpError::from_http)?;
 
-    let query_filter = build_api_key_filter(
-        filters.scope.as_deref(),
-        filters.search.as_deref(),
-    );
+    let query_filter = build_api_key_filter(filters.scope.as_deref(), filters.search.as_deref());
 
     let cursor_state = CursorState::new(filters.cursor.clone(), filters.trail.clone());
 
@@ -319,17 +316,21 @@ async fn build_stream(
     filters: &ApiKeyFilters,
     toasts: &[Toast],
 ) -> Result<Response, ApiKeyHttpError> {
-    let status_filter = parse_api_key_status(filters.status.as_deref())
-        .map_err(ApiKeyHttpError::from_http)?;
+    let status_filter =
+        parse_api_key_status(filters.status.as_deref()).map_err(ApiKeyHttpError::from_http)?;
 
-    let query_filter = build_api_key_filter(
-        filters.scope.as_deref(),
-        filters.search.as_deref(),
-    );
+    let query_filter = build_api_key_filter(filters.scope.as_deref(), filters.search.as_deref());
 
     let cursor_state = CursorState::new(filters.cursor.clone(), filters.trail.clone());
 
-    let panel = build_panel_view(state, status_filter, &query_filter, &cursor_state, issued.as_ref()).await?;
+    let panel = build_panel_view(
+        state,
+        status_filter,
+        &query_filter,
+        &cursor_state,
+        issued.as_ref(),
+    )
+    .await?;
     let panel_html = render_panel_html(&panel)?;
 
     let mut stream = StreamBuilder::new();

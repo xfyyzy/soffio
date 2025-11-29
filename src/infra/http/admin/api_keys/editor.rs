@@ -1,7 +1,4 @@
-use crate::{
-    domain::api_keys::ApiScope,
-    presentation::admin::views as admin_views,
-};
+use crate::{domain::api_keys::ApiScope, presentation::admin::views as admin_views};
 
 pub fn build_new_key_view(issued_token: Option<String>) -> admin_views::AdminApiKeyNewView {
     admin_views::AdminApiKeyNewView {
