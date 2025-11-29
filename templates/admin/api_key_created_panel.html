@@ -1,0 +1,33 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}api-key-created{% endblock %}
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}{% endblock %}
+
+{% block panel_controls %}{% endblock %}
+
+{% block panel_content %}
+  <p>Your new API key has been created. Copy it now — it won't be shown again.</p>
+
+  <div data-role="token-display">
+    <code data-role="token-value">{{ content.token }}</code>
+    <form
+      method="post"
+      action="{{ content.copy_toast_action }}"
+      data-role="inline-form"
+      data-on-submit__prevent="(@post(`{{ content.copy_toast_action }}`, { contentType: 'form' }))"
+    >
+      <input type="hidden" name="kind" value="success">
+      <input type="hidden" name="message" value="Key copied to clipboard">
+      <button
+        type="submit"
+        data-on-click__prevent="(@copyToClipboard({ href: `{{ content.token }}`, successMessage: 'Key copied to clipboard', errorMessage: 'Copy failed' }))"
+      >Copy</button>
+    </form>
+  </div>
+
+  <div data-role="form-actions">
+    <a href="{{ content.back_href }}" data-role="button">Back to API keys</a>
+  </div>
+{% endblock panel_content %}

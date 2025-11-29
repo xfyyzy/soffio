@@ -507,6 +507,7 @@ pub struct CreateApiKeyParams {
     pub prefix: String,
     pub hashed_secret: Vec<u8>,
     pub scopes: Vec<ApiScope>,
+    pub expires_in: Option<time::Duration>,
     pub expires_at: Option<OffsetDateTime>,
     pub created_by: String,
 }
@@ -522,6 +523,7 @@ pub struct UpdateApiKeySecretParams {
 pub enum ApiKeyStatusFilter {
     Active,
     Revoked,
+    Expired,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -541,7 +543,9 @@ pub struct ApiKeyPageRequest {
 pub struct ApiKeyListPage {
     pub items: Vec<ApiKeyRecord>,
     pub total: u64,
+    pub active: u64,
     pub revoked: u64,
+    pub expired: u64,
     pub next_cursor: Option<ApiKeyCursor>,
     pub scope_counts: Vec<(ApiScope, u64)>,
 }
@@ -558,7 +562,13 @@ pub trait ApiKeysRepo: Send + Sync {
 
     async fn find_by_prefix(&self, prefix: &str) -> Result<Option<ApiKeyRecord>, RepoError>;
 
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<ApiKeyRecord>, RepoError>;
+
     async fn revoke_key(&self, id: Uuid, revoked_at: OffsetDateTime) -> Result<(), RepoError>;
+
+    async fn delete_key(&self, id: Uuid) -> Result<bool, RepoError>;
+
+    async fn expire_keys(&self) -> Result<u64, RepoError>;
 
     async fn update_secret(
         &self,

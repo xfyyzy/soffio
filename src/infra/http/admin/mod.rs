@@ -160,6 +160,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
             "/api-keys/{id}/rotate",
             post(api_keys::admin_api_key_rotate),
         )
+        .route(
+            "/api-keys/{id}/delete",
+            post(api_keys::admin_api_key_delete),
+        )
         .route("/_health/db", get(health::admin_health))
         .route("/cache/invalidate", post(cache::invalidate_cache))
         .route("/static/admin/{*path}", get(assets::serve_admin))

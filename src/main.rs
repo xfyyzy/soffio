@@ -10,6 +10,7 @@ use apalis::{
     layers::WorkerBuilderExt,
     prelude::{Data, Monitor, WorkerBuilder, WorkerFactoryFn},
 };
+use apalis_cron::CronStream;
 use apalis_sql::{Config as ApalisSqlConfig, postgres::PostgresStorage};
 use futures::stream::TryStreamExt;
 use soffio::{
@@ -25,7 +26,8 @@ use soffio::{
         chrome::ChromeService,
         feed::FeedService,
         jobs::{
-            JobWorkerContext, process_cache_invalidation_job, process_publish_page_job,
+            ExpireApiKeysContext, JobWorkerContext, expire_api_keys_schedule,
+            process_cache_invalidation_job, process_expire_api_keys_job, process_publish_page_job,
             process_publish_post_job,
         },
         page::PageService,
@@ -110,8 +112,12 @@ async fn run_serve(settings: config::Settings) -> Result<(), AppError> {
 
     warm_initial_cache(&app.http_state).await?;
 
-    let monitor_handle =
-        spawn_job_monitor(job_repositories, app.job_context.clone(), &settings.jobs);
+    let monitor_handle = spawn_job_monitor(
+        job_repositories,
+        app.job_context.clone(),
+        app.api_keys.clone(),
+        &settings.jobs,
+    );
 
     let result = serve_http(&settings, app.http_state, app.admin_state, app.api_state).await;
 
@@ -204,6 +210,7 @@ struct ApplicationContext {
     admin_state: AdminState,
     api_state: ApiState,
     job_context: JobWorkerContext,
+    api_keys: Arc<ApiKeyService>,
 }
 
 fn build_site_services(
@@ -404,6 +411,7 @@ fn build_application_context(
         admin_state,
         api_state,
         job_context,
+        api_keys: api_key_service,
     })
 }
 
@@ -500,6 +508,7 @@ async fn warm_initial_cache(http_state: &HttpState) -> Result<(), AppError> {
 fn spawn_job_monitor(
     repositories: Arc<PostgresRepositories>,
     context: JobWorkerContext,
+    api_keys: Arc<ApiKeyService>,
     jobs: &config::JobsSettings,
 ) -> tokio::task::JoinHandle<()> {
     let render_storage = PostgresStorage::new_with_config(
@@ -583,6 +592,13 @@ fn spawn_job_monitor(
         .backend(cache_invalidation_storage)
         .build_fn(process_cache_invalidation_job);
 
+    // Cron-based API key expiration worker (runs hourly)
+    let expire_api_keys_ctx = ExpireApiKeysContext { api_keys };
+    let expire_api_keys_worker = WorkerBuilder::new("expire-api-keys-worker")
+        .data(expire_api_keys_ctx)
+        .backend(CronStream::new(expire_api_keys_schedule()))
+        .build_fn(process_expire_api_keys_job);
+
     let monitor = Monitor::new()
         .register(render_post_worker)
         .register(render_sections_worker)
@@ -591,7 +607,8 @@ fn spawn_job_monitor(
         .register(render_page_worker)
         .register(publish_post_worker)
         .register(publish_page_worker)
-        .register(cache_worker);
+        .register(cache_worker)
+        .register(expire_api_keys_worker);
 
     tokio::spawn(async move {
         if let Err(err) = monitor.run().await {

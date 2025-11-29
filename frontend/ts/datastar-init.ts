@@ -298,7 +298,7 @@ window.addEventListener(UPLOAD_QUEUE_EVENT, (event) => {
 });
 
 const actionHandlers: ActionHandlerMap = {
-  async copyUploadLink(ctxArg, paramsArg = {}) {
+  async copyToClipboard(ctxArg, paramsArg = {}) {
     const { el } = (ctxArg ?? {}) as ActionContext;
     const {
       href,

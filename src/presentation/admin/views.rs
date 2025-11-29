@@ -888,18 +888,26 @@ pub struct AdminApiScopeOption {
 }
 
 #[derive(Clone)]
+pub struct AdminApiScopeDisplay {
+    pub slug: String,
+    pub label: String,
+}
+
+#[derive(Clone)]
 pub struct AdminApiKeyRowView {
     pub id: String,
     pub name: String,
     pub prefix: String,
-    pub scopes: Vec<String>,
+    pub scopes: Vec<AdminApiScopeDisplay>,
     pub created_at: String,
     pub last_used_at: Option<String>,
     pub expires_at: Option<String>,
-    pub revoked: bool,
+    pub status: String,
+    pub status_label: String,
     pub description: Option<String>,
     pub revoke_action: String,
     pub rotate_action: String,
+    pub delete_action: String,
 }
 
 #[derive(Clone)]
@@ -992,6 +1000,20 @@ pub struct AdminApiKeyNewTemplate {
 #[template(path = "admin/api_key_new_panel.html")]
 pub struct AdminApiKeyNewPanelTemplate {
     pub content: AdminApiKeyNewView,
+}
+
+#[derive(Clone)]
+pub struct AdminApiKeyCreatedView {
+    pub heading: String,
+    pub token: String,
+    pub back_href: String,
+    pub copy_toast_action: String,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_key_created_panel.html")]
+pub struct AdminApiKeyCreatedPanelTemplate {
+    pub content: AdminApiKeyCreatedView,
 }
 
 #[derive(Template)]

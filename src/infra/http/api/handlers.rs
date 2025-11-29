@@ -110,7 +110,7 @@ pub async fn list_posts(
     Query(query): Query<PostListQuery>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentRead)
+        .requires(crate::domain::api_keys::ApiScope::PostRead)
         .map_err(|_| ApiError::forbidden())?;
 
     let settings = state.settings.load().await.map_err(settings_to_api)?;
@@ -157,7 +157,7 @@ pub async fn get_post(
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentRead)
+        .requires(crate::domain::api_keys::ApiScope::PostRead)
         .map_err(|_| ApiError::forbidden())?;
 
     let post = state
@@ -179,7 +179,7 @@ pub async fn create_post(
     Json(payload): Json<PostCreateRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentWrite)
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
         .map_err(|_| ApiError::forbidden())?;
 
     let actor = super::state::ApiState::actor_label(&principal);
@@ -212,7 +212,7 @@ pub async fn update_post(
     Json(payload): Json<PostUpdateRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentWrite)
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
         .map_err(|_| ApiError::forbidden())?;
     let actor = super::state::ApiState::actor_label(&principal);
 
@@ -242,7 +242,7 @@ pub async fn update_post_status(
     Json(payload): Json<PostStatusRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentWrite)
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
         .map_err(|_| ApiError::forbidden())?;
     let actor = super::state::ApiState::actor_label(&principal);
 
@@ -270,7 +270,7 @@ pub async fn replace_post_tags(
     Json(payload): Json<PostTagsRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentWrite)
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
         .map_err(|_| ApiError::forbidden())?;
     let actor = super::state::ApiState::actor_label(&principal);
 
@@ -291,6 +291,25 @@ pub async fn replace_post_tags(
     Ok(StatusCode::NO_CONTENT)
 }
 
+pub async fn delete_post(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    state
+        .posts
+        .delete_post(&actor, id)
+        .await
+        .map_err(post_to_api)?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /// -------- Pages --------
 pub async fn list_pages(
     State(state): State<ApiState>,
@@ -298,7 +317,7 @@ pub async fn list_pages(
     Query(query): Query<PageListQuery>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentRead)
+        .requires(crate::domain::api_keys::ApiScope::PageRead)
         .map_err(|_| ApiError::forbidden())?;
 
     let settings = state.settings.load().await.map_err(settings_to_api)?;
@@ -337,7 +356,7 @@ pub async fn get_page(
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentRead)
+        .requires(crate::domain::api_keys::ApiScope::PageRead)
         .map_err(|_| ApiError::forbidden())?;
 
     let page = state.pages.find_by_slug(&slug).await.map_err(page_to_api)?;
@@ -354,7 +373,7 @@ pub async fn create_page(
     Json(payload): Json<PageCreateRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentWrite)
+        .requires(crate::domain::api_keys::ApiScope::PageWrite)
         .map_err(|_| ApiError::forbidden())?;
     let actor = super::state::ApiState::actor_label(&principal);
 
@@ -383,7 +402,7 @@ pub async fn update_page(
     Json(payload): Json<PageUpdateRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentWrite)
+        .requires(crate::domain::api_keys::ApiScope::PageWrite)
         .map_err(|_| ApiError::forbidden())?;
     let actor = super::state::ApiState::actor_label(&principal);
 
@@ -410,7 +429,7 @@ pub async fn update_page_status(
     Json(payload): Json<PageStatusRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentWrite)
+        .requires(crate::domain::api_keys::ApiScope::PageWrite)
         .map_err(|_| ApiError::forbidden())?;
     let actor = super::state::ApiState::actor_label(&principal);
 
@@ -431,6 +450,25 @@ pub async fn update_page_status(
     Ok(Json(page))
 }
 
+pub async fn delete_page(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PageWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    state
+        .pages
+        .delete_page(&actor, id)
+        .await
+        .map_err(page_to_api)?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 /// -------- Tags --------
 pub async fn list_tags(
     State(state): State<ApiState>,
@@ -438,7 +476,7 @@ pub async fn list_tags(
     Query(query): Query<TagListQuery>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentRead)
+        .requires(crate::domain::api_keys::ApiScope::TagRead)
         .map_err(|_| ApiError::forbidden())?;
     let settings = state.settings.load().await.map_err(settings_to_api)?;
     let limit = query
@@ -548,7 +586,7 @@ pub async fn list_navigation(
     Query(query): Query<NavigationListQuery>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentRead)
+        .requires(crate::domain::api_keys::ApiScope::NavigationRead)
         .map_err(|_| ApiError::forbidden())?;
     let settings = state.settings.load().await.map_err(settings_to_api)?;
     let limit = query
@@ -670,7 +708,7 @@ pub async fn list_uploads(
     Query(query): Query<UploadListQuery>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentRead)
+        .requires(crate::domain::api_keys::ApiScope::UploadRead)
         .map_err(|_| ApiError::forbidden())?;
     let settings = state.settings.load().await.map_err(settings_to_api)?;
     let limit = query
@@ -804,7 +842,7 @@ pub async fn get_settings(
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::ContentRead)
+        .requires(crate::domain::api_keys::ApiScope::SettingsRead)
         .map_err(|_| ApiError::forbidden())?;
 
     let settings = state.settings.load().await.map_err(settings_to_api)?;
@@ -907,7 +945,7 @@ pub async fn list_jobs(
     Query(query): Query<JobsListQuery>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
-        .requires(crate::domain::api_keys::ApiScope::JobsRead)
+        .requires(crate::domain::api_keys::ApiScope::JobRead)
         .map_err(|_| ApiError::forbidden())?;
 
     let limit = query.limit.unwrap_or(50).clamp(1, 200);

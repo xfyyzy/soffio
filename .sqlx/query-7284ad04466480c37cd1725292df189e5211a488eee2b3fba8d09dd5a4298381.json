@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE api_keys\n            SET status = 'expired',\n                updated_at = now()\n            WHERE status = 'active'\n              AND expires_at IS NOT NULL\n              AND expires_at < now()\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "7284ad04466480c37cd1725292df189e5211a488eee2b3fba8d09dd5a4298381"
+}

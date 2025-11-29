@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO api_keys (id, name, description, prefix, hashed_secret, scopes, expires_at, created_by, created_at)\n            VALUES ($1, $2, $3, $4, $5, $6::api_scope[], $7, $8, $9)\n            RETURNING id, name, description, prefix, hashed_secret, scopes as \"scopes: Vec<ApiScope>\", expires_at, revoked_at, last_used_at, created_by, created_at\n            ",
+  "query": "\n            INSERT INTO api_keys (id, name, description, prefix, hashed_secret, scopes, status, expires_in, expires_at, created_by, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6::api_scope[], 'active', $7, $8, $9, $10, $10)\n            RETURNING id, name, description, prefix, hashed_secret,\n                      scopes as \"scopes: Vec<ApiScope>\",\n                      status as \"status: ApiKeyStatus\",\n                      expires_in, expires_at, revoked_at, last_used_at, created_by, created_at, updated_at\n            ",
   "describe": {
     "columns": [
       {
@@ -40,13 +40,19 @@
                   "name": "api_scope",
                   "kind": {
                     "Enum": [
-                      "content_read",
-                      "content_write",
+                      "post_read",
+                      "post_write",
+                      "page_read",
+                      "page_write",
+                      "tag_read",
                       "tag_write",
+                      "navigation_read",
                       "navigation_write",
+                      "upload_read",
                       "upload_write",
+                      "settings_read",
                       "settings_write",
-                      "jobs_read",
+                      "job_read",
                       "audit_read"
                     ]
                   }
@@ -58,27 +64,53 @@
       },
       {
         "ordinal": 6,
+        "name": "status: ApiKeyStatus",
+        "type_info": {
+          "Custom": {
+            "name": "api_key_status",
+            "kind": {
+              "Enum": [
+                "active",
+                "revoked",
+                "expired"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "expires_in",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 8,
         "name": "expires_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 7,
+        "ordinal": 9,
         "name": "revoked_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 8,
+        "ordinal": 10,
         "name": "last_used_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
+        "ordinal": 11,
         "name": "created_by",
         "type_info": "Text"
       },
       {
-        "ordinal": 10,
+        "ordinal": 12,
         "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
@@ -98,13 +130,19 @@
                   "name": "api_scope",
                   "kind": {
                     "Enum": [
-                      "content_read",
-                      "content_write",
+                      "post_read",
+                      "post_write",
+                      "page_read",
+                      "page_write",
+                      "tag_read",
                       "tag_write",
+                      "navigation_read",
                       "navigation_write",
+                      "upload_read",
                       "upload_write",
+                      "settings_read",
                       "settings_write",
-                      "jobs_read",
+                      "job_read",
                       "audit_read"
                     ]
                   }
@@ -113,6 +151,7 @@
             }
           }
         },
+        "Interval",
         "Timestamptz",
         "Text",
         "Timestamptz"
@@ -125,12 +164,15 @@
       false,
       false,
       false,
+      false,
+      true,
       true,
       true,
       true,
       false,
+      false,
       false
     ]
   },
-  "hash": "a62b111f8f41c7241036caaf5f712e835f2964bb672028d9afcf04cfec2cf9af"
+  "hash": "b8588a9da8e06bc93f327d5c8c904b2dc4372ba39ab9b26975889ee39fcb23f8"
 }

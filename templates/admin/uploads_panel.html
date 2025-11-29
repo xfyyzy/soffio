@@ -52,7 +52,7 @@
                 <button
                   type="submit"
                   data-role="secondary"
-                  data-on-click__prevent="(@copyUploadLink({ href: `{{ item.public_href }}`, successMessage: 'Link copied to clipboard', errorMessage: 'Copy failed' }))"
+                  data-on-click__prevent="(@copyToClipboard({ href: `{{ item.public_href }}`, successMessage: 'Link copied to clipboard', errorMessage: 'Copy failed' }))"
                 >Copy Link</button>
               </form>
               <form

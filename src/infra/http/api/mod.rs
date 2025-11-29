@@ -24,7 +24,10 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
             "/api/v1/posts",
             get(handlers::list_posts).post(handlers::create_post),
         )
-        .route("/api/v1/posts/{id}", patch(handlers::update_post))
+        .route(
+            "/api/v1/posts/{id}",
+            patch(handlers::update_post).delete(handlers::delete_post),
+        )
         .route(
             "/api/v1/posts/{id}/status",
             post(handlers::update_post_status),
@@ -35,7 +38,10 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
             "/api/v1/pages",
             get(handlers::list_pages).post(handlers::create_page),
         )
-        .route("/api/v1/pages/{id}", patch(handlers::update_page))
+        .route(
+            "/api/v1/pages/{id}",
+            patch(handlers::update_page).delete(handlers::delete_page),
+        )
         .route(
             "/api/v1/pages/{id}/status",
             post(handlers::update_page_status),

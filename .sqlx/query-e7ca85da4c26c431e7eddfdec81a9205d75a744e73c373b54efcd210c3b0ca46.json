@@ -11,13 +11,19 @@
             "name": "api_scope",
             "kind": {
               "Enum": [
-                "content_read",
-                "content_write",
+                "post_read",
+                "post_write",
+                "page_read",
+                "page_write",
+                "tag_read",
                 "tag_write",
+                "navigation_read",
                 "navigation_write",
+                "upload_read",
                 "upload_write",
+                "settings_read",
                 "settings_write",
-                "jobs_read",
+                "job_read",
                 "audit_read"
               ]
             }

@@ -1,0 +1,145 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, name, description, prefix, hashed_secret,\n                   scopes as \"scopes: Vec<ApiScope>\",\n                   CASE\n                       WHEN status = 'active' AND expires_at IS NOT NULL AND expires_at < now()\n                       THEN 'expired'::api_key_status\n                       ELSE status\n                   END as \"status!: ApiKeyStatus\",\n                   expires_in, expires_at, revoked_at, last_used_at, created_by, created_at, updated_at\n            FROM api_keys\n            WHERE\n                ($1::text IS NULL OR\n                    CASE\n                        WHEN status = 'active' AND expires_at IS NOT NULL AND expires_at < now()\n                        THEN 'expired'\n                        ELSE status::text\n                    END = $1)\n                AND ($2::text IS NULL OR LOWER(name) LIKE $2 OR LOWER(prefix) LIKE $2 OR LOWER(COALESCE(description, '')) LIKE $2)\n                AND ($3::text IS NULL OR $3::api_scope = ANY(scopes))\n                AND ($4::timestamptz IS NULL OR (created_at, id) < ($4, $5))\n            ORDER BY created_at DESC, id DESC\n            LIMIT $6\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "prefix",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "hashed_secret",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 5,
+        "name": "scopes: Vec<ApiScope>",
+        "type_info": {
+          "Custom": {
+            "name": "api_scope[]",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "api_scope",
+                  "kind": {
+                    "Enum": [
+                      "post_read",
+                      "post_write",
+                      "page_read",
+                      "page_write",
+                      "tag_read",
+                      "tag_write",
+                      "navigation_read",
+                      "navigation_write",
+                      "upload_read",
+                      "upload_write",
+                      "settings_read",
+                      "settings_write",
+                      "job_read",
+                      "audit_read"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "status!: ApiKeyStatus",
+        "type_info": {
+          "Custom": {
+            "name": "api_key_status",
+            "kind": {
+              "Enum": [
+                "active",
+                "revoked",
+                "expired"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "expires_in",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 8,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "revoked_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "last_used_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_by",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      null,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "06d05bc2aab86fecf715f086242a1e308dfa4bc5c21512a37dbf778abe4747c9"
+}

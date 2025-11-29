@@ -27,8 +27,10 @@ async-trait = "0.1"
 base64 = "0.22"
 ammonia = "4"
 apalis = { version = "0.7", default-features = false, features = ["limit", "tracing"] }
+apalis-cron = { version = "0.7", default-features = false }
 apalis-sql = { version = "0.7", default-features = false, features = ["postgres"] }
 comrak = { version = "0.48", default-features = false, features = ["syntect"] }
+cron = "0.15"
 once_cell = "1"
 syntect = { version = "5.3", default-features = false, features = ["default-themes", "html", "parsing", "regex-fancy"] }
 include_dir = "0.7.4"

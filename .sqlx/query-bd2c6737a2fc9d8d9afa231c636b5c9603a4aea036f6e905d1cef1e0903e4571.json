@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, name, description, prefix, hashed_secret, scopes as \"scopes: Vec<ApiScope>\", expires_at, revoked_at, last_used_at, created_by, created_at\n            FROM api_keys\n            WHERE\n                (($3::bool = FALSE AND $4::bool = FALSE) OR ($3 = TRUE AND revoked_at IS NULL) OR ($4 = TRUE AND revoked_at IS NOT NULL))\n                AND ($1::text IS NULL OR LOWER(name) LIKE $1 OR LOWER(prefix) LIKE $1 OR LOWER(COALESCE(description, '')) LIKE $1)\n                AND ($2::text IS NULL OR $2::api_scope = ANY(scopes))\n                AND ($5::timestamptz IS NULL OR (created_at, id) < ($5, $6))\n            ORDER BY created_at DESC, id DESC\n            LIMIT $7\n            ",
+  "query": "\n            SELECT id, name, description, prefix, hashed_secret,\n                   scopes as \"scopes: Vec<ApiScope>\",\n                   status as \"status: ApiKeyStatus\",\n                   expires_in, expires_at, revoked_at, last_used_at, created_by, created_at, updated_at\n            FROM api_keys\n            WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -40,13 +40,19 @@
                   "name": "api_scope",
                   "kind": {
                     "Enum": [
-                      "content_read",
-                      "content_write",
+                      "post_read",
+                      "post_write",
+                      "page_read",
+                      "page_write",
+                      "tag_read",
                       "tag_write",
+                      "navigation_read",
                       "navigation_write",
+                      "upload_read",
                       "upload_write",
+                      "settings_read",
                       "settings_write",
-                      "jobs_read",
+                      "job_read",
                       "audit_read"
                     ]
                   }
@@ -58,39 +64,59 @@
       },
       {
         "ordinal": 6,
+        "name": "status: ApiKeyStatus",
+        "type_info": {
+          "Custom": {
+            "name": "api_key_status",
+            "kind": {
+              "Enum": [
+                "active",
+                "revoked",
+                "expired"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "expires_in",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 8,
         "name": "expires_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 7,
+        "ordinal": 9,
         "name": "revoked_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 8,
+        "ordinal": 10,
         "name": "last_used_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
+        "ordinal": 11,
         "name": "created_by",
         "type_info": "Text"
       },
       {
-        "ordinal": 10,
+        "ordinal": 12,
         "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Text",
-        "Text",
-        "Bool",
-        "Bool",
-        "Timestamptz",
-        "Uuid",
-        "Int8"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -100,12 +126,15 @@
       false,
       false,
       false,
+      false,
+      true,
       true,
       true,
       true,
       false,
+      false,
       false
     ]
   },
-  "hash": "540e5bf3048c5dd639e919a4cb2cbb010b1e4cb3e0a7d89aa64d652e8a3abee1"
+  "hash": "bd2c6737a2fc9d8d9afa231c636b5c9603a4aea036f6e905d1cef1e0903e4571"
 }

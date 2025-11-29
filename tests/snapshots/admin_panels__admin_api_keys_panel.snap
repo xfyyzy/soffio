@@ -24,7 +24,7 @@ expression: rendered
           
           
           
-          <input type="hidden" name="tag" value="content_read">
+          <input type="hidden" name="scope" value="content_read">
           
           
           
@@ -44,7 +44,7 @@ expression: rendered
           
           
           
-          <input type="hidden" name="tag" value="content_read">
+          <input type="hidden" name="scope" value="content_read">
           
           
           
@@ -64,7 +64,7 @@ expression: rendered
           
           
           
-          <input type="hidden" name="tag" value="content_read">
+          <input type="hidden" name="scope" value="content_read">
           
           
           
@@ -108,13 +108,15 @@ expression: rendered
 
 
 
-  <table data-role="publishable-table">
+  <table data-role="publishable-table" data-table="api-keys">
     <thead>
       <tr>
         <th scope="col" data-column="name">Name</th>
+        <th scope="col" data-column="description">Description</th>
         <th scope="col" data-column="prefix">Prefix</th>
         <th scope="col" data-column="scopes">Scopes</th>
         <th scope="col" data-column="created">Created</th>
+        <th scope="col" data-column="expires">Expires</th>
         <th scope="col" data-column="last-used">Last used</th>
         <th scope="col" data-column="status">Status</th>
         <th scope="col">Actions</th>
@@ -123,18 +125,28 @@ expression: rendered
     <tbody>
       
       <tr data-role="api-key-row" data-key-id="00000000-0000-0000-0000-000000000000">
-        <td data-column="name">test-key</td>
+        <td data-column="name" title="test-key"><span>test-key</span></td>
+        <td data-column="description" title="Test API key">
+          
+          <span>Test API key</span>
+          
+        </td>
         <td data-column="prefix"><code>sk_abc123</code></td>
         <td data-column="scopes">
           <div data-role="badge-row">
           
-            <span data-role="badge">content_read</span>
+            <span data-role="badge">Post read</span>
           
-            <span data-role="badge">content_write</span>
+            <span data-role="badge">Post write</span>
           
           </div>
         </td>
         <td data-column="created">2025-10-24T12:00:00Z</td>
+        <td data-column="expires">
+          
+            2026-10-24T12:00:00Z
+          
+        </td>
         <td data-column="last-used">
           
             2025-10-25T09:00:00Z
@@ -169,6 +181,16 @@ expression: rendered
                   <button type="submit" data-variant="danger">Revoke</button>
                 </form>
                 
+                <form data-role="inline-form" method="post" action="/api-keys/00000000-0000-0000-0000-000000000000/delete"
+                      data-on-submit__prevent="(@post(`/api-keys/00000000-0000-0000-0000-000000000000/delete`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="00000000-0000-0000-0000-000000000000">
+                  <input type="hidden" name="cursor" value="cursor-token">
+                  <input type="hidden" name="status_filter" value="">
+                  <input type="hidden" name="filter_search" value="test">
+                  <input type="hidden" name="filter_scope" value="content_read">
+                  <input type="hidden" name="trail" value="~">
+                  <button type="submit" data-variant="danger">Delete</button>
+                </form>
               </div>
         </td>
       </tr>
@@ -183,7 +205,7 @@ expression: rendered
         
         
         
-        <input type="hidden" name="tag" value="content_read">
+        <input type="hidden" name="scope" value="content_read">
         
         
         
@@ -200,7 +222,7 @@ expression: rendered
         
         
         
-        <input type="hidden" name="tag" value="content_read">
+        <input type="hidden" name="scope" value="content_read">
         
         
         

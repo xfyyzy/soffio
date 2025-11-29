@@ -10,7 +10,7 @@ use crate::application::repos::{
     ApiKeyPageRequest, ApiKeyQueryFilter, ApiKeysRepo, CreateApiKeyParams, RepoError,
     UpdateApiKeySecretParams,
 };
-use crate::domain::api_keys::{ApiKeyRecord, ApiScope};
+use crate::domain::api_keys::{ApiKeyRecord, ApiKeyStatus, ApiScope};
 
 const TOKEN_PREFIX: &str = "sk";
 const MIN_SECRET_LEN: usize = 32;
@@ -42,7 +42,7 @@ pub struct IssueApiKeyCommand {
     pub name: String,
     pub description: Option<String>,
     pub scopes: Vec<ApiScope>,
-    pub expires_at: Option<OffsetDateTime>,
+    pub expires_in: Option<time::Duration>,
     pub created_by: String,
 }
 
@@ -90,6 +90,10 @@ impl ApiKeyService {
         let token = format!("{TOKEN_PREFIX}_{prefix}_{secret}");
         let hashed_secret = Self::hash_secret(&secret);
 
+        // Compute expires_at from expires_in if set
+        let now = OffsetDateTime::now_utc();
+        let expires_at = cmd.expires_in.map(|d| now + d);
+
         let record = self
             .repo
             .create_key(CreateApiKeyParams {
@@ -98,7 +102,8 @@ impl ApiKeyService {
                 prefix: prefix.clone(),
                 hashed_secret,
                 scopes: cmd.scopes,
-                expires_at: cmd.expires_at,
+                expires_in: cmd.expires_in,
+                expires_at,
                 created_by: cmd.created_by,
             })
             .await?;
@@ -107,6 +112,14 @@ impl ApiKeyService {
     }
 
     pub async fn rotate(&self, id: Uuid) -> Result<ApiKeyIssued, ApiKeyError> {
+        // Verify key exists
+        let _current = self
+            .repo
+            .find_by_id(id)
+            .await?
+            .ok_or(ApiKeyError::NotFound)?;
+
+        // Generate new credentials - repo layer handles reactivation and expires_at recalculation
         let prefix = Self::generate_prefix();
         let secret = Self::generate_secret();
         let token = format!("{TOKEN_PREFIX}_{prefix}_{secret}");
@@ -128,6 +141,16 @@ impl ApiKeyService {
         let now = OffsetDateTime::now_utc();
         self.repo.revoke_key(id, now).await?;
         Ok(())
+    }
+
+    pub async fn delete(&self, id: Uuid) -> Result<bool, ApiKeyError> {
+        let deleted = self.repo.delete_key(id).await?;
+        Ok(deleted)
+    }
+
+    pub async fn expire_keys(&self) -> Result<u64, ApiKeyError> {
+        let count = self.repo.expire_keys().await?;
+        Ok(count)
     }
 
     pub async fn list(&self) -> Result<Vec<ApiKeyRecord>, ApiKeyError> {
@@ -165,18 +188,22 @@ impl ApiKeyService {
             .map_err(|_| ApiAuthError::Invalid)?
             .ok_or(ApiAuthError::Invalid)?;
 
-        let now = OffsetDateTime::now_utc();
-        if let Some(revoked_at) = record.revoked_at
-            && revoked_at <= now
-        {
-            return Err(ApiAuthError::Revoked);
+        // Check status field first
+        match record.status {
+            ApiKeyStatus::Revoked => return Err(ApiAuthError::Revoked),
+            ApiKeyStatus::Expired => return Err(ApiAuthError::Expired),
+            ApiKeyStatus::Active => { /* continue */ }
         }
+
+        // Fallback: check for keys that expired between cron runs
+        let now = OffsetDateTime::now_utc();
         if let Some(expires_at) = record.expires_at
             && expires_at <= now
         {
             return Err(ApiAuthError::Expired);
         }
 
+        // Verify secret
         let hashed_input = Self::hash_secret(&parsed.secret);
         if record.hashed_secret.ct_eq(&hashed_input).unwrap_u8() == 0 {
             return Err(ApiAuthError::Invalid);
