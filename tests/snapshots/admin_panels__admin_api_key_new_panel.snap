@@ -37,6 +37,9 @@ expression: rendered
         
       </select>
     </label>
+    <div data-role="scope-selection-store">
+  <input type="hidden" name="scope_state" value="">
+</div>
   </form>
   
 

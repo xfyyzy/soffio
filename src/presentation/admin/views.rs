@@ -1001,6 +1001,12 @@ pub struct AdminApiKeyScopePickerTemplate {
 }
 
 #[derive(Template)]
+#[template(path = "admin/api_key_scope_selection_store.html")]
+pub struct AdminApiKeyScopeSelectionStoreTemplate {
+    pub picker: AdminApiKeyScopePickerView,
+}
+
+#[derive(Template)]
 #[template(path = "admin/page_edit.html")]
 pub struct AdminPageEditTemplate {
     pub view: AdminLayout<AdminPageEditorView>,

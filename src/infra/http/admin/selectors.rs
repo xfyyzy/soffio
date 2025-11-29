@@ -16,5 +16,6 @@ pub const TAG_PICKER: &str = "[data-role=\"picker\"][data-picker-type=\"tag\"]";
 pub const TAG_SELECTION_STORE: &str = "[data-role=\"tag-selection-store\"]";
 
 pub const SCOPE_PICKER: &str = "[data-role=\"picker\"][data-picker-type=\"scope\"]";
+pub const SCOPE_SELECTION_STORE: &str = "[data-role=\"scope-selection-store\"]";
 
 pub const UPLOAD_QUEUE_BODY: &str = "[data-role=\"upload-queue-body\"]";

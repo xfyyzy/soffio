@@ -37,8 +37,7 @@ pub struct ApiKeyFilters {
 pub struct CreateApiKeyForm {
     pub name: String,
     pub description: Option<String>,
-    #[serde(default)]
-    pub scopes: Vec<String>,
+    pub scope_state: Option<String>,
     pub expires_in: Option<String>,
 }
 
@@ -111,7 +110,8 @@ pub async fn admin_api_key_new_submit(
     State(state): State<AdminState>,
     Form(form): Form<CreateApiKeyForm>,
 ) -> Response {
-    let scopes = match parse_scopes(&form.scopes) {
+    let scope_values = parse_scope_state(&form.scope_state);
+    let scopes = match parse_scopes(&scope_values) {
         Ok(scopes) if !scopes.is_empty() => scopes,
         _ => {
             return ApiKeyHttpError::bad_request("At least one scope is required").into_response();
@@ -146,7 +146,8 @@ pub async fn admin_api_key_create(
     State(state): State<AdminState>,
     Form(form): Form<CreateApiKeyForm>,
 ) -> Response {
-    let scopes = match parse_scopes(&form.scopes) {
+    let scope_values = parse_scope_state(&form.scope_state);
+    let scopes = match parse_scopes(&scope_values) {
         Ok(scopes) if !scopes.is_empty() => scopes,
         _ => {
             return ApiKeyHttpError::bad_request("At least one scope is required").into_response();
@@ -275,12 +276,14 @@ fn parse_scope_state(state: &Option<String>) -> Vec<String> {
 }
 
 fn render_scope_picker_response(selected_scopes: &[String]) -> Response {
-    use crate::infra::http::admin::selectors::SCOPE_PICKER;
+    use crate::infra::http::admin::selectors::{SCOPE_PICKER, SCOPE_SELECTION_STORE};
 
     let picker = build_scope_picker(selected_scopes);
-    let template = admin_views::AdminApiKeyScopePickerTemplate { picker };
 
-    let html = match template.render() {
+    let picker_template = admin_views::AdminApiKeyScopePickerTemplate {
+        picker: picker.clone(),
+    };
+    let picker_html = match picker_template.render() {
         Ok(html) => html,
         Err(err) => {
             return ApiKeyHttpError::from_template(err, "admin::api_keys::scope_picker")
@@ -288,8 +291,18 @@ fn render_scope_picker_response(selected_scopes: &[String]) -> Response {
         }
     };
 
+    let store_template = admin_views::AdminApiKeyScopeSelectionStoreTemplate { picker };
+    let store_html = match store_template.render() {
+        Ok(html) => html,
+        Err(err) => {
+            return ApiKeyHttpError::from_template(err, "admin::api_keys::scope_selection_store")
+                .into_response();
+        }
+    };
+
     let mut stream = crate::application::stream::StreamBuilder::new();
-    stream.push_patch(html, SCOPE_PICKER, ElementPatchMode::Replace);
+    stream.push_patch(picker_html, SCOPE_PICKER, ElementPatchMode::Replace);
+    stream.push_patch(store_html, SCOPE_SELECTION_STORE, ElementPatchMode::Replace);
     stream.into_response()
 }
 
