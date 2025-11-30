@@ -23,6 +23,7 @@ expression: rendered
       <span>Description</span>
       <textarea name="description" rows="3" placeholder="Optional purpose"></textarea>
     </label>
+    
     <label>
       <span>Expires in</span>
       <select name="expires_in">
@@ -35,6 +36,7 @@ expression: rendered
         
       </select>
     </label>
+    
     <div data-role="scope-selection-store">
   <input type="hidden" name="scope_state" value="">
 </div>
@@ -92,6 +94,7 @@ expression: rendered
 </section>
   <div data-role="form-actions">
     <button type="submit" form="api-key-form">Create key</button>
+    
   </div>
 
   </div>
