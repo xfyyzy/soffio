@@ -1,29 +1,3 @@
-[data-role="navigation-editor"] input,
-[data-role="navigation-editor"] textarea,
-[data-role="navigation-editor"] select,
-[data-role="api-key-editor"] input,
-[data-role="api-key-editor"] textarea,
-[data-role="api-key-editor"] select,
-[data-role="page-editor"] select,
-[data-role="post-editor"] select {
-  padding: 0.65rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-soft);
-  font-size: 1rem;
-}
-
-[data-role="post-editor"] button,
-[data-role="page-editor"] button,
-[data-role="tag-editor"] button,
-[data-role="navigation-editor"] button,
-[data-role="api-key-editor"] button,
-[data-role="post-create-form"] button,
-[data-role="page-create-form"] button,
-[data-role="tag-create-form"] button,
-[data-role="navigation-create-form"] button {
-  align-self: flex-start;
-}
-
 [data-admin-toast="stack"] {
   position: fixed;
   top: 2rem;
@@ -248,3 +222,121 @@ status-badge {
 
 status-badge {
   font-size: 0.8rem;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+status-badge[data-status="published"] {
+  background-color: #dcfce7;
+  color: #047857;
+}
+
+status-badge[data-status="draft"] {
+  background-color: #eef2ff;
+  color: #4338ca;
+}
+
+status-badge[data-status="archived"] {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+status-badge[data-status="error"] {
+  background-color: #fde6f2;
+  color: #be185d;
+}
+
+status-badge[data-status="internal"] {
+  background-color: #e0f2fe;
+  color: #1d4ed8;
+}
+
+status-badge[data-status="external"] {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+status-badge[data-status="enabled"] {
+  background-color: #dcfce7;
+  color: #047857;
+}
+
+status-badge[data-status="disabled"] {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+status-badge[data-status="pending"] {
+  background-color: rgba(96, 125, 139, 0.16);
+  color: #607d8b;
+}
+
+status-badge[data-status="uploading"] {
+  background-color: rgba(33, 150, 243, 0.16);
+  color: #0d47a1;
+}
+
+status-badge[data-status="success"] {
+  background-color: rgba(76, 175, 80, 0.18);
+  color: #1b5e20;
+}
+
+status-badge[data-status="active"] {
+  background-color: #dcfce7;
+  color: #047857;
+}
+
+status-badge[data-status="revoked"] {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+status-badge[data-status="expired"] {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+[data-role="card"] {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-card);
+  margin-bottom: 1.5rem;
+}
+
+[data-role="card"][data-variant="success"] {
+  background-color: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+[data-role="card"][data-variant="success"] p {
+  margin: 0.25rem 0;
+  color: #166534;
+}
+
+[data-role="card"][data-variant="highlight"] {
+  background-color: #eef2ff;
+  border: 1px solid #a5b4fc;
+}
+
+[data-role="card"][data-variant="highlight"] p {
+  margin: 0.25rem 0;
+  color: #3730a3;
+}
+
+[data-role="token-display"] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #f1f5f9;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: var(--radius-card);
+  margin-bottom: 1.5rem;
+}
+
+[data-role="token-display"] code {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  word-break: break-all;
+  color: var(--text-primary);
+}
+
