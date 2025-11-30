@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::application::pagination::ApiKeyCursor;
 use crate::application::repos::{
     ApiKeyListPage, ApiKeyPageRequest, ApiKeyQueryFilter, ApiKeyStatusFilter, ApiKeysRepo,
-    CreateApiKeyParams, RepoError, UpdateApiKeySecretParams,
+    CreateApiKeyParams, RepoError, UpdateApiKeyMetadataParams, UpdateApiKeySecretParams,
 };
 use crate::domain::api_keys::{ApiKeyRecord, ApiKeyStatus, ApiScope};
 
@@ -363,6 +363,36 @@ impl ApiKeysRepo for PostgresRepositories {
             "#,
             params.new_prefix,
             params.new_hashed_secret,
+            params.id
+        )
+        .fetch_one(self.pool())
+        .await
+        .map_err(RepoError::from_persistence)?;
+
+        ApiKeyRecord::try_from(row)
+    }
+
+    async fn update_metadata(
+        &self,
+        params: UpdateApiKeyMetadataParams,
+    ) -> Result<ApiKeyRecord, RepoError> {
+        let row = sqlx::query_as!(
+            ApiKeyRow,
+            r#"
+            UPDATE api_keys
+            SET name = $1,
+                description = $2,
+                scopes = $3::api_scope[],
+                updated_at = now()
+            WHERE id = $4
+            RETURNING id, name, description, prefix, hashed_secret,
+                      scopes as "scopes: Vec<ApiScope>",
+                      status as "status: ApiKeyStatus",
+                      expires_in, expires_at, revoked_at, last_used_at, created_by, created_at, updated_at
+            "#,
+            params.name,
+            params.description,
+            params.scopes as Vec<ApiScope>,
             params.id
         )
         .fetch_one(self.pool())

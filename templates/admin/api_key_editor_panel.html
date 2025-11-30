@@ -1,6 +1,6 @@
 {% extends "admin/layouts/panel.html" %}
 
-{% block panel_id %}api-key-new{% endblock %}
+{% block panel_id %}api-key-editor{% endblock %}
 {% block panel_heading %}{{ content.heading }}{% endblock %}
 
 {% block panel_toolbar %}{% endblock panel_toolbar %}
@@ -13,24 +13,17 @@
         data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
     <label>
       <span>Name</span>
-      <input type="text" name="name" value="{% if let Some(v) = &content.name %}{{ v }}{% endif %}" required>
+      <input type="text" name="name" value="{{ content.name }}" required>
     </label>
     <label>
       <span>Description</span>
       <textarea name="description" rows="3" placeholder="Optional purpose">{% if let Some(v) = &content.description %}{{ v }}{% endif %}</textarea>
     </label>
-    <label>
-      <span>Expires in</span>
-      <select name="expires_in">
-        {% for option in content.expires_in_options %}
-        <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
-        {% endfor %}
-      </select>
-    </label>
     {% include "admin/api_key_scope_selection_store.html" %}
   </form>
   {% include "admin/api_key_scope_picker.html" %}
   <div data-role="form-actions">
-    <button type="submit" form="api-key-form">Create key</button>
+    <button type="submit" form="api-key-form">Save changes</button>
+    <a href="/api-keys" data-role="button" data-variant="secondary">Back to API keys</a>
   </div>
 {% endblock panel_content %}

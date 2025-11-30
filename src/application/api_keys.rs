@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::application::repos::{
     ApiKeyPageRequest, ApiKeyQueryFilter, ApiKeysRepo, CreateApiKeyParams, RepoError,
-    UpdateApiKeySecretParams,
+    UpdateApiKeyMetadataParams, UpdateApiKeySecretParams,
 };
 use crate::domain::api_keys::{ApiKeyRecord, ApiKeyStatus, ApiScope};
 
@@ -44,6 +44,14 @@ pub struct IssueApiKeyCommand {
     pub scopes: Vec<ApiScope>,
     pub expires_in: Option<time::Duration>,
     pub created_by: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct UpdateApiKeyCommand {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub scopes: Vec<ApiScope>,
 }
 
 #[derive(Debug, Clone)]
@@ -135,6 +143,29 @@ impl ApiKeyService {
             .await?;
 
         Ok(ApiKeyIssued { record, token })
+    }
+
+    pub async fn update(&self, cmd: UpdateApiKeyCommand) -> Result<ApiKeyRecord, ApiKeyError> {
+        if cmd.scopes.is_empty() {
+            return Err(ApiKeyError::InvalidScopes);
+        }
+
+        let record = self
+            .repo
+            .update_metadata(UpdateApiKeyMetadataParams {
+                id: cmd.id,
+                name: cmd.name,
+                description: cmd.description,
+                scopes: cmd.scopes,
+            })
+            .await?;
+
+        Ok(record)
+    }
+
+    pub async fn load(&self, id: Uuid) -> Result<Option<ApiKeyRecord>, ApiKeyError> {
+        let record = self.repo.find_by_id(id).await?;
+        Ok(record)
     }
 
     pub async fn revoke(&self, id: Uuid) -> Result<(), ApiKeyError> {

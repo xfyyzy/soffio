@@ -11,12 +11,17 @@ pub struct ApiKeyHttpError(ApiErrorKind);
 #[derive(Debug)]
 enum ApiErrorKind {
     BadRequest(&'static str, Option<String>),
+    NotFound(&'static str),
     Service(String),
 }
 
 impl ApiKeyHttpError {
     pub fn bad_request(message: &'static str) -> Self {
         Self(ApiErrorKind::BadRequest(message, None))
+    }
+
+    pub fn not_found(message: &'static str) -> Self {
+        Self(ApiErrorKind::NotFound(message))
     }
 
     pub fn from_api(err: ApiKeyError) -> Self {
@@ -54,6 +59,13 @@ impl IntoResponse for ApiKeyHttpError {
                 StatusCode::BAD_REQUEST,
                 message,
                 hint.unwrap_or_else(|| "Invalid request".to_string()),
+            )
+            .into_response(),
+            ApiErrorKind::NotFound(message) => crate::application::error::HttpError::new(
+                "infra::http::admin_api_keys",
+                StatusCode::NOT_FOUND,
+                message,
+                "The requested resource was not found".to_string(),
             )
             .into_response(),
             ApiErrorKind::Service(detail) => crate::application::error::HttpError::new(

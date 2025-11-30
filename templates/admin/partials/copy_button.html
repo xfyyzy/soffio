@@ -1,0 +1,14 @@
+<form
+  method="post"
+  action="{{ copy_toast_action }}"
+  data-role="inline-form"
+  data-on-submit__prevent="(@post(`{{ copy_toast_action }}`, { contentType: 'form' }))"
+>
+  <input type="hidden" name="kind" value="success">
+  <input type="hidden" name="message" value="{{ copy_success_message }}">
+  <button
+    type="submit"
+    {% if !copy_button_role.is_empty() %}data-role="{{ copy_button_role }}"{% endif %}
+    data-on-click__prevent="(@copyToClipboard({ href: `{{ copy_value }}`, successMessage: '{{ copy_success_message }}', errorMessage: '{{ copy_error_message }}' }))"
+  >{{ copy_button_label }}</button>
+</form>

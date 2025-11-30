@@ -905,6 +905,7 @@ pub struct AdminApiKeyRowView {
     pub status: String,
     pub status_label: String,
     pub description: Option<String>,
+    pub edit_href: String,
     pub revoke_action: String,
     pub rotate_action: String,
     pub delete_action: String,
@@ -949,7 +950,6 @@ pub struct AdminApiKeyListView {
     pub previous_page_state: Option<AdminApiKeyPaginationState>,
     pub next_page_state: Option<AdminApiKeyPaginationState>,
     pub available_scopes: Vec<AdminApiScopeOption>,
-    pub new_token: Option<String>,
 }
 
 #[derive(Template)]
@@ -987,7 +987,6 @@ pub struct AdminApiKeyNewView {
     pub description: Option<String>,
     pub expires_in_options: Vec<AdminApiKeyExpiresInOption>,
     pub scope_picker: AdminApiKeyScopePickerView,
-    pub new_token: Option<String>,
 }
 
 #[derive(Template)]
@@ -1005,6 +1004,7 @@ pub struct AdminApiKeyNewPanelTemplate {
 #[derive(Clone)]
 pub struct AdminApiKeyCreatedView {
     pub heading: String,
+    pub message: String,
     pub token: String,
     pub back_href: String,
     pub copy_toast_action: String,
@@ -1014,6 +1014,27 @@ pub struct AdminApiKeyCreatedView {
 #[template(path = "admin/api_key_created_panel.html")]
 pub struct AdminApiKeyCreatedPanelTemplate {
     pub content: AdminApiKeyCreatedView,
+}
+
+#[derive(Clone)]
+pub struct AdminApiKeyEditorView {
+    pub heading: String,
+    pub form_action: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub scope_picker: AdminApiKeyScopePickerView,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_key_edit.html")]
+pub struct AdminApiKeyEditTemplate {
+    pub view: AdminLayout<AdminApiKeyEditorView>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_key_editor_panel.html")]
+pub struct AdminApiKeyEditorPanelTemplate {
+    pub content: AdminApiKeyEditorView,
 }
 
 #[derive(Template)]

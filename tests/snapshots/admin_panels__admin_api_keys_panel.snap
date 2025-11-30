@@ -159,6 +159,7 @@ expression: rendered
         </td>
         <td data-role="publishable-actions">
               <div data-role="row-actions">
+                <a href="/api-keys/00000000-0000-0000-0000-000000000000/edit">Edit</a>
                 <form data-role="inline-form" method="post" action="/api-keys/00000000-0000-0000-0000-000000000000/rotate"
                       data-on-submit__prevent="(@post(`/api-keys/00000000-0000-0000-0000-000000000000/rotate`, { contentType: 'form' }))">
                   <input type="hidden" name="id" value="00000000-0000-0000-0000-000000000000">

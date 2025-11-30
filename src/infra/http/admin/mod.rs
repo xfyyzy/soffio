@@ -144,9 +144,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/api-keys", get(api_keys::admin_api_keys))
         .route("/api-keys/create", post(api_keys::admin_api_key_create))
         .route("/api-keys/panel", post(api_keys::admin_api_keys_panel))
+        .route("/api-keys/new", get(api_keys::admin_api_key_new))
         .route(
-            "/api-keys/new",
-            get(api_keys::admin_api_key_new).post(api_keys::admin_api_key_new_submit),
+            "/api-keys/{id}/edit",
+            get(api_keys::admin_api_key_edit).post(api_keys::admin_api_key_update),
         )
         .route(
             "/api-keys/new/scopes/toggle",

@@ -8,23 +8,17 @@
 {% block panel_controls %}{% endblock %}
 
 {% block panel_content %}
-  <p>Your new API key has been created. Copy it now — it won't be shown again.</p>
+  <p>{{ content.message }}</p>
 
   <div data-role="token-display">
     <code data-role="token-value">{{ content.token }}</code>
-    <form
-      method="post"
-      action="{{ content.copy_toast_action }}"
-      data-role="inline-form"
-      data-on-submit__prevent="(@post(`{{ content.copy_toast_action }}`, { contentType: 'form' }))"
-    >
-      <input type="hidden" name="kind" value="success">
-      <input type="hidden" name="message" value="Key copied to clipboard">
-      <button
-        type="submit"
-        data-on-click__prevent="(@copyToClipboard({ href: `{{ content.token }}`, successMessage: 'Key copied to clipboard', errorMessage: 'Copy failed' }))"
-      >Copy</button>
-    </form>
+    {% let copy_value = content.token.clone() %}
+    {% let copy_toast_action = content.copy_toast_action.clone() %}
+    {% let copy_button_label = "Copy" %}
+    {% let copy_success_message = "Key copied to clipboard" %}
+    {% let copy_error_message = "Copy failed" %}
+    {% let copy_button_role = "" %}
+    {% include "admin/partials/copy_button.html" %}
   </div>
 
   <div data-role="form-actions">

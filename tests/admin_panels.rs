@@ -657,6 +657,7 @@ fn snapshot_admin_api_keys_panel() {
             status: "active".into(),
             status_label: "Active".into(),
             description: Some("Test API key".into()),
+            edit_href: "/api-keys/00000000-0000-0000-0000-000000000000/edit".into(),
             revoke_action: "/api-keys/00000000-0000-0000-0000-000000000000/revoke".into(),
             rotate_action: "/api-keys/00000000-0000-0000-0000-000000000000/rotate".into(),
             delete_action: "/api-keys/00000000-0000-0000-0000-000000000000/delete".into(),
@@ -727,7 +728,6 @@ fn snapshot_admin_api_keys_panel() {
                 label: "Content write".into(),
             },
         ],
-        new_token: None,
     };
 
     let template = AdminApiKeysPanelTemplate { content };
@@ -778,7 +778,6 @@ fn snapshot_admin_api_key_new_panel() {
             ],
             selected_values: Vec::new(),
         },
-        new_token: None,
     };
 
     let template = AdminApiKeyNewPanelTemplate { content };

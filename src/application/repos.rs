@@ -519,6 +519,14 @@ pub struct UpdateApiKeySecretParams {
     pub new_hashed_secret: Vec<u8>,
 }
 
+#[derive(Debug, Clone)]
+pub struct UpdateApiKeyMetadataParams {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub scopes: Vec<ApiScope>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ApiKeyStatusFilter {
     Active,
@@ -573,6 +581,11 @@ pub trait ApiKeysRepo: Send + Sync {
     async fn update_secret(
         &self,
         params: UpdateApiKeySecretParams,
+    ) -> Result<ApiKeyRecord, RepoError>;
+
+    async fn update_metadata(
+        &self,
+        params: UpdateApiKeyMetadataParams,
     ) -> Result<ApiKeyRecord, RepoError>;
 
     async fn update_last_used(

@@ -42,3 +42,10 @@ pub struct ScopeToggleForm {
     pub scope_id: String,
     pub scope_state: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct EditApiKeyForm {
+    pub name: String,
+    pub description: Option<String>,
+    pub scope_state: Option<String>,
+}

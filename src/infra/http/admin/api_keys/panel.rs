@@ -3,7 +3,6 @@ use std::str::FromStr;
 
 use crate::{
     application::{
-        api_keys::ApiKeyIssued,
         pagination::ApiKeyCursor,
         repos::{ApiKeyPageRequest, ApiKeyQueryFilter, SettingsRepo},
     },
@@ -26,7 +25,6 @@ pub async fn build_panel_view(
     status_filter: Option<crate::application::repos::ApiKeyStatusFilter>,
     filter: &ApiKeyQueryFilter,
     cursor_state: &CursorState,
-    issued: Option<&ApiKeyIssued>,
 ) -> Result<admin_views::AdminApiKeyListView, ApiKeyHttpError> {
     let settings = state
         .db
@@ -82,13 +80,12 @@ pub async fn build_panel_view(
             status: key.status.as_str().to_string(),
             status_label: key.status.display_name().to_string(),
             description: key.description,
+            edit_href: format!("/api-keys/{}/edit", key.id),
             revoke_action: format!("/api-keys/{}/revoke", key.id),
             rotate_action: format!("/api-keys/{}/rotate", key.id),
             delete_action: format!("/api-keys/{}/delete", key.id),
         })
         .collect();
-
-    let new_token = issued.as_ref().map(|i| i.token.clone());
 
     // Build status counts struct
     let counts = ApiKeyStatusCounts {
@@ -165,7 +162,6 @@ pub async fn build_panel_view(
         previous_page_state,
         next_page_state,
         available_scopes: scope_options(),
-        new_token,
     })
 }
 

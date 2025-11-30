@@ -41,20 +41,13 @@
           <td data-role="publishable-actions">
             <div data-role="row-actions">
               <a href="{{ item.download_href }}">Download</a>
-              <form
-                method="post"
-                action="{{ content.copy_toast_action }}"
-                data-role="inline-form"
-                data-on-submit__prevent="(@post(`{{ content.copy_toast_action }}`, { contentType: 'form' }))"
-              >
-                <input type="hidden" name="kind" value="success">
-                <input type="hidden" name="message" value="Link copied to clipboard">
-                <button
-                  type="submit"
-                  data-role="secondary"
-                  data-on-click__prevent="(@copyToClipboard({ href: `{{ item.public_href }}`, successMessage: 'Link copied to clipboard', errorMessage: 'Copy failed' }))"
-                >Copy Link</button>
-              </form>
+              {% let copy_value = item.public_href.clone() %}
+              {% let copy_toast_action = content.copy_toast_action.clone() %}
+              {% let copy_button_label = "Copy Link" %}
+              {% let copy_success_message = "Link copied to clipboard" %}
+              {% let copy_error_message = "Copy failed" %}
+              {% let copy_button_role = "secondary" %}
+              {% include "admin/partials/copy_button.html" %}
               <form
                 method="post"
                 action="{{ item.delete_action }}"

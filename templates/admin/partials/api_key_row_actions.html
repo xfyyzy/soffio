@@ -1,4 +1,5 @@
               <div data-role="row-actions">
+                <a href="{{ key.edit_href }}">Edit</a>
                 <form data-role="inline-form" method="post" action="{{ key.rotate_action }}"
                       data-on-submit__prevent="(@post(`{{ key.rotate_action }}`, { contentType: 'form' }))">
                   <input type="hidden" name="id" value="{{ key.id }}">

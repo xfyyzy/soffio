@@ -1,6 +1,6 @@
 use askama::Template;
 use axum::{
-    extract::{Form, Query, State},
+    extract::{Form, Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
 };
@@ -8,14 +8,14 @@ use uuid::Uuid;
 
 use crate::{
     application::{
-        api_keys::{ApiKeyIssued, IssueApiKeyCommand},
+        api_keys::{ApiKeyIssued, IssueApiKeyCommand, UpdateApiKeyCommand},
         stream::StreamBuilder,
     },
-    domain::api_keys::ApiScope,
+    domain::api_keys::{ApiKeyRecord, ApiScope},
     infra::http::admin::{
         AdminState,
         pagination::CursorState,
-        selectors::{API_KEYS_PANEL, SCOPE_PICKER, SCOPE_SELECTION_STORE},
+        selectors::{API_KEY_EDITOR_PANEL, API_KEYS_PANEL, SCOPE_PICKER, SCOPE_SELECTION_STORE},
         shared::{Toast, push_toasts},
     },
     presentation::{admin::views as admin_views, views::render_template_response},
@@ -26,7 +26,10 @@ use std::str::FromStr;
 use super::{
     editor::{build_new_key_view, build_scope_picker, parse_expires_in, parse_scope_state},
     errors::ApiKeyHttpError,
-    forms::{ApiKeyFilters, ApiKeyIdForm, ApiKeyPanelForm, CreateApiKeyForm, ScopeToggleForm},
+    forms::{
+        ApiKeyFilters, ApiKeyIdForm, ApiKeyPanelForm, CreateApiKeyForm, EditApiKeyForm,
+        ScopeToggleForm,
+    },
     panel::{build_api_key_filter, build_panel_view, render_created_panel_html, render_panel_html},
     status::parse_api_key_status,
 };
@@ -57,52 +60,54 @@ pub async fn admin_api_keys_panel(
         }
     };
 
-    match build_stream(&state, None, &filters, &[]).await {
+    match build_stream(&state, &filters, &[]).await {
         Ok(stream) => stream,
         Err(err) => err.into_response(),
     }
 }
 
 pub async fn admin_api_key_new(State(state): State<AdminState>) -> Response {
-    match build_new_page(&state, None, StatusCode::OK).await {
+    match build_new_page(&state).await {
         Ok(resp) => resp,
         Err(err) => err.into_response(),
     }
 }
 
-pub async fn admin_api_key_new_submit(
+pub async fn admin_api_key_edit(State(state): State<AdminState>, Path(id): Path<Uuid>) -> Response {
+    match build_edit_page(&state, id).await {
+        Ok(resp) => resp,
+        Err(err) => err.into_response(),
+    }
+}
+
+pub async fn admin_api_key_update(
     State(state): State<AdminState>,
-    Form(form): Form<CreateApiKeyForm>,
+    Path(id): Path<Uuid>,
+    Form(form): Form<EditApiKeyForm>,
 ) -> Response {
     let scope_values = parse_scope_state(&form.scope_state);
     let scopes = match parse_scopes(&scope_values) {
         Ok(scopes) if !scopes.is_empty() => scopes,
         _ => {
-            return ApiKeyHttpError::bad_request("At least one scope is required").into_response();
+            return build_error_toast_response("At least one scope is required");
         }
     };
 
-    let expires_in = parse_expires_in(form.expires_in.as_deref());
-
-    let actor = "admin:api-keys";
-    let issued = match state
+    match state
         .api_keys
-        .issue(IssueApiKeyCommand {
+        .update(UpdateApiKeyCommand {
+            id,
             name: form.name,
             description: form.description,
             scopes,
-            expires_in,
-            created_by: actor.to_string(),
         })
         .await
     {
-        Ok(issued) => issued,
-        Err(err) => return ApiKeyHttpError::from_api(err).into_response(),
-    };
-
-    match build_new_page(&state, Some(issued), StatusCode::CREATED).await {
-        Ok(resp) => resp,
-        Err(err) => err.into_response(),
+        Ok(record) => match build_edit_stream(&record) {
+            Ok(stream) => stream,
+            Err(err) => err.into_response(),
+        },
+        Err(err) => build_error_toast_response(&format!("Failed to update key: {err}")),
     }
 }
 
@@ -165,7 +170,7 @@ pub async fn admin_api_key_revoke(
         trail: form.trail,
     };
 
-    match build_stream(&state, None, &filters, &[Toast::success("Key revoked")]).await {
+    match build_stream(&state, &filters, &[Toast::success("Key revoked")]).await {
         Ok(stream) => stream,
         Err(err) => err.into_response(),
     }
@@ -185,22 +190,7 @@ pub async fn admin_api_key_rotate(
         Err(err) => return ApiKeyHttpError::from_api(err).into_response(),
     };
 
-    let filters = ApiKeyFilters {
-        status: form.status_filter,
-        search: form.filter_search,
-        scope: form.filter_scope,
-        cursor: form.cursor,
-        trail: form.trail,
-    };
-
-    match build_stream(
-        &state,
-        Some(issued),
-        &filters,
-        &[Toast::success("Key rotated")],
-    )
-    .await
-    {
+    match build_rotated_stream(issued) {
         Ok(stream) => stream,
         Err(err) => err.into_response(),
     }
@@ -227,7 +217,7 @@ pub async fn admin_api_key_delete(
         trail: form.trail,
     };
 
-    match build_stream(&state, None, &filters, &[Toast::success("Key deleted")]).await {
+    match build_stream(&state, &filters, &[Toast::success("Key deleted")]).await {
         Ok(stream) => stream,
         Err(err) => err.into_response(),
     }
@@ -289,7 +279,7 @@ async fn build_page(
 
     let cursor_state = CursorState::new(filters.cursor.clone(), filters.trail.clone());
 
-    let panel = build_panel_view(state, status_filter, &query_filter, &cursor_state, None).await?;
+    let panel = build_panel_view(state, status_filter, &query_filter, &cursor_state).await?;
     let chrome = load_chrome(state).await?;
     let template = admin_views::AdminApiKeysTemplate {
         view: admin_views::AdminLayout::new(chrome, panel),
@@ -297,22 +287,72 @@ async fn build_page(
     Ok(render_template_response(template, StatusCode::OK))
 }
 
-async fn build_new_page(
-    state: &AdminState,
-    issued: Option<ApiKeyIssued>,
-    status: StatusCode,
-) -> Result<Response, ApiKeyHttpError> {
+async fn build_new_page(state: &AdminState) -> Result<Response, ApiKeyHttpError> {
     let chrome = load_chrome(state).await?;
-    let view = build_new_key_view(issued.map(|i| i.token));
+    let view = build_new_key_view();
 
     let layout = admin_views::AdminLayout::new(chrome, view);
     let template = admin_views::AdminApiKeyNewTemplate { view: layout };
-    Ok(render_template_response(template, status))
+    Ok(render_template_response(template, StatusCode::OK))
+}
+
+async fn build_edit_page(state: &AdminState, id: Uuid) -> Result<Response, ApiKeyHttpError> {
+    let record = state
+        .api_keys
+        .load(id)
+        .await
+        .map_err(ApiKeyHttpError::from_api)?
+        .ok_or_else(|| ApiKeyHttpError::not_found("API key not found"))?;
+
+    let chrome = load_chrome(state).await?;
+    let view = build_editor_view(&record);
+
+    let layout = admin_views::AdminLayout::new(chrome, view);
+    let template = admin_views::AdminApiKeyEditTemplate { view: layout };
+    Ok(render_template_response(template, StatusCode::OK))
+}
+
+fn build_edit_stream(record: &ApiKeyRecord) -> Result<Response, ApiKeyHttpError> {
+    let view = build_editor_view(record);
+    let panel_html = render_editor_panel_html(&view)?;
+
+    let mut stream = StreamBuilder::new();
+    stream.push_patch(panel_html, API_KEY_EDITOR_PANEL, ElementPatchMode::Replace);
+    push_toasts(&mut stream, &[Toast::success("API key updated")])
+        .map_err(|err| ApiKeyHttpError::service(format!("{err:?}")))?;
+
+    Ok(stream.into_response())
+}
+
+fn build_editor_view(record: &ApiKeyRecord) -> admin_views::AdminApiKeyEditorView {
+    let selected_scopes: Vec<String> = record
+        .scopes
+        .iter()
+        .map(|s| s.as_str().to_string())
+        .collect();
+
+    admin_views::AdminApiKeyEditorView {
+        heading: format!("Edit API key: {}", record.name),
+        form_action: format!("/api-keys/{}/edit", record.id),
+        name: record.name.clone(),
+        description: record.description.clone(),
+        scope_picker: build_scope_picker(&selected_scopes),
+    }
+}
+
+fn render_editor_panel_html(
+    content: &admin_views::AdminApiKeyEditorView,
+) -> Result<String, ApiKeyHttpError> {
+    let template = admin_views::AdminApiKeyEditorPanelTemplate {
+        content: content.clone(),
+    };
+    template
+        .render()
+        .map_err(|err| ApiKeyHttpError::from_template(err, "admin::api_keys::editor_panel"))
 }
 
 async fn build_stream(
     state: &AdminState,
-    issued: Option<ApiKeyIssued>,
     filters: &ApiKeyFilters,
     toasts: &[Toast],
 ) -> Result<Response, ApiKeyHttpError> {
@@ -323,14 +363,7 @@ async fn build_stream(
 
     let cursor_state = CursorState::new(filters.cursor.clone(), filters.trail.clone());
 
-    let panel = build_panel_view(
-        state,
-        status_filter,
-        &query_filter,
-        &cursor_state,
-        issued.as_ref(),
-    )
-    .await?;
+    let panel = build_panel_view(state, status_filter, &query_filter, &cursor_state).await?;
     let panel_html = render_panel_html(&panel)?;
 
     let mut stream = StreamBuilder::new();
@@ -352,10 +385,16 @@ fn build_error_toast_response(message: &str) -> Response {
     stream.into_response()
 }
 
-fn build_created_stream(issued: ApiKeyIssued) -> Result<Response, ApiKeyHttpError> {
+fn build_key_display_stream(
+    token: String,
+    heading: &str,
+    message: &str,
+    toast_message: &str,
+) -> Result<Response, ApiKeyHttpError> {
     let created_view = admin_views::AdminApiKeyCreatedView {
-        heading: "New key".to_string(),
-        token: issued.token,
+        heading: heading.to_string(),
+        message: message.to_string(),
+        token,
         back_href: "/api-keys".to_string(),
         copy_toast_action: "/toasts".to_string(),
     };
@@ -363,10 +402,28 @@ fn build_created_stream(issued: ApiKeyIssued) -> Result<Response, ApiKeyHttpErro
 
     let mut stream = StreamBuilder::new();
     stream.push_patch(panel_html, API_KEYS_PANEL, ElementPatchMode::Replace);
-    push_toasts(&mut stream, &[Toast::success("API key created")])
+    push_toasts(&mut stream, &[Toast::success(toast_message)])
         .map_err(|err| ApiKeyHttpError::service(format!("{err:?}")))?;
 
     Ok(stream.into_response())
+}
+
+fn build_created_stream(issued: ApiKeyIssued) -> Result<Response, ApiKeyHttpError> {
+    build_key_display_stream(
+        issued.token,
+        "New key",
+        "Your new API key has been created. Copy it now — it won't be shown again.",
+        "API key created",
+    )
+}
+
+fn build_rotated_stream(issued: ApiKeyIssued) -> Result<Response, ApiKeyHttpError> {
+    build_key_display_stream(
+        issued.token,
+        "Key rotated",
+        "Your API key has been rotated. Copy the new key now — it won't be shown again.",
+        "Key rotated",
+    )
 }
 
 fn parse_scopes(values: &[String]) -> Result<Vec<ApiScope>, ApiKeyHttpError> {
