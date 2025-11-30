@@ -737,28 +737,11 @@ fn snapshot_admin_api_keys_panel() {
 
 #[test]
 fn snapshot_admin_api_key_new_panel() {
-    let content = AdminApiKeyNewView {
+    let content = AdminApiKeyEditorView {
         heading: "Create API key".into(),
-        form_action: "/api-keys/new".into(),
-        name: None,
+        form_action: "/api-keys/create".into(),
+        name: String::new(),
         description: None,
-        expires_in_options: vec![
-            AdminApiKeyExpiresInOption {
-                value: "".into(),
-                label: "Never expires".into(),
-                selected: true,
-            },
-            AdminApiKeyExpiresInOption {
-                value: "30d".into(),
-                label: "30 days".into(),
-                selected: false,
-            },
-            AdminApiKeyExpiresInOption {
-                value: "90d".into(),
-                label: "90 days".into(),
-                selected: false,
-            },
-        ],
         scope_picker: AdminApiKeyScopePickerView {
             toggle_action: "/api-keys/new/scopes/toggle".into(),
             selected: Vec::new(),
@@ -778,9 +761,28 @@ fn snapshot_admin_api_key_new_panel() {
             ],
             selected_values: Vec::new(),
         },
+        expires_in_options: Some(vec![
+            AdminApiKeyExpiresInOption {
+                value: "".into(),
+                label: "Never expires".into(),
+                selected: true,
+            },
+            AdminApiKeyExpiresInOption {
+                value: "30d".into(),
+                label: "30 days".into(),
+                selected: false,
+            },
+            AdminApiKeyExpiresInOption {
+                value: "90d".into(),
+                label: "90 days".into(),
+                selected: false,
+            },
+        ]),
+        submit_label: "Create key".into(),
+        show_back_link: false,
     };
 
-    let template = AdminApiKeyNewPanelTemplate { content };
+    let template = AdminApiKeyEditorPanelTemplate { content };
     let rendered = template.render().unwrap();
     assert_snapshot!("admin_api_key_new_panel", rendered);
 }

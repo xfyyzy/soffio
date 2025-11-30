@@ -980,33 +980,10 @@ pub struct AdminApiKeyScopePickerView {
 }
 
 #[derive(Clone)]
-pub struct AdminApiKeyNewView {
-    pub heading: String,
-    pub form_action: String,
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub expires_in_options: Vec<AdminApiKeyExpiresInOption>,
-    pub scope_picker: AdminApiKeyScopePickerView,
-}
-
-#[derive(Template)]
-#[template(path = "admin/api_key_new.html")]
-pub struct AdminApiKeyNewTemplate {
-    pub view: AdminLayout<AdminApiKeyNewView>,
-}
-
-#[derive(Template)]
-#[template(path = "admin/api_key_new_panel.html")]
-pub struct AdminApiKeyNewPanelTemplate {
-    pub content: AdminApiKeyNewView,
-}
-
-#[derive(Clone)]
 pub struct AdminApiKeyCreatedView {
     pub heading: String,
     pub message: String,
     pub token: String,
-    pub back_href: String,
     pub copy_toast_action: String,
 }
 
@@ -1023,6 +1000,15 @@ pub struct AdminApiKeyEditorView {
     pub name: String,
     pub description: Option<String>,
     pub scope_picker: AdminApiKeyScopePickerView,
+    pub expires_in_options: Option<Vec<AdminApiKeyExpiresInOption>>,
+    pub submit_label: String,
+    pub show_back_link: bool,
+}
+
+#[derive(Template)]
+#[template(path = "admin/api_key_new.html")]
+pub struct AdminApiKeyNewTemplate {
+    pub view: AdminLayout<AdminApiKeyEditorView>,
 }
 
 #[derive(Template)]

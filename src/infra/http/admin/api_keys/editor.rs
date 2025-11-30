@@ -1,13 +1,15 @@
 use crate::{domain::api_keys::ApiScope, presentation::admin::views as admin_views};
 
-pub fn build_new_key_view() -> admin_views::AdminApiKeyNewView {
-    admin_views::AdminApiKeyNewView {
+pub fn build_new_key_view() -> admin_views::AdminApiKeyEditorView {
+    admin_views::AdminApiKeyEditorView {
         heading: "Create API key".to_string(),
         form_action: "/api-keys/create".to_string(),
-        name: None,
+        name: String::new(),
         description: None,
-        expires_in_options: expires_in_options(None),
         scope_picker: build_scope_picker(&[]),
+        expires_in_options: Some(expires_in_options(None)),
+        submit_label: "Create key".to_string(),
+        show_back_link: false,
     }
 }
 

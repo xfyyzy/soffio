@@ -15,7 +15,7 @@ use crate::{
     infra::http::admin::{
         AdminState,
         pagination::CursorState,
-        selectors::{API_KEY_EDITOR_PANEL, API_KEYS_PANEL, SCOPE_PICKER, SCOPE_SELECTION_STORE},
+        selectors::{API_KEY_EDITOR_PANEL, PANEL, SCOPE_PICKER, SCOPE_SELECTION_STORE},
         shared::{Toast, push_toasts},
     },
     presentation::{admin::views as admin_views, views::render_template_response},
@@ -337,6 +337,9 @@ fn build_editor_view(record: &ApiKeyRecord) -> admin_views::AdminApiKeyEditorVie
         name: record.name.clone(),
         description: record.description.clone(),
         scope_picker: build_scope_picker(&selected_scopes),
+        expires_in_options: None,
+        submit_label: "Save changes".to_string(),
+        show_back_link: false,
     }
 }
 
@@ -367,7 +370,9 @@ async fn build_stream(
     let panel_html = render_panel_html(&panel)?;
 
     let mut stream = StreamBuilder::new();
-    stream.push_patch(panel_html, API_KEYS_PANEL, ElementPatchMode::Replace);
+    // Replace the visible panel regardless of whether we're on the list view (api-keys)
+    // or the standalone editor view (api-key-editor). PANEL catches both cases.
+    stream.push_patch(panel_html, PANEL, ElementPatchMode::Replace);
 
     if !toasts.is_empty() {
         push_toasts(&mut stream, toasts)
@@ -395,13 +400,13 @@ fn build_key_display_stream(
         heading: heading.to_string(),
         message: message.to_string(),
         token,
-        back_href: "/api-keys".to_string(),
         copy_toast_action: "/toasts".to_string(),
     };
     let panel_html = render_created_panel_html(&created_view)?;
 
     let mut stream = StreamBuilder::new();
-    stream.push_patch(panel_html, API_KEYS_PANEL, ElementPatchMode::Replace);
+    // Use broad panel selector so both list view (api-keys) and standalone editor view succeed.
+    stream.push_patch(panel_html, PANEL, ElementPatchMode::Replace);
     push_toasts(&mut stream, &[Toast::success(toast_message)])
         .map_err(|err| ApiKeyHttpError::service(format!("{err:?}")))?;
 

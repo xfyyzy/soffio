@@ -19,11 +19,23 @@
       <span>Description</span>
       <textarea name="description" rows="3" placeholder="Optional purpose">{% if let Some(v) = &content.description %}{{ v }}{% endif %}</textarea>
     </label>
+    {% if let Some(options) = &content.expires_in_options %}
+    <label>
+      <span>Expires in</span>
+      <select name="expires_in">
+        {% for option in options %}
+        <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% endif %}
     {% include "admin/api_key_scope_selection_store.html" %}
   </form>
   {% include "admin/api_key_scope_picker.html" %}
   <div data-role="form-actions">
-    <button type="submit" form="api-key-form">Save changes</button>
+    <button type="submit" form="api-key-form">{{ content.submit_label }}</button>
+    {% if content.show_back_link %}
     <a href="/api-keys" data-role="button" data-variant="secondary">Back to API keys</a>
+    {% endif %}
   </div>
 {% endblock panel_content %}

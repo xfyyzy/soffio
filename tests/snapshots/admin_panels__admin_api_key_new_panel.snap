@@ -2,7 +2,7 @@
 source: tests/admin_panels.rs
 expression: rendered
 ---
-<section data-role="panel" data-admin-panel="api-key-new">
+<section data-role="panel" data-admin-panel="api-key-editor">
   <header data-role="panel-header">
     <h2 data-role="panel-title">Create API key</h2>
   </header>
@@ -13,8 +13,8 @@ expression: rendered
 
 
   
-  <form id="api-key-form" data-role="api-key-editor" method="post" action="/api-keys/new"
-        data-on-submit__prevent="(@post(`/api-keys/new`, { contentType: 'form' }))">
+  <form id="api-key-form" data-role="api-key-editor" method="post" action="/api-keys/create"
+        data-on-submit__prevent="(@post(`/api-keys/create`, { contentType: 'form' }))">
     <label>
       <span>Name</span>
       <input type="text" name="name" value="" required>

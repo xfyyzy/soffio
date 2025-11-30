@@ -93,6 +93,8 @@ impl ApiKeyService {
             return Err(ApiKeyError::InvalidScopes);
         }
 
+        let description = Self::normalize_description(cmd.description);
+
         let prefix = Self::generate_prefix();
         let secret = Self::generate_secret();
         let token = format!("{TOKEN_PREFIX}_{prefix}_{secret}");
@@ -106,7 +108,7 @@ impl ApiKeyService {
             .repo
             .create_key(CreateApiKeyParams {
                 name: cmd.name,
-                description: cmd.description,
+                description,
                 prefix: prefix.clone(),
                 hashed_secret,
                 scopes: cmd.scopes,
@@ -150,12 +152,14 @@ impl ApiKeyService {
             return Err(ApiKeyError::InvalidScopes);
         }
 
+        let description = Self::normalize_description(cmd.description);
+
         let record = self
             .repo
             .update_metadata(UpdateApiKeyMetadataParams {
                 id: cmd.id,
                 name: cmd.name,
-                description: cmd.description,
+                description,
                 scopes: cmd.scopes,
             })
             .await?;
@@ -254,6 +258,12 @@ impl ApiKeyService {
         })
     }
 
+    /// Normalize optional descriptions coming from external inputs.
+    /// Treat empty or whitespace-only strings as absent to align with UI placeholder logic.
+    fn normalize_description(desc: Option<String>) -> Option<String> {
+        desc.and_then(|d| if d.trim().is_empty() { None } else { Some(d) })
+    }
+
     fn hash_secret(secret: &str) -> Vec<u8> {
         let mut hasher = Sha256::new();
         hasher.update(secret.as_bytes());
@@ -290,4 +300,35 @@ impl ApiKeyService {
 struct ParsedToken {
     prefix: String,
     secret: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ApiKeyService;
+
+    #[test]
+    fn normalize_description_drops_empty_and_whitespace() {
+        assert_eq!(ApiKeyService::normalize_description(None), None);
+        assert_eq!(
+            ApiKeyService::normalize_description(Some(String::new())),
+            None
+        );
+        assert_eq!(
+            ApiKeyService::normalize_description(Some("   ".into())),
+            None
+        );
+    }
+
+    #[test]
+    fn normalize_description_preserves_non_empty() {
+        assert_eq!(
+            ApiKeyService::normalize_description(Some("desc".into())),
+            Some("desc".into())
+        );
+        // Leading/trailing whitespace is preserved; only empty strings are stripped.
+        assert_eq!(
+            ApiKeyService::normalize_description(Some(" spaced ".into())),
+            Some(" spaced ".into())
+        );
+    }
 }
