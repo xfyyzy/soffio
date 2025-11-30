@@ -52,7 +52,15 @@ fn prepare_admin_assets() -> Result<(), String> {
     let mut parts: Vec<_> = fs::read_dir(&parts_dir)
         .map_err(|err| format!("failed to read {}: {err}", parts_dir.display()))?
         .filter_map(|entry| match entry {
-            Ok(e) if e.file_type().map(|ft| ft.is_file()).unwrap_or(false) => Some(e),
+            Ok(e)
+                if e.file_type().map(|ft| ft.is_file()).unwrap_or(false)
+                    && e.path()
+                        .extension()
+                        .map(|ext| ext == "css")
+                        .unwrap_or(false) =>
+            {
+                Some(e)
+            }
             _ => None,
         })
         .collect();
