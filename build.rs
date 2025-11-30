@@ -65,7 +65,7 @@ fn prepare_admin_assets() -> Result<(), String> {
         })
         .collect();
 
-    parts.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+    parts.sort_by_key(|a| a.file_name());
 
     if parts.is_empty() {
         return Err(format!(
