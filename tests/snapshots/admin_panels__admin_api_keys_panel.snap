@@ -2,6 +2,7 @@
 source: tests/admin_panels.rs
 expression: rendered
 ---
+
 <section data-role="panel" data-admin-panel="api-keys">
   <header data-role="panel-header">
     <h2 data-role="panel-title">API keys</h2>
