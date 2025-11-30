@@ -12,6 +12,7 @@ use walkdir::WalkDir;
 fn main() {
     prepare_public_assets().expect("failed to prepare static public assets");
     prepare_common_assets().expect("failed to prepare shared static assets");
+    prepare_admin_assets().expect("failed to prepare admin static assets");
 
     let static_dir = Path::new("static");
 
@@ -25,6 +26,58 @@ fn main() {
             println!("cargo:rerun-if-changed={}", entry.path().display());
         }
     }
+}
+
+fn prepare_admin_assets() -> Result<(), String> {
+    let out_dir = PathBuf::from(env::var("OUT_DIR").map_err(|err| err.to_string())?);
+    let source_admin = Path::new("static").join("admin");
+    let dest_admin = out_dir.join("static_admin");
+
+    if dest_admin.exists() {
+        fs::remove_dir_all(&dest_admin)
+            .map_err(|err| format!("failed to clean {}: {err}", dest_admin.display()))?;
+    }
+
+    copy_dir(&source_admin, &dest_admin)?;
+
+    // Remove split sources from the bundled output; we only need the concatenated app.css at runtime.
+    let split_dir = dest_admin.join("app");
+    if split_dir.exists() {
+        fs::remove_dir_all(&split_dir)
+            .map_err(|err| format!("failed to clean split dir {}: {err}", split_dir.display()))?;
+    }
+
+    // Concatenate admin CSS parts into a single app.css in the bundled output.
+    let parts_dir = source_admin.join("app");
+    let mut parts: Vec<_> = fs::read_dir(&parts_dir)
+        .map_err(|err| format!("failed to read {}: {err}", parts_dir.display()))?
+        .filter_map(|entry| match entry {
+            Ok(e) if e.file_type().map(|ft| ft.is_file()).unwrap_or(false) => Some(e),
+            _ => None,
+        })
+        .collect();
+
+    parts.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+
+    if parts.is_empty() {
+        return Err(format!(
+            "no admin css parts found in {}",
+            parts_dir.display()
+        ));
+    }
+
+    let mut combined = String::new();
+    for entry in parts {
+        let content = fs::read_to_string(entry.path())
+            .map_err(|err| format!("failed to read {}: {err}", entry.path().display()))?;
+        combined.push_str(&content);
+    }
+
+    let dest_file = dest_admin.join("app.css");
+    fs::write(&dest_file, combined)
+        .map_err(|err| format!("failed to write {}: {err}", dest_file.display()))?;
+
+    Ok(())
 }
 
 fn prepare_public_assets() -> Result<(), String> {
