@@ -10,6 +10,7 @@ use axum::{
 use tracing::{error, warn};
 
 use crate::{
+    application::api_keys::ApiPrincipal,
     application::error::ErrorReport,
     infra::cache::{ResponseCache, should_store_response},
 };
@@ -76,6 +77,21 @@ pub async fn log_responses(request: Request<Body>, next: Next) -> Response {
     let uri = request.uri().clone();
     let start = Instant::now();
 
+    let (api_key_id, api_scopes) = match request.extensions().get::<ApiPrincipal>() {
+        Some(principal) => (
+            Some(principal.key_id.to_string()),
+            Some(
+                principal
+                    .scopes
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
+        ),
+        None => (None, None),
+    };
+
     let mut response = next.run(request).await;
     let status = response.status();
 
@@ -102,6 +118,8 @@ pub async fn log_responses(request: Request<Body>, next: Next) -> Response {
                 source = source,
                 detail = %detail,
                 chain = ?messages,
+                api_key_id = api_key_id.as_deref().unwrap_or(""),
+                api_scopes = api_scopes.as_deref().unwrap_or(""),
                 "request failed",
             );
         } else {
@@ -115,6 +133,8 @@ pub async fn log_responses(request: Request<Body>, next: Next) -> Response {
                 source = source,
                 detail = %detail,
                 chain = ?messages,
+                api_key_id = api_key_id.as_deref().unwrap_or(""),
+                api_scopes = api_scopes.as_deref().unwrap_or(""),
                 "client request error",
             );
         }

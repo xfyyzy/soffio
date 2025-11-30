@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-use super::PostgresRepositories;
+use super::{map_sqlx_error, PostgresRepositories};
 
 #[derive(sqlx::FromRow)]
 struct UploadRow {
@@ -96,7 +96,7 @@ impl UploadsRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(UploadRecord::from))
     }
@@ -125,7 +125,7 @@ impl UploadsRepo for PostgresRepositories {
             .build_query_as::<UploadRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         Ok(rows.into_iter().map(UploadRecord::from).collect())
     }
@@ -159,7 +159,7 @@ impl UploadsRepo for PostgresRepositories {
             .build_query_as::<UploadRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let has_more = (rows.len() as i64) > limit;
         if has_more {
@@ -189,7 +189,7 @@ impl UploadsRepo for PostgresRepositories {
             .build_query_scalar()
             .fetch_one(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         PostgresRepositories::convert_count(count)
     }
@@ -217,7 +217,7 @@ impl UploadsRepo for PostgresRepositories {
             .build_query_as::<MonthRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let mut counts = Vec::with_capacity(rows.len());
         for row in rows {
@@ -253,7 +253,7 @@ impl UploadsRepo for PostgresRepositories {
             .build_query_as::<TypeRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let mut counts = Vec::with_capacity(rows.len());
         for row in rows {
@@ -276,7 +276,7 @@ impl UploadsRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }

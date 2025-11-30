@@ -5,6 +5,7 @@ use uuid::Uuid;
 use crate::application::repos::{RepoError, SectionsRepo};
 use crate::domain::entities::PostSectionRecord;
 
+use crate::infra::db::map_sqlx_error;
 use super::PostgresRepositories;
 use super::types::{PersistedPostSection, PersistedPostSectionOwned, PostSectionRow};
 
@@ -23,7 +24,7 @@ impl PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(|record| record.id))
     }
@@ -43,7 +44,7 @@ impl PostgresRepositories {
         )
         .fetch_optional(tx.as_mut())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(|record| record.id))
     }
@@ -76,7 +77,7 @@ impl PostgresRepositories {
         )
         .execute(tx.as_mut())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         if sections.is_empty() {
             return Ok(());
@@ -87,7 +88,7 @@ impl PostgresRepositories {
                 r#"COPY post_sections (id, post_id, parent_id, position, level, heading_html, heading_text, body_html, contains_code, contains_math, contains_mermaid, anchor_slug) FROM STDIN WITH (FORMAT CSV, DELIMITER ',', NULL '', QUOTE '"')"#,
             )
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let mut buffer = String::with_capacity(64 * 1024);
         let post_id_str = post_id.to_string();
@@ -96,21 +97,17 @@ impl PostgresRepositories {
             append_csv_row(&mut buffer, &post_id_str, section);
 
             if buffer.len() >= 32 * 1024 {
-                copy.send(buffer.as_bytes())
-                    .await
-                    .map_err(RepoError::from_persistence)?;
+                copy.send(buffer.as_bytes()).await.map_err(map_sqlx_error)?;
                 buffer.clear();
             }
         }
 
         if !buffer.is_empty() {
-            copy.send(buffer.as_bytes())
-                .await
-                .map_err(RepoError::from_persistence)?;
+            copy.send(buffer.as_bytes()).await.map_err(map_sqlx_error)?;
             buffer.clear();
         }
 
-        copy.finish().await.map_err(RepoError::from_persistence)?;
+        copy.finish().await.map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -133,7 +130,7 @@ impl PostgresRepositories {
         )
         .execute(tx.as_mut())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -153,7 +150,7 @@ impl PostgresRepositories {
         )
         .execute(tx.as_mut())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -175,7 +172,7 @@ impl SectionsRepo for PostgresRepositories {
         )
         .fetch_all(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(rows.into_iter().map(PostSectionRecord::from).collect())
     }

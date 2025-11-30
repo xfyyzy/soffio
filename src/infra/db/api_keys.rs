@@ -10,7 +10,7 @@ use crate::application::repos::{
 };
 use crate::domain::api_keys::{ApiKeyRecord, ApiKeyStatus, ApiScope};
 
-use super::PostgresRepositories;
+use super::{map_sqlx_error, PostgresRepositories};
 
 #[derive(Debug, sqlx::FromRow)]
 struct ApiKeyRow {
@@ -175,7 +175,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .fetch_all(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         let mut records: Vec<ApiKeyRecord> = rows
             .into_iter()
@@ -217,7 +217,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         let scope_rows = sqlx::query!(
             r#"
@@ -229,7 +229,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .fetch_all(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         let scope_counts = scope_rows
             .into_iter()
@@ -262,7 +262,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         row.map(ApiKeyRecord::try_from).transpose()
     }
@@ -282,7 +282,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         row.map(ApiKeyRecord::try_from).transpose()
     }
@@ -301,7 +301,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -316,7 +316,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(result.rows_affected() > 0)
     }
@@ -334,7 +334,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(result.rows_affected())
     }
@@ -367,7 +367,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         ApiKeyRecord::try_from(row)
     }
@@ -397,7 +397,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         ApiKeyRecord::try_from(row)
     }
@@ -418,7 +418,7 @@ impl ApiKeysRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }

@@ -12,7 +12,7 @@ use crate::{
     domain::entities::TagRecord,
 };
 
-use super::PostgresRepositories;
+use super::{PostgresRepositories, map_sqlx_error};
 
 const TAG_PRIMARY_TIME_EXPR: &str = "COALESCE(t.updated_at, t.created_at)";
 
@@ -67,7 +67,7 @@ impl TagsRepo for PostgresRepositories {
         )
         .fetch_all(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(rows.into_iter().map(TagRecord::from).collect())
     }
@@ -86,7 +86,7 @@ impl TagsRepo for PostgresRepositories {
         )
         .fetch_all(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(rows.into_iter().map(TagRecord::from).collect())
     }
@@ -112,7 +112,7 @@ impl TagsRepo for PostgresRepositories {
         )
         .fetch_all(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(rows
             .into_iter()
@@ -138,7 +138,7 @@ impl TagsRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(TagRecord::from))
     }
@@ -155,7 +155,7 @@ impl TagsRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(TagRecord::from))
     }
@@ -171,7 +171,7 @@ impl TagsRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(u64::try_from(row.count).unwrap_or(u64::MAX))
     }
@@ -230,7 +230,7 @@ impl TagsRepo for PostgresRepositories {
             .build_query_as::<TagListRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let has_more = (rows.len() as i64) > limit;
         if has_more {
@@ -285,7 +285,7 @@ impl TagsRepo for PostgresRepositories {
             .build_query_scalar()
             .fetch_one(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         Self::convert_count(count)
     }
@@ -318,7 +318,7 @@ impl TagsRepo for PostgresRepositories {
             .build_query_as::<MonthRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let mut counts = Vec::with_capacity(rows.len());
         for row in rows {
@@ -368,7 +368,7 @@ impl TagsWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(TagRecord::from(row))
     }
@@ -402,7 +402,7 @@ impl TagsWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(TagRecord::from(row))
     }
@@ -417,7 +417,7 @@ impl TagsWriteRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }

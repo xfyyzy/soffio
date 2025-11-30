@@ -16,6 +16,36 @@ use crate::{
 
 use super::PostgresRepositories;
 
+fn map_sqlx_error(err: sqlx::Error) -> RepoError {
+    match err {
+        sqlx::Error::RowNotFound => RepoError::NotFound,
+        sqlx::Error::Database(db) if db.message().contains("duplicate key") => {
+            RepoError::Duplicate {
+                constraint: db.constraint().unwrap_or("unknown").to_string(),
+            }
+        }
+        sqlx::Error::Database(db)
+            if db.message().contains("violates foreign key constraint")
+                || db.message().contains("invalid input syntax") =>
+        {
+            RepoError::InvalidInput {
+                message: db.message().to_string(),
+            }
+        }
+        sqlx::Error::Database(db) if db.message().contains("violates") => RepoError::Integrity {
+            message: db.message().to_string(),
+        },
+        sqlx::Error::Database(db)
+            if db
+                .message()
+                .contains("canceling statement due to user request") =>
+        {
+            RepoError::Timeout
+        }
+        other => RepoError::from_persistence(other),
+    }
+}
+
 #[derive(sqlx::FromRow)]
 struct NavigationItemRow {
     id: Uuid,
@@ -123,7 +153,7 @@ impl NavigationRepo for PostgresRepositories {
             .build_query_as::<NavigationItemRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let has_more = (rows.len() as u32) > page.limit;
         let next_cursor = if has_more {
@@ -187,9 +217,11 @@ impl NavigationRepo for PostgresRepositories {
             .build_query_scalar()
             .fetch_one(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
-        Ok(u64::try_from(count).map_err(RepoError::from_persistence)?)
+        Ok(u64::try_from(count).map_err(|e| RepoError::InvalidInput {
+            message: e.to_string(),
+        })?)
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<NavigationItemRecord>, RepoError> {
@@ -216,7 +248,7 @@ impl NavigationRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(NavigationItemRecord::from))
     }
@@ -269,7 +301,7 @@ impl NavigationWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(NavigationItemRecord::from(row))
     }
@@ -321,7 +353,7 @@ impl NavigationWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(NavigationItemRecord::from(row))
     }
@@ -336,7 +368,7 @@ impl NavigationWriteRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }

@@ -1024,12 +1024,37 @@ pub async fn list_audit_logs(
 
 /// -------- Helper conversions --------
 fn repo_to_api(err: RepoError) -> ApiError {
-    ApiError::new(
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "repo_error",
-        "Persistence error",
-        Some(err.to_string()),
-    )
+    match err {
+        RepoError::Duplicate { constraint } => ApiError::new(
+            StatusCode::CONFLICT,
+            "duplicate",
+            "Duplicate record",
+            Some(constraint),
+        ),
+        RepoError::Pagination(p) => ApiError::bad_request("invalid cursor", Some(p.to_string())),
+        RepoError::NotFound => ApiError::not_found("resource not found"),
+        RepoError::InvalidInput { message } => {
+            ApiError::bad_request("invalid input", Some(message))
+        }
+        RepoError::Integrity { message } => ApiError::new(
+            StatusCode::CONFLICT,
+            "integrity_error",
+            "Integrity constraint violated",
+            Some(message),
+        ),
+        RepoError::Timeout => ApiError::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "db_timeout",
+            "Database timeout",
+            None,
+        ),
+        RepoError::Persistence(msg) => ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "repo_error",
+            "Persistence error",
+            Some(msg),
+        ),
+    }
 }
 
 fn post_to_api(err: AdminPostError) -> ApiError {

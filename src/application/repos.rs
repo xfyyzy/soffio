@@ -23,6 +23,14 @@ pub enum RepoError {
     Persistence(String),
     #[error("duplicate record violates unique constraint `{constraint}`")]
     Duplicate { constraint: String },
+    #[error("resource not found")]
+    NotFound,
+    #[error("invalid input: {message}")]
+    InvalidInput { message: String },
+    #[error("integrity error: {message}")]
+    Integrity { message: String },
+    #[error("database timeout")]
+    Timeout,
     #[error(transparent)]
     Pagination(#[from] PaginationError),
 }

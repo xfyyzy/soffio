@@ -43,10 +43,14 @@ pub async fn api_auth(
         }
     };
 
+    let principal_clone = principal.clone();
     request.extensions_mut().insert(principal);
     request.extensions_mut().insert(state.clone());
 
-    next.run(request).await
+    let mut response = next.run(request).await;
+    // expose principal to outer middleware/logging
+    response.extensions_mut().insert(principal_clone);
+    response
 }
 
 pub async fn api_rate_limit(

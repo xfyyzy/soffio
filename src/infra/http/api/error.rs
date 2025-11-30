@@ -1,3 +1,4 @@
+use crate::application::error::ErrorReport;
 use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -85,6 +86,7 @@ impl ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
+        let hint = self.hint.clone();
         let body = ApiErrorBody {
             error: ApiErrorMessage {
                 code: self.code.to_string(),
@@ -92,6 +94,14 @@ impl IntoResponse for ApiError {
                 hint: self.hint,
             },
         };
-        (self.status, Json(body)).into_response()
+        let mut response = (self.status, Json(body)).into_response();
+        // Attach a structured report so shared logging middleware can emit rich diagnostics.
+        ErrorReport::from_message(
+            "infra::http::api",
+            self.status,
+            format!("{}: {}", self.code, hint.as_deref().unwrap_or(self.message)),
+        )
+        .attach(&mut response);
+        response
     }
 }

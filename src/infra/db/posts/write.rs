@@ -12,6 +12,36 @@ use crate::domain::types::PostStatus;
 use super::PostgresRepositories;
 use super::types::PostRow;
 
+fn map_sqlx_error(err: sqlx::Error) -> RepoError {
+    match err {
+        sqlx::Error::RowNotFound => RepoError::NotFound,
+        sqlx::Error::Database(db) if db.message().contains("duplicate key") => {
+            RepoError::Duplicate {
+                constraint: db.constraint().unwrap_or("unknown").to_string(),
+            }
+        }
+        sqlx::Error::Database(db)
+            if db.message().contains("violates foreign key constraint")
+                || db.message().contains("invalid input syntax") =>
+        {
+            RepoError::InvalidInput {
+                message: db.message().to_string(),
+            }
+        }
+        sqlx::Error::Database(db) if db.message().contains("violates") => RepoError::Integrity {
+            message: db.message().to_string(),
+        },
+        sqlx::Error::Database(db)
+            if db
+                .message()
+                .contains("canceling statement due to user request") =>
+        {
+            RepoError::Timeout
+        }
+        other => RepoError::from_persistence(other),
+    }
+}
+
 #[async_trait]
 impl PostsWriteRepo for PostgresRepositories {
     async fn create_post(&self, params: CreatePostParams) -> Result<PostRecord, RepoError> {
@@ -68,7 +98,7 @@ impl PostsWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PostRecord::from(row))
     }
@@ -119,7 +149,7 @@ impl PostsWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PostRecord::from(row))
     }
@@ -165,7 +195,7 @@ impl PostsWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PostRecord::from(row))
     }
@@ -196,7 +226,7 @@ impl PostsWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PostRecord::from(row))
     }
@@ -229,7 +259,7 @@ impl PostsWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PostRecord::from(row))
     }
@@ -244,17 +274,13 @@ impl PostsWriteRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
 
     async fn replace_post_tags(&self, post_id: Uuid, tag_ids: &[Uuid]) -> Result<(), RepoError> {
-        let mut tx = self
-            .pool()
-            .begin()
-            .await
-            .map_err(RepoError::from_persistence)?;
+        let mut tx = self.pool().begin().await.map_err(map_sqlx_error)?;
 
         sqlx::query!(
             r#"
@@ -265,7 +291,7 @@ impl PostsWriteRepo for PostgresRepositories {
         )
         .execute(&mut *tx)
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         if !tag_ids.is_empty() {
             sqlx::query!(
@@ -279,10 +305,10 @@ impl PostsWriteRepo for PostgresRepositories {
             )
             .execute(&mut *tx)
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
         }
 
-        tx.commit().await.map_err(RepoError::from_persistence)?;
+        tx.commit().await.map_err(map_sqlx_error)?;
 
         Ok(())
     }

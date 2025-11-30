@@ -75,6 +75,8 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         .route("/api/v1/jobs", get(handlers::list_jobs))
         .route("/api/v1/audit", get(handlers::list_audit_logs))
         .with_state(state)
+        // Order matters: log runs after auth+rate so principal is available.
+        .layer(axum_middleware::from_fn(log_responses))
         .layer(axum_middleware::from_fn_with_state(
             rate_state,
             middleware::api_rate_limit,
@@ -83,5 +85,4 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
             auth_state,
             middleware::api_auth,
         ))
-        .layer(axum_middleware::from_fn(log_responses))
 }
