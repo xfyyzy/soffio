@@ -182,8 +182,15 @@ table[data-table="api-keys"] [data-role="publishable-actions"] {
   min-width: 140px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 0.35rem;
+}
+
+table[data-table="api-keys"] [data-role="publishable-actions"] a,
+table[data-table="api-keys"] [data-role="publishable-actions"] button {
+  display: block;
+  width: 100%;
+  text-align: left;
 }
 
 [data-column="visible"] {
