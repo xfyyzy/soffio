@@ -58,7 +58,7 @@ jobs:
               cargo clippy --workspace --all-targets -- -D warnings && \
               cargo test --workspace --all-targets -- --nocapture && \
               cargo run -- import --file seed/seed.toml && \
-              (cargo run -- serve \
+              (cargo run --bin soffio -- serve \
                 --server-host 0.0.0.0 \
                 --server-admin-host 0.0.0.0 \
                 --server-public-port 3000 \
