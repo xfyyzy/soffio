@@ -182,9 +182,16 @@ impl ApiKeysRepo for PostgresRepositories {
             .map(ApiKeyRecord::try_from)
             .collect::<Result<_, _>>()?;
 
-        let next_cursor = if records.len() as i64 > limit {
-            let last = records.pop().expect("exists");
-            Some(ApiKeyCursor::new(last.created_at, last.id))
+        let has_more = (records.len() as i64) > limit;
+        if has_more {
+            // drop the extra item used to detect presence of a next page
+            records.pop();
+        }
+
+        let next_cursor = if has_more {
+            records
+                .last()
+                .map(|last| ApiKeyCursor::new(last.created_at, last.id))
         } else {
             None
         };
