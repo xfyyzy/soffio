@@ -58,20 +58,21 @@ jobs:
               cargo clippy --workspace --all-targets -- -D warnings && \
               cargo test --workspace --all-targets -- --nocapture && \
               cargo run --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml && \
+              LOG_PATH=/tmp/soffio.log; \
               cargo run --bin soffio -- serve \
                 --server-host 0.0.0.0 \
                 --server-admin-host 0.0.0.0 \
                 --server-public-port 3000 \
                 --server-admin-port 3001 \
                 --config-file soffio.toml.example \
-                >/tmp/soffio.log 2>&1 & \
+                >$LOG_PATH 2>&1 & \
               srv=$! && \
               ready=0; \
               for i in $(seq 1 60); do \
                 if curl -sf http://127.0.0.1:3000/_health/db >/dev/null; then ready=1; break; fi; \
                 sleep 1; \
               done; \
-              if [ "$ready" -ne 1 ]; then echo "soffio server not ready"; cat /tmp/soffio.log || true; kill $srv; exit 1; fi && \
+              if [ "$ready" -ne 1 ]; then echo "soffio server not ready"; [ -f "$LOG_PATH" ] && cat "$LOG_PATH"; ps -ef | grep soffio || true; kill $srv || true; exit 1; fi && \
               cargo test --test live_api -- --ignored --nocapture && \
               kill $srv
             '
