@@ -97,9 +97,9 @@ dependencies = [
 
 [[package]]
 name = "apalis"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ea07a005e05b1672920818822ebace7a59bdf4b3176390d7be661e2b4027c42"
+checksum = "504d52557a16b7b202941660f339c9182910d498cac40f93d15f6b31e6bef290"
 dependencies = [
  "apalis-core",
  "futures",
@@ -113,9 +113,9 @@ dependencies = [
 
 [[package]]
 name = "apalis-core"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b67ac401df19b3a77f26700cb0af838217353f74bc7365ac50c61561f767a5ec"
+checksum = "3948d2051795c769e6a44a46549879af39d5e8e4fb113e0011cf99f7cd21b657"
 dependencies = [
  "futures",
  "futures-timer",
