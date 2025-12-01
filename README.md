@@ -62,8 +62,8 @@ src/
 
 - Base path: `/api/v1` on the public listener.
 - Auth: `Authorization: Bearer <api_key>` (obtain/manage keys in the admin UI under “API keys”; keys are shown once). Admin workflow documented in [`docs/admin/api-keys.md`](docs/admin/api-keys.md).
-- Scopes control access (`content_read`, `content_write`, `tag_write`, `navigation_write`, `upload_write`, `settings_write`, `jobs_read`, `audit_read`).
-- Rate limit: configured separately via `api_rate_limit` (defaults 120 req / 60s per key).
+- Scopes control access (snake_case): `post_read`, `post_write`, `page_read`, `page_write`, `tag_read`, `tag_write`, `navigation_read`, `navigation_write`, `upload_read`, `upload_write`, `settings_read`, `settings_write`, `job_read`, `audit_read`.
+- Rate limit: configured via `api_rate_limit` (default: 120 requests per 60s per key).
 - Specification: [`docs/api/openapi.yaml`](docs/api/openapi.yaml).
 
 ## Development Workflow
