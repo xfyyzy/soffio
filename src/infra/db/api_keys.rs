@@ -10,7 +10,7 @@ use crate::application::repos::{
 };
 use crate::domain::api_keys::{ApiKeyRecord, ApiKeyStatus, ApiScope};
 
-use super::{map_sqlx_error, PostgresRepositories};
+use super::{PostgresRepositories, map_sqlx_error};
 
 #[derive(Debug, sqlx::FromRow)]
 struct ApiKeyRow {

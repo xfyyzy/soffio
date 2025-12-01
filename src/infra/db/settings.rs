@@ -6,7 +6,7 @@ use crate::{
     domain::entities::SiteSettingsRecord,
 };
 
-use super::{map_sqlx_error, DbTimeZone, PostgresRepositories};
+use super::{DbTimeZone, PostgresRepositories, map_sqlx_error};
 
 #[derive(sqlx::FromRow)]
 struct SiteSettingsRow {

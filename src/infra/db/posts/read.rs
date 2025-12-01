@@ -10,9 +10,9 @@ use crate::application::repos::{
 use crate::domain::entities::PostRecord;
 use crate::domain::types::PostStatus;
 
-use crate::infra::db::map_sqlx_error;
 use super::PostgresRepositories;
 use super::types::PostRow;
+use crate::infra::db::map_sqlx_error;
 
 impl PostgresRepositories {
     pub fn stream_all_posts(&self) -> BoxStream<'_, Result<PostRecord, RepoError>> {

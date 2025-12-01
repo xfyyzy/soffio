@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-use super::{map_sqlx_error, PostgresRepositories};
+use super::{PostgresRepositories, map_sqlx_error};
 
 #[derive(sqlx::FromRow)]
 struct UploadRow {

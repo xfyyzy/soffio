@@ -5,9 +5,9 @@ use uuid::Uuid;
 use crate::application::repos::{RepoError, SectionsRepo};
 use crate::domain::entities::PostSectionRecord;
 
-use crate::infra::db::map_sqlx_error;
 use super::PostgresRepositories;
 use super::types::{PersistedPostSection, PersistedPostSectionOwned, PostSectionRow};
+use crate::infra::db::map_sqlx_error;
 
 impl PostgresRepositories {
     pub async fn find_post_id_by_slug_immediate(

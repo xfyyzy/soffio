@@ -13,7 +13,7 @@ use crate::{
     domain::{entities::PageRecord, types::PageStatus},
 };
 
-use super::{map_sqlx_error, PostgresRepositories};
+use super::{PostgresRepositories, map_sqlx_error};
 
 const PAGE_PRIMARY_TIME_EXPR: &str = "CASE \
     WHEN status = 'published'::page_status THEN \
