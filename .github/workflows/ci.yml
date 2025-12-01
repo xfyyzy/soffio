@@ -70,8 +70,8 @@ jobs:
               for i in $(seq 1 60); do \
                 if curl -sf http://127.0.0.1:3000/_health/db >/dev/null; then ready=1; break; fi; \
                 sleep 1; \
-              done && \
-              if [ "$ready" -ne 1 ]; then echo "soffio server not ready" && kill $srv && exit 1; fi && \
+              done; \
+              if [ "$ready" -ne 1 ]; then echo "soffio server not ready"; cat /tmp/soffio.log || true; kill $srv; exit 1; fi && \
               cargo test --test live_api -- --ignored --nocapture && \
               kill $srv
             '
