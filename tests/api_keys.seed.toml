@@ -1,0 +1,10 @@
+# Base URL of the running public API service used by live E2E tests.
+base_url = "http://localhost:3000"
+
+# Demo API keys seeded via admin UI; safe to commit (non-secret demo data).
+[keys]
+all = "sk_0bc4c710aba0_8902d052565a47639f426ecfce8391fbb2cfd3f484e844adb473f7e4e5201238"
+write = "sk_21eb29c5428f_4e4db6920d364d46a5311678872fcea3c621493b47c8465db56f286134145b9a"
+read = "sk_56f6201aecd2_05c59b57d23746e28d55826091bb07ba54fcf1f2cc434bbe8d4d3268c8db86d1"
+revoked = "sk_cc815221adcb_13da890062cf4b2ca389420cb15097ed8e801ec253944f2cb752a84af5d72a69"
+expired = "sk_efd67ac28207_410b9130fe7841d1b00eed68504880d828c7fc1022144d85ab20d3b47a50b6bc"
