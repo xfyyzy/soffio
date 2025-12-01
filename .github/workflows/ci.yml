@@ -59,12 +59,11 @@ jobs:
               cargo test --workspace --all-targets -- --nocapture && \
               cargo run --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml && \
               LOG_PATH=/tmp/soffio.log; \
-              cargo run --bin soffio -- serve \
+              cargo run --bin soffio -- --config-file soffio.toml.example serve \
                 --server-host 0.0.0.0 \
                 --server-admin-host 0.0.0.0 \
                 --server-public-port 3000 \
                 --server-admin-port 3001 \
-                --config-file soffio.toml.example \
                 >$LOG_PATH 2>&1 & \
               srv=$! && \
               ready=0; \
