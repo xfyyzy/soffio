@@ -20002,3 +20002,415 @@ destination_url = "https://admin.soffio.xfyyzy.xyz/"
 sort_order = 16
 open_in_new_tab = true
 visible = true
+
+[[api_keys]]
+id = "a3ca85ab-04ed-4769-adb3-d552cd9bff60"
+name = "test-readonly"
+description = "Read only key for tests"
+prefix = "56f6201aecd2"
+hashed_secret = [
+    106,
+    159,
+    38,
+    227,
+    136,
+    84,
+    93,
+    164,
+    110,
+    0,
+    158,
+    62,
+    204,
+    115,
+    127,
+    113,
+    33,
+    133,
+    29,
+    50,
+    47,
+    195,
+    74,
+    166,
+    127,
+    88,
+    84,
+    3,
+    207,
+    3,
+    183,
+    234,
+]
+scopes = ["post_read"]
+status = "active"
+last_used_at = [
+    2025,
+    335,
+    7,
+    6,
+    26,
+    495472000,
+    0,
+    0,
+    0,
+]
+created_by = "admin:api-keys"
+created_at = [
+    2025,
+    334,
+    21,
+    3,
+    11,
+    539500000,
+    0,
+    0,
+    0,
+]
+updated_at = [
+    2025,
+    334,
+    21,
+    3,
+    11,
+    539500000,
+    0,
+    0,
+    0,
+]
+
+[[api_keys]]
+id = "9ba65887-5a35-4775-9348-9372446301b4"
+name = "test-write"
+description = "Write key for posts/pages"
+prefix = "21eb29c5428f"
+hashed_secret = [
+    229,
+    126,
+    116,
+    79,
+    76,
+    95,
+    213,
+    198,
+    194,
+    195,
+    145,
+    12,
+    63,
+    125,
+    130,
+    113,
+    73,
+    119,
+    122,
+    205,
+    193,
+    194,
+    47,
+    38,
+    132,
+    87,
+    72,
+    165,
+    147,
+    207,
+    224,
+    76,
+]
+scopes = [
+    "post_read",
+    "post_write",
+    "page_read",
+    "page_write",
+]
+status = "active"
+last_used_at = [
+    2025,
+    335,
+    7,
+    6,
+    26,
+    276552000,
+    0,
+    0,
+    0,
+]
+created_by = "admin:api-keys"
+created_at = [
+    2025,
+    334,
+    21,
+    3,
+    38,
+    75289000,
+    0,
+    0,
+    0,
+]
+updated_at = [
+    2025,
+    334,
+    21,
+    3,
+    38,
+    75289000,
+    0,
+    0,
+    0,
+]
+
+[[api_keys]]
+id = "41ce8a98-40c2-4db2-a7ce-067703f9b60b"
+name = "test-revoked"
+description = "Key to revoke for negative tests"
+prefix = "cc815221adcb"
+hashed_secret = [
+    133,
+    213,
+    249,
+    250,
+    222,
+    76,
+    75,
+    249,
+    155,
+    213,
+    244,
+    229,
+    161,
+    170,
+    189,
+    39,
+    160,
+    245,
+    93,
+    178,
+    78,
+    32,
+    179,
+    12,
+    53,
+    49,
+    33,
+    12,
+    229,
+    249,
+    31,
+    31,
+]
+scopes = ["post_read"]
+status = "revoked"
+revoked_at = [
+    2025,
+    334,
+    21,
+    4,
+    20,
+    179614000,
+    0,
+    0,
+    0,
+]
+created_by = "admin:api-keys"
+created_at = [
+    2025,
+    334,
+    21,
+    4,
+    5,
+    730892000,
+    0,
+    0,
+    0,
+]
+updated_at = [
+    2025,
+    334,
+    21,
+    4,
+    20,
+    179119000,
+    0,
+    0,
+    0,
+]
+
+[[api_keys]]
+id = "2ea1f746-d967-4734-8731-3063e4620a77"
+name = "test-expired"
+description = "Expired key for negative path"
+prefix = "efd67ac28207"
+hashed_secret = [
+    219,
+    31,
+    105,
+    200,
+    215,
+    136,
+    32,
+    28,
+    144,
+    87,
+    114,
+    188,
+    124,
+    202,
+    148,
+    53,
+    106,
+    137,
+    236,
+    240,
+    127,
+    59,
+    83,
+    8,
+    47,
+    253,
+    0,
+    184,
+    222,
+    164,
+    83,
+    142,
+]
+scopes = ["post_read"]
+status = "expired"
+expires_at = [
+    2025,
+    333,
+    21,
+    6,
+    9,
+    609424000,
+    0,
+    0,
+    0,
+]
+last_used_at = [
+    2025,
+    335,
+    8,
+    23,
+    54,
+    625705000,
+    0,
+    0,
+    0,
+]
+created_by = "admin:api-keys"
+created_at = [
+    2025,
+    334,
+    21,
+    4,
+    58,
+    168648000,
+    0,
+    0,
+    0,
+]
+updated_at = [
+    2025,
+    334,
+    21,
+    4,
+    58,
+    168648000,
+    0,
+    0,
+    0,
+]
+
+[[api_keys]]
+id = "19e59048-a7dd-40d3-a27b-80d56642bd93"
+name = "test-all"
+description = "Full-scope key for coverage"
+prefix = "0bc4c710aba0"
+hashed_secret = [
+    85,
+    62,
+    246,
+    205,
+    200,
+    107,
+    78,
+    217,
+    214,
+    245,
+    181,
+    202,
+    164,
+    149,
+    88,
+    152,
+    140,
+    41,
+    86,
+    229,
+    136,
+    181,
+    176,
+    9,
+    181,
+    159,
+    220,
+    253,
+    151,
+    250,
+    138,
+    239,
+]
+scopes = [
+    "post_read",
+    "post_write",
+    "page_read",
+    "page_write",
+    "tag_read",
+    "tag_write",
+    "navigation_read",
+    "navigation_write",
+    "upload_read",
+    "upload_write",
+    "settings_read",
+    "settings_write",
+    "job_read",
+    "audit_read",
+]
+status = "active"
+last_used_at = [
+    2025,
+    335,
+    8,
+    2,
+    9,
+    931080000,
+    0,
+    0,
+    0,
+]
+created_by = "admin:api-keys"
+created_at = [
+    2025,
+    334,
+    21,
+    9,
+    52,
+    974070000,
+    0,
+    0,
+    0,
+]
+updated_at = [
+    2025,
+    334,
+    21,
+    9,
+    52,
+    974070000,
+    0,
+    0,
+    0,
+]
+
