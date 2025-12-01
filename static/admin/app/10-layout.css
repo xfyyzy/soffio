@@ -38,6 +38,7 @@ table[data-role="audit-table"] td {
   padding: 0.6rem 0.8rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
+  vertical-align: middle;
 }
 
 /* Keep row separators continuous on api-keys table */
@@ -163,9 +164,9 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
 
 /* API key table column sizing */
 table[data-table="api-keys"] [data-column="prefix"] {
-  width: 12ch;
-  min-width: 12ch;
-  max-width: 12ch;
+  width: 10ch;
+  min-width: 10ch;
+  max-width: 10ch;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -174,22 +175,22 @@ table[data-table="api-keys"] [data-column="prefix"] {
 table[data-table="api-keys"] [data-column="created"],
 table[data-table="api-keys"] [data-column="expires"],
 table[data-table="api-keys"] [data-column="last-used"] {
-  width: 20ch;
-  min-width: 20ch;
-  max-width: 20ch;
+  width: 18ch;
+  min-width: 18ch;
+  max-width: 18ch;
   white-space: nowrap;
 }
 
 table[data-table="api-keys"] [data-column="status"] {
-  width: 8ch;
-  min-width: 8ch;
-  max-width: 8ch;
+  width: 7ch;
+  min-width: 7ch;
+  max-width: 7ch;
   white-space: nowrap;
 }
 
 /* Actions column: stack buttons to reclaim horizontal space for timestamps */
 table[data-table="api-keys"] [data-role="publishable-actions"] {
-  min-width: 140px;
+  min-width: 120px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -202,6 +203,21 @@ table[data-table="api-keys"] [data-role="publishable-actions"] button {
   display: block;
   width: 100%;
   text-align: left;
+}
+
+/* Scope/description width control to avoid horizontal scroll */
+table[data-table="api-keys"] td[data-column="scopes"] div[data-role="badge-row"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  max-width: 14rem;
+}
+
+table[data-table="api-keys"] td[data-column="description"] {
+  max-width: 16rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 [data-column="visible"] {
