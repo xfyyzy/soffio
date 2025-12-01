@@ -329,7 +329,7 @@ fn build_application_context(
         audit_service.clone(),
     ));
     let admin_audit_service = Arc::new(audit_service);
-    let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo));
+    let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
 
     let upload_storage = Arc::new(
         UploadStorage::new(settings.uploads.directory.clone())
@@ -357,6 +357,7 @@ fn build_application_context(
             tags_repo.clone(),
             navigation_repo.clone(),
             uploads_repo.clone(),
+            api_keys_repo.clone(),
         )),
         posts: admin_post_service,
         pages: admin_page_service,

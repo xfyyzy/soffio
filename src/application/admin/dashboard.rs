@@ -6,9 +6,9 @@ use crate::application::{
     error::HttpError,
     pagination::{NavigationCursor, PageRequest, PaginationError, UploadCursor},
     repos::{
-        NavigationQueryFilter, NavigationRepo, PageQueryFilter, PagesRepo, PostListScope,
-        PostQueryFilter, PostsRepo, RepoError, TagQueryFilter, TagsRepo, UploadQueryFilter,
-        UploadsRepo,
+        ApiKeyPageRequest, ApiKeyQueryFilter, ApiKeysRepo, NavigationQueryFilter, NavigationRepo,
+        PageQueryFilter, PagesRepo, PostListScope, PostQueryFilter, PostsRepo, RepoError,
+        TagQueryFilter, TagsRepo, UploadQueryFilter, UploadsRepo,
     },
 };
 use crate::domain::types::{NavigationDestinationType, PageStatus, PostStatus};
@@ -30,6 +30,7 @@ const UPLOADS_LIST_FAILURE_MESSAGE: &str = "Failed to enumerate uploads";
 const UPLOADS_CURSOR_FAILURE_MESSAGE: &str = "Failed to decode upload cursor";
 const UPLOAD_PAGE_LIMIT: u32 = 200;
 const NAVIGATION_PAGE_LIMIT: u32 = 200;
+const API_KEYS_FAILURE_MESSAGE: &str = "Failed to compute API key dashboard metrics";
 
 const DOCUMENT_CONTENT_TYPES: &[&str] = &[
     "application/pdf",
@@ -51,6 +52,7 @@ pub struct AdminDashboardService {
     tags: Arc<dyn TagsRepo>,
     navigation: Arc<dyn NavigationRepo>,
     uploads: Arc<dyn UploadsRepo>,
+    api_keys: Arc<dyn ApiKeysRepo>,
 }
 
 impl AdminDashboardService {
@@ -61,6 +63,7 @@ impl AdminDashboardService {
         tags: Arc<dyn TagsRepo>,
         navigation: Arc<dyn NavigationRepo>,
         uploads: Arc<dyn UploadsRepo>,
+        api_keys: Arc<dyn ApiKeysRepo>,
     ) -> Self {
         Self {
             posts,
@@ -68,17 +71,20 @@ impl AdminDashboardService {
             tags,
             navigation,
             uploads,
+            api_keys,
         }
     }
 
     pub async fn overview(&self) -> Result<AdminDashboardView, HttpError> {
-        let (posts_panel, pages_panel, tags_panel, navigation_panel, uploads_panel) = tokio::try_join!(
-            self.collect_posts_panel(),
-            self.collect_pages_panel(),
-            self.collect_tags_panel(),
-            self.collect_navigation_panel(),
-            self.collect_uploads_panel(),
-        )?;
+        let (posts_panel, pages_panel, tags_panel, navigation_panel, uploads_panel, api_keys_panel) =
+            tokio::try_join!(
+                self.collect_posts_panel(),
+                self.collect_pages_panel(),
+                self.collect_tags_panel(),
+                self.collect_navigation_panel(),
+                self.collect_uploads_panel(),
+                self.collect_api_keys_panel(),
+            )?;
 
         Ok(AdminDashboardView {
             title: "Dashboard".to_string(),
@@ -88,6 +94,7 @@ impl AdminDashboardService {
                 tags_panel,
                 navigation_panel,
                 uploads_panel,
+                api_keys_panel,
             ],
             empty_message: "No assets have been created yet.".to_string(),
         })
@@ -523,6 +530,51 @@ impl AdminDashboardService {
             caption: "Stored media and documents".to_string(),
             metrics,
             empty_message: "No uploads have been stored yet.".to_string(),
+        })
+    }
+
+    async fn collect_api_keys_panel(&self) -> Result<AdminDashboardPanelView, HttpError> {
+        let repo = Arc::clone(&self.api_keys);
+
+        let page = repo
+            .list_keys(
+                &ApiKeyQueryFilter::default(),
+                ApiKeyPageRequest {
+                    limit: 1,
+                    cursor: None,
+                },
+            )
+            .await
+            .map_err(|err| repo_failure(API_KEYS_FAILURE_MESSAGE, err))?;
+
+        let metrics = vec![
+            AdminMetricView {
+                label: "Total keys".to_string(),
+                value: page.total,
+                hint: Some("Issued across all scopes".to_string()),
+            },
+            AdminMetricView {
+                label: "Active".to_string(),
+                value: page.active,
+                hint: Some("Valid and usable".to_string()),
+            },
+            AdminMetricView {
+                label: "Revoked".to_string(),
+                value: page.revoked,
+                hint: Some("Explicitly disabled".to_string()),
+            },
+            AdminMetricView {
+                label: "Expired".to_string(),
+                value: page.expired,
+                hint: Some("Past expiration timestamp".to_string()),
+            },
+        ];
+
+        Ok(AdminDashboardPanelView {
+            title: "API keys".to_string(),
+            caption: "Lifecycle and validity".to_string(),
+            metrics,
+            empty_message: "No API keys have been issued yet.".to_string(),
         })
     }
 }
