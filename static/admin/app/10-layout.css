@@ -191,10 +191,10 @@ table[data-table="api-keys"] [data-column="status"] {
 /* Actions column: stack buttons to reclaim horizontal space for timestamps */
 table[data-table="api-keys"] [data-role="publishable-actions"] {
   min-width: 120px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
+  display: grid;
+  grid-auto-rows: min-content;
+  align-content: center;
+  justify-items: start;
   gap: 0.35rem;
 }
 
