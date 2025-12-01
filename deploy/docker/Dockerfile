@@ -106,8 +106,6 @@ RUN set -eux; \
     /tmp/deploy/docker/setup-mirrors.sh; \
     addgroup -S soffio 2>/dev/null || true; \
     adduser -S -G soffio soffio 2>/dev/null || true; \
-    apt-get update && apt-get install -y --no-install-recommends gosu && \
-    rm -rf /var/lib/apt/lists/* && \
     install -d -o soffio -g soffio /var/lib/soffio; \
     install -m 0644 /tmp/puppeteer.config.json /puppeteer-config.json; \
     install -m 0755 /tmp/mmdc-wrapper.sh /usr/local/bin/mmdc; \
@@ -116,8 +114,8 @@ RUN set -eux; \
 COPY --from=builder /work/target/${TARGET_TRIPLE}/release/soffio /usr/local/bin/soffio
 RUN chmod 0755 /usr/local/bin/soffio && chown soffio:soffio /usr/local/bin/soffio
 
-COPY deploy/docker/entrypoint-gosu.sh /usr/local/bin/entrypoint-gosu.sh
-RUN chmod +x /usr/local/bin/entrypoint-gosu.sh
+COPY deploy/docker/entrypoint-su.sh /usr/local/bin/entrypoint-su.sh
+RUN chmod +x /usr/local/bin/entrypoint-su.sh
 
-ENTRYPOINT ["/usr/local/bin/entrypoint-gosu.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint-su.sh"]
 CMD ["/usr/local/bin/soffio"]
