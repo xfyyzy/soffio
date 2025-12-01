@@ -26,7 +26,7 @@ use crate::{
         page::PageService,
     },
     infra::{
-        cache::ResponseCache,
+        cache::{ResponseCache, SeoKey},
         db::PostgresRepositories,
         uploads::{UploadStorage, UploadStorageError},
     },
@@ -437,39 +437,52 @@ fn build_upload_response(path: &str, bytes: Bytes) -> Response {
 }
 
 async fn sitemap(State(state): State<HttpState>) -> Response {
+    if let Some(body) = state.cache.get_seo(SeoKey::Sitemap).await {
+        return xml_response(body, "application/xml");
+    }
+
     match build_sitemap_xml(&state).await {
-        Ok(body) => Response::builder()
-            .status(StatusCode::OK)
-            .header(CONTENT_TYPE, "application/xml")
-            .body(Body::from(body))
-            .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        Ok(body) => {
+            state.cache.put_seo(SeoKey::Sitemap, body.clone()).await;
+            xml_response(body, "application/xml")
+        }
         Err(err) => err.into_response(),
     }
 }
 
 async fn rss_feed(State(state): State<HttpState>) -> Response {
+    if let Some(body) = state.cache.get_seo(SeoKey::Rss).await {
+        return xml_response(body, "application/rss+xml");
+    }
+
     match build_rss_xml(&state).await {
-        Ok(body) => Response::builder()
-            .status(StatusCode::OK)
-            .header(CONTENT_TYPE, "application/rss+xml")
-            .body(Body::from(body))
-            .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        Ok(body) => {
+            state.cache.put_seo(SeoKey::Rss, body.clone()).await;
+            xml_response(body, "application/rss+xml")
+        }
         Err(err) => err.into_response(),
     }
 }
 
 async fn atom_feed(State(state): State<HttpState>) -> Response {
+    if let Some(body) = state.cache.get_seo(SeoKey::Atom).await {
+        return xml_response(body, "application/atom+xml");
+    }
+
     match build_atom_xml(&state).await {
-        Ok(body) => Response::builder()
-            .status(StatusCode::OK)
-            .header(CONTENT_TYPE, "application/atom+xml")
-            .body(Body::from(body))
-            .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        Ok(body) => {
+            state.cache.put_seo(SeoKey::Atom, body.clone()).await;
+            xml_response(body, "application/atom+xml")
+        }
         Err(err) => err.into_response(),
     }
 }
 
 async fn robots_txt(State(state): State<HttpState>) -> Response {
+    if let Some(body) = state.cache.get_seo(SeoKey::Robots).await {
+        return plain_response(body);
+    }
+
     let settings = match state.db.load_site_settings().await {
         Ok(s) => s,
         Err(err) => {
@@ -487,11 +500,8 @@ async fn robots_txt(State(state): State<HttpState>) -> Response {
     let sitemap_url = format!("{base}sitemap.xml");
     let body = format!("User-agent: *\nAllow: /\nSitemap: {sitemap_url}\n");
 
-    Response::builder()
-        .status(StatusCode::OK)
-        .header(CONTENT_TYPE, "text/plain; charset=utf-8")
-        .body(Body::from(body))
-        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
+    state.cache.put_seo(SeoKey::Robots, body.clone()).await;
+    plain_response(body)
 }
 
 fn canonical_url(base: &str, path: &str) -> String {
@@ -507,6 +517,22 @@ fn canonical_url(base: &str, path: &str) -> String {
 fn normalize_public_site_url(url: &str) -> String {
     let trimmed = url.trim_end_matches('/');
     format!("{trimmed}/")
+}
+
+fn xml_response(body: String, content_type: &str) -> Response {
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(CONTENT_TYPE, content_type)
+        .body(Body::from(body))
+        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
+}
+
+fn plain_response(body: String) -> Response {
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(CONTENT_TYPE, "text/plain; charset=utf-8")
+        .body(Body::from(body))
+        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
 }
 
 async fn build_sitemap_xml(state: &HttpState) -> Result<String, HttpError> {
