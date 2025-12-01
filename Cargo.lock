@@ -113,9 +113,9 @@ dependencies = [
 
 [[package]]
 name = "apalis-core"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b67ac401df19b3a77f26700cb0af838217353f74bc7365ac50c61561f767a5ec"
+checksum = "3948d2051795c769e6a44a46549879af39d5e8e4fb113e0011cf99f7cd21b657"
 dependencies = [
  "futures",
  "futures-timer",
@@ -129,9 +129,9 @@ dependencies = [
 
 [[package]]
 name = "apalis-sql"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6bd1f9ba8f69312b930420f8c64d6e230b6e716ca88dd8bbc262894298cf9e3"
+checksum = "9d96124556e2190523c1a52acf3b3e02af564343b4fa888f0b712775ac80ee04"
 dependencies = [
  "apalis-core",
  "async-stream",
