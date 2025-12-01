@@ -7,8 +7,8 @@ info:
     a Bearer token that carries an API key issued from the admin UI. Scopes
     are enforced server-side (see descriptions for required scope).
   license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
+    name: BSD-2-Clause
+    url: https://opensource.org/licenses/BSD-2-Clause
 servers:
   - url: http://127.0.0.1:3000
 security:
