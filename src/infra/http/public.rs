@@ -440,6 +440,12 @@ async fn sitemap(State(state): State<HttpState>) -> Response {
     if let Some(body) = state.cache.get_seo(SeoKey::Sitemap).await {
         return xml_response(body, "application/xml");
     }
+    tracing::info!(
+        target = "soffio::seo",
+        key = "sitemap",
+        hit = false,
+        "seo cache miss"
+    );
 
     match build_sitemap_xml(&state).await {
         Ok(body) => {
@@ -454,6 +460,12 @@ async fn rss_feed(State(state): State<HttpState>) -> Response {
     if let Some(body) = state.cache.get_seo(SeoKey::Rss).await {
         return xml_response(body, "application/rss+xml");
     }
+    tracing::info!(
+        target = "soffio::seo",
+        key = "rss",
+        hit = false,
+        "seo cache miss"
+    );
 
     match build_rss_xml(&state).await {
         Ok(body) => {
@@ -468,6 +480,12 @@ async fn atom_feed(State(state): State<HttpState>) -> Response {
     if let Some(body) = state.cache.get_seo(SeoKey::Atom).await {
         return xml_response(body, "application/atom+xml");
     }
+    tracing::info!(
+        target = "soffio::seo",
+        key = "atom",
+        hit = false,
+        "seo cache miss"
+    );
 
     match build_atom_xml(&state).await {
         Ok(body) => {
@@ -482,6 +500,12 @@ async fn robots_txt(State(state): State<HttpState>) -> Response {
     if let Some(body) = state.cache.get_seo(SeoKey::Robots).await {
         return plain_response(body);
     }
+    tracing::info!(
+        target = "soffio::seo",
+        key = "robots",
+        hit = false,
+        "seo cache miss"
+    );
 
     let settings = match state.db.load_site_settings().await {
         Ok(s) => s,
