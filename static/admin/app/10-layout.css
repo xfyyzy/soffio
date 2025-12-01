@@ -171,9 +171,6 @@ table[data-table="api-keys"] [data-column="prefix"] {
   width: 12ch;
   min-width: 12ch;
   max-width: 12ch;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 table[data-table="api-keys"] [data-column="name"] {
@@ -181,7 +178,7 @@ table[data-table="api-keys"] [data-column="name"] {
   max-width: 18rem;
 }
 
-table[data-table="api-keys"] [data-column="name"] span {
+table[data-table="api-keys"] :is([data-column="name"] span, [data-column="prefix"] code) {
   display: inline-block;
   max-width: 100%;
   white-space: nowrap;
