@@ -40,6 +40,16 @@ table[data-role="audit-table"] td {
   text-align: left;
 }
 
+/* Keep row separators continuous on api-keys table */
+table[data-table="api-keys"] tr {
+  border-bottom: 1px solid var(--border);
+}
+
+table[data-table="api-keys"] td,
+table[data-table="api-keys"] th {
+  border-bottom: none;
+}
+
 [data-role="upload-queue"] {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
