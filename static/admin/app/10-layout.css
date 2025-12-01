@@ -164,9 +164,9 @@ table[data-table="api-keys"] [data-column="prefix"] {
 table[data-table="api-keys"] [data-column="created"],
 table[data-table="api-keys"] [data-column="expires"],
 table[data-table="api-keys"] [data-column="last-used"] {
-  width: 11ch;
-  min-width: 11ch;
-  max-width: 11ch;
+  width: 20ch;
+  min-width: 20ch;
+  max-width: 20ch;
   white-space: nowrap;
 }
 
@@ -175,6 +175,15 @@ table[data-table="api-keys"] [data-column="status"] {
   min-width: 8ch;
   max-width: 8ch;
   white-space: nowrap;
+}
+
+/* Actions column: stack buttons to reclaim horizontal space for timestamps */
+table[data-table="api-keys"] [data-role="publishable-actions"] {
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
 }
 
 [data-column="visible"] {
