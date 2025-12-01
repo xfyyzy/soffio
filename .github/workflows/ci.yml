@@ -45,6 +45,7 @@ jobs:
             -w /work \
             -e DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev \
             -e SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres \
+            -e SQLX_OFFLINE=true \
             rust:1.91-alpine3.20 \
             sh -ec '
               apk update && \
@@ -55,5 +56,17 @@ jobs:
               cargo fmt --all -- --check && \
               cargo check --workspace --all-targets && \
               cargo clippy --workspace --all-targets -- -D warnings && \
-              cargo test --workspace --all-targets -- --nocapture
+              cargo test --workspace --all-targets -- --nocapture && \
+              cargo run -- import --file seed/seed.toml && \
+              (cargo run -- serve \
+                --server-host 0.0.0.0 \
+                --server-admin-host 0.0.0.0 \
+                --server-public-port 3000 \
+                --server-admin-port 3001 \
+                --config-file soffio.toml.example \
+                >/tmp/soffio.log 2>&1 &) && \
+              srv=$! && \
+              for i in $(seq 1 30); do curl -sf http://127.0.0.1:3000/_health/db && break || sleep 1; done && \
+              cargo test --test live_api -- --ignored --nocapture && \
+              kill $srv
             '
