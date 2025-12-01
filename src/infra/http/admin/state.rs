@@ -6,6 +6,7 @@ use crate::application::admin::{
     posts::AdminPostService, settings::AdminSettingsService, tags::AdminTagService,
     uploads::AdminUploadService,
 };
+use crate::application::api_keys::ApiKeyService;
 use crate::infra::{cache::ResponseCache, db::PostgresRepositories, uploads::UploadStorage};
 
 #[derive(Clone)]
@@ -24,4 +25,5 @@ pub struct AdminState {
     pub upload_limit_bytes: u64,
     pub jobs: Arc<AdminJobService>,
     pub audit: Arc<AdminAuditService>,
+    pub api_keys: Arc<ApiKeyService>,
 }

@@ -1,0 +1,112 @@
+/* API Keys table column widths */
+table[data-table="api-keys"] [data-column="name"] {
+  min-width: 8rem;
+  max-width: 10rem;
+}
+
+table[data-table="api-keys"] [data-column="name"] span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table[data-table="api-keys"] [data-column="description"] {
+  min-width: 6rem;
+  max-width: 8rem;
+}
+
+table[data-table="api-keys"] [data-column="description"] span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table[data-table="api-keys"] [data-column="prefix"] {
+  width: 7rem;
+}
+
+table[data-table="api-keys"] [data-column="scopes"] {
+  min-width: 7rem;
+  max-width: 9rem;
+}
+
+table[data-table="api-keys"] [data-column="scopes"] [data-role="badge-row"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+table[data-table="api-keys"] [data-column="scopes"] [data-role="badge"] {
+  margin-left: 0;
+  width: fit-content;
+  white-space: nowrap;
+}
+
+table[data-table="api-keys"] [data-column="created"],
+table[data-table="api-keys"] [data-column="expires"],
+table[data-table="api-keys"] [data-column="last-used"] {
+  width: 9rem;
+  white-space: nowrap;
+}
+
+table[data-table="api-keys"] [data-column="status"] {
+  width: 5rem;
+}
+
+[data-role="settings-summary-table"] {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+[data-role="settings-summary-table"] th,
+[data-role="settings-summary-table"] td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  vertical-align: top;
+}
+
+[data-role="settings-summary-table"] th {
+  width: 28%;
+  background-color: #f8fafc;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+[data-role="settings-summary-table"] tr:last-child th,
+[data-role="settings-summary-table"] tr:last-child td {
+  border-bottom: none;
+}
+
+[data-role="settings-summary-text-group"] {
+  display: grid;
+  gap: 1.25rem;
+}
+
+[data-role="settings-summary-text"] h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+[data-role="settings-summary-text"] textarea {
+  width: 100%;
+  resize: none;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-soft);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background-color: #f8fafc;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}

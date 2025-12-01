@@ -9,7 +9,7 @@ use crate::{
     domain::entities::AuditLogRecord,
 };
 
-use super::PostgresRepositories;
+use super::{PostgresRepositories, map_sqlx_error};
 
 #[derive(sqlx::FromRow)]
 struct AuditRow {
@@ -54,7 +54,7 @@ impl AuditRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -122,7 +122,7 @@ impl AuditRepo for PostgresRepositories {
             .build_query_as::<AuditRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let records: Vec<AuditLogRecord> = rows.into_iter().map(AuditLogRecord::from).collect();
         let next_cursor = if records.len() as u32 == limit {

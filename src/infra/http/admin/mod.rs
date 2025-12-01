@@ -1,3 +1,4 @@
+mod api_keys;
 mod audit;
 mod cache;
 mod dashboard;
@@ -32,7 +33,7 @@ use axum::{
 
 use crate::{application::repos::SettingsRepo, infra::assets};
 
-use super::middleware::{invalidate_admin_writes, log_responses};
+use super::middleware::{invalidate_admin_writes, log_responses, set_request_context};
 use tracing::error;
 
 pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router {
@@ -140,6 +141,30 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/jobs/{id}/retry", post(jobs::admin_job_retry))
         .route("/jobs/{id}/cancel", post(jobs::admin_job_cancel))
         .route("/audit", get(audit::admin_audit))
+        .route("/api-keys", get(api_keys::admin_api_keys))
+        .route("/api-keys/create", post(api_keys::admin_api_key_create))
+        .route("/api-keys/panel", post(api_keys::admin_api_keys_panel))
+        .route("/api-keys/new", get(api_keys::admin_api_key_new))
+        .route(
+            "/api-keys/{id}/edit",
+            get(api_keys::admin_api_key_edit).post(api_keys::admin_api_key_update),
+        )
+        .route(
+            "/api-keys/new/scopes/toggle",
+            post(api_keys::admin_api_key_scopes_toggle),
+        )
+        .route(
+            "/api-keys/{id}/revoke",
+            post(api_keys::admin_api_key_revoke),
+        )
+        .route(
+            "/api-keys/{id}/rotate",
+            post(api_keys::admin_api_key_rotate),
+        )
+        .route(
+            "/api-keys/{id}/delete",
+            post(api_keys::admin_api_key_delete),
+        )
         .route("/_health/db", get(health::admin_health))
         .route("/cache/invalidate", post(cache::invalidate_cache))
         .route("/static/admin/{*path}", get(assets::serve_admin))
@@ -151,6 +176,7 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
             invalidate_admin_writes,
         ))
         .layer(middleware::from_fn(log_responses))
+        .layer(middleware::from_fn(set_request_context))
 }
 
 async fn favicon(State(state): State<AdminState>) -> Response {
@@ -167,7 +193,14 @@ async fn favicon(State(state): State<AdminState>) -> Response {
                 error = %err,
                 "failed to load favicon from settings"
             );
-            StatusCode::SERVICE_UNAVAILABLE.into_response()
+            let mut response = StatusCode::SERVICE_UNAVAILABLE.into_response();
+            crate::application::error::ErrorReport::from_error(
+                "infra::http::admin::favicon",
+                StatusCode::SERVICE_UNAVAILABLE,
+                &err,
+            )
+            .attach(&mut response);
+            response
         }
     }
 }

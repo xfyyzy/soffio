@@ -31,6 +31,7 @@ use crate::{
         entities::UploadRecord,
         uploads::{self, UploadMetadata},
     },
+    infra::http::repo_error_to_http,
     infra::uploads::UploadStorageError,
     presentation::{admin::views as admin_views, views::render_template_response},
     util::bytes::format_bytes,
@@ -1126,11 +1127,6 @@ fn admin_upload_error(source: &'static str, err: AdminUploadError) -> HttpError 
             "Upload not found",
             "The requested upload does not exist",
         ),
-        AdminUploadError::Repo(repo) => HttpError::from_error(
-            source,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error",
-            &repo,
-        ),
+        AdminUploadError::Repo(repo) => repo_error_to_http(source, repo),
     }
 }

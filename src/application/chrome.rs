@@ -61,6 +61,8 @@ impl ChromeService {
             entries.push(map_navigation_item(&item)?);
         }
 
+        let public_site_url = normalize_public_site_url(&settings.public_site_url);
+
         let chrome = LayoutChrome {
             brand: BrandView {
                 title: settings.brand_title.clone(),
@@ -75,6 +77,7 @@ impl ChromeService {
                 description: settings.meta_description.clone(),
                 og_title: settings.og_title.clone(),
                 og_description: settings.og_description.clone(),
+                canonical: public_site_url.clone(),
             },
         };
 
@@ -138,4 +141,9 @@ fn map_navigation_item(item: &NavigationItemRecord) -> Result<NavigationLinkView
             Ok(link)
         }
     }
+}
+
+fn normalize_public_site_url(url: &str) -> String {
+    let trimmed = url.trim_end_matches('/');
+    format!("{trimmed}/")
 }

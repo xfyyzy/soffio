@@ -6,7 +6,7 @@ use crate::{
     domain::entities::SiteSettingsRecord,
 };
 
-use super::{DbTimeZone, PostgresRepositories};
+use super::{DbTimeZone, PostgresRepositories, map_sqlx_error};
 
 #[derive(sqlx::FromRow)]
 struct SiteSettingsRow {
@@ -85,7 +85,7 @@ impl SettingsRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         let row = row.ok_or_else(|| RepoError::from_persistence("site settings row missing"))?;
 
@@ -157,7 +157,7 @@ impl SettingsRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }

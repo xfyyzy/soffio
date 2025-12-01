@@ -1,0 +1,80 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% let panel_action = content.panel_action %}
+{% block panel_id %}api-keys{% endblock %}
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}
+      <a href="{{ content.new_key_href }}">New API key</a>
+{% endblock panel_toolbar %}
+
+{% block panel_controls %}
+{% let panel_action = content.panel_action %}
+{% include "admin/partials/status_tabs.html" %}
+{% include "admin/partials/filter_form.html" %}
+{% endblock panel_controls %}
+
+{% block panel_content %}
+{% let panel_action = content.panel_action %}
+  <table data-role="publishable-table" data-table="api-keys">
+    <thead>
+      <tr>
+        <th scope="col" data-column="name">Name</th>
+        <th scope="col" data-column="description">Description</th>
+        <th scope="col" data-column="prefix">Prefix</th>
+        <th scope="col" data-column="scopes">Scopes</th>
+        <th scope="col" data-column="created">Created</th>
+        <th scope="col" data-column="expires">Expires</th>
+        <th scope="col" data-column="last-used">Last used</th>
+        <th scope="col" data-column="status">Status</th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for key in content.keys %}
+      <tr data-role="api-key-row" data-key-id="{{ key.id }}">
+        <td data-column="name" title="{{ key.name }}"><span>{{ key.name }}</span></td>
+        <td data-column="description"{% if let Some(desc) = &key.description %} title="{{ desc }}"{% endif %}>
+          {% if let Some(desc) = &key.description %}
+          <span>{{ desc }}</span>
+          {% else %}
+          <span data-role="muted">—</span>
+          {% endif %}
+        </td>
+        <td data-column="prefix"><code>{{ key.prefix }}</code></td>
+        <td data-column="scopes">
+          <div data-role="badge-row">
+          {% for scope in key.scopes %}
+            <span data-role="badge">{{ scope.label }}</span>
+          {% endfor %}
+          </div>
+        </td>
+        <td data-column="created">{{ key.created_at }}</td>
+        <td data-column="expires">
+          {% if let Some(ts) = &key.expires_at %}
+            {{ ts }}
+          {% else %}
+            <span data-role="muted">—</span>
+          {% endif %}
+        </td>
+        <td data-column="last-used">
+          {% if let Some(ts) = &key.last_used_at %}
+            {{ ts }}
+          {% else %}
+            <span data-role="muted">—</span>
+          {% endif %}
+        </td>
+        <td data-column="status">
+          <status-badge data-status="{{ key.status }}">
+            {{ key.status_label }}
+          </status-badge>
+        </td>
+        <td data-role="publishable-actions">
+{% include "admin/partials/api_key_row_actions.html" %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% include "admin/partials/pagination.html" %}
+{% endblock panel_content %}

@@ -20,7 +20,7 @@ use crate::domain::types::PostStatus;
 use crate::presentation::views::{
     self, FeedLoaderContext, FeedLoaderTemplate, PageContext, PostCard, PostCardsAppendTemplate,
     PostDetailContext, PostSectionEvent, PostTocEvent, PostTocView, TemplateRenderError,
-    build_tag_badges, site_base_url,
+    build_tag_badges,
 };
 use crate::util::timezone;
 use uuid::Uuid;
@@ -185,7 +185,12 @@ impl FeedService {
             cards.push(record_to_card(record, &tags, settings.timezone));
         }
 
-        let posts_ld_json = build_posts_ld_json(&cards, &filter);
+        let posts_ld_json = build_posts_ld_json(
+            &cards,
+            &filter,
+            &settings.public_site_url,
+            &settings.meta_title,
+        );
 
         let post_count = cards.len();
         Ok(PageContext {
@@ -347,12 +352,17 @@ fn record_to_card(record: &PostRecord, tags: &[TagRecord], timezone: chrono_tz::
     }
 }
 
-fn build_posts_ld_json(cards: &[PostCard], filter: &FeedFilter) -> Option<String> {
+fn build_posts_ld_json(
+    cards: &[PostCard],
+    filter: &FeedFilter,
+    public_site_url: &str,
+    blog_name: &str,
+) -> Option<String> {
     if cards.is_empty() {
         return None;
     }
 
-    let site_url = site_base_url();
+    let site_url = normalize_public_site_url(public_site_url);
     let blog_url = format!("{site_url}{}", filter.base_path());
 
     let blog_posts = cards
@@ -363,7 +373,7 @@ fn build_posts_ld_json(cards: &[PostCard], filter: &FeedFilter) -> Option<String
                 "headline": card.title,
                 "description": card.excerpt,
                 "datePublished": card.iso_date,
-                "url": format!("{site_url}/posts/{}", card.slug),
+                "url": format!("{site_url}posts/{}", card.slug),
             })
         })
         .collect::<Vec<_>>();
@@ -371,11 +381,16 @@ fn build_posts_ld_json(cards: &[PostCard], filter: &FeedFilter) -> Option<String
     serde_json::to_string(&json!({
         "@context": "https://schema.org",
         "@type": "Blog",
-        "name": "Soffio Blog",
+        "name": blog_name,
         "url": blog_url,
         "blogPost": blog_posts,
     }))
     .ok()
+}
+
+fn normalize_public_site_url(url: &str) -> String {
+    let trimmed = url.trim_end_matches('/');
+    format!("{trimmed}/")
 }
 
 fn build_post_section_events(nodes: &[PostSectionNode]) -> Vec<PostSectionEvent> {

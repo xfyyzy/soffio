@@ -13,7 +13,7 @@ use crate::{
     domain::{entities::PageRecord, types::PageStatus},
 };
 
-use super::PostgresRepositories;
+use super::{PostgresRepositories, map_sqlx_error};
 
 const PAGE_PRIMARY_TIME_EXPR: &str = "CASE \
     WHEN status = 'published'::page_status THEN \
@@ -181,7 +181,7 @@ impl PagesRepo for PostgresRepositories {
             .build_query_as::<PageListRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let next_cursor = if (rows.len() as i64) > limit {
             let overflow = rows.pop().expect("overflow row exists when len > limit");
@@ -209,7 +209,7 @@ impl PagesRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(PageRecord::from))
     }
@@ -249,7 +249,7 @@ impl PagesRepo for PostgresRepositories {
             .build_query_scalar()
             .fetch_one(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         Ok(count as u64)
     }
@@ -268,7 +268,7 @@ impl PagesRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(PageRecord::from))
     }
@@ -314,7 +314,7 @@ impl PagesRepo for PostgresRepositories {
             .build_query_as::<MonthRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let mut counts = Vec::with_capacity(rows.len());
         for row in rows {
@@ -379,7 +379,7 @@ impl PagesWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PageRecord::from(row))
     }
@@ -418,7 +418,7 @@ impl PagesWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PageRecord::from(row))
     }
@@ -460,7 +460,7 @@ impl PagesWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PageRecord::from(row))
     }
@@ -489,7 +489,7 @@ impl PagesWriteRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(PageRecord::from(row))
     }
@@ -504,7 +504,7 @@ impl PagesWriteRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -525,7 +525,7 @@ impl PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(|record| record.id))
     }
@@ -545,7 +545,7 @@ impl PostgresRepositories {
         )
         .fetch_optional(tx.as_mut())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(|record| record.id))
     }
@@ -568,7 +568,7 @@ impl PostgresRepositories {
         )
         .execute(tx.as_mut())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }

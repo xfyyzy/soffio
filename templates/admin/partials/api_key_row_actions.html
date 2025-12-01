@@ -1,0 +1,35 @@
+              <div data-role="row-actions">
+                <a href="{{ key.edit_href }}">Edit</a>
+                <form data-role="inline-form" method="post" action="{{ key.rotate_action }}"
+                      data-on-submit__prevent="(@post(`{{ key.rotate_action }}`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ key.id }}">
+                  <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
+                  <input type="hidden" name="filter_scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
+                  <input type="hidden" name="trail" value="{% if let Some(v) = &content.trail %}{{ v }}{% endif %}">
+                  <button type="submit">Rotate</button>
+                </form>
+                {% if key.status == "active" %}
+                <form data-role="inline-form" method="post" action="{{ key.revoke_action }}"
+                      data-on-submit__prevent="(@post(`{{ key.revoke_action }}`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ key.id }}">
+                  <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
+                  <input type="hidden" name="filter_scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
+                  <input type="hidden" name="trail" value="{% if let Some(v) = &content.trail %}{{ v }}{% endif %}">
+                  <button type="submit" data-variant="danger">Revoke</button>
+                </form>
+                {% endif %}
+                <form data-role="inline-form" method="post" action="{{ key.delete_action }}"
+                      data-on-submit__prevent="(@post(`{{ key.delete_action }}`, { contentType: 'form' }))">
+                  <input type="hidden" name="id" value="{{ key.id }}">
+                  <input type="hidden" name="cursor" value="{% if let Some(v) = &content.cursor_param %}{{ v }}{% endif %}">
+                  <input type="hidden" name="status_filter" value="{% if let Some(v) = &content.active_status_key %}{{ v }}{% endif %}">
+                  <input type="hidden" name="filter_search" value="{% if let Some(v) = &content.filter_search %}{{ v }}{% endif %}">
+                  <input type="hidden" name="filter_scope" value="{% if let Some(v) = &content.filter_scope %}{{ v }}{% endif %}">
+                  <input type="hidden" name="trail" value="{% if let Some(v) = &content.trail %}{{ v }}{% endif %}">
+                  <button type="submit" data-variant="danger">Delete</button>
+                </form>
+              </div>

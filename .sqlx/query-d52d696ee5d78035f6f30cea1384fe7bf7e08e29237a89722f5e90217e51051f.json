@@ -1,0 +1,67 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO api_keys (\n                id,\n                name,\n                description,\n                prefix,\n                hashed_secret,\n                scopes,\n                status,\n                expires_in,\n                expires_at,\n                revoked_at,\n                last_used_at,\n                created_by,\n                created_at,\n                updated_at\n            )\n            VALUES (\n                $1,\n                $2,\n                $3,\n                $4,\n                $5,\n                $6::api_scope[],\n                $7::api_key_status,\n                $8,\n                $9,\n                $10,\n                $11,\n                $12,\n                $13,\n                $14\n            )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Bytea",
+        {
+          "Custom": {
+            "name": "api_scope[]",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "api_scope",
+                  "kind": {
+                    "Enum": [
+                      "post_read",
+                      "post_write",
+                      "page_read",
+                      "page_write",
+                      "tag_read",
+                      "tag_write",
+                      "navigation_read",
+                      "navigation_write",
+                      "upload_read",
+                      "upload_write",
+                      "settings_read",
+                      "settings_write",
+                      "job_read",
+                      "audit_read"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "Custom": {
+            "name": "api_key_status",
+            "kind": {
+              "Enum": [
+                "active",
+                "revoked",
+                "expired"
+              ]
+            }
+          }
+        },
+        "Interval",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d52d696ee5d78035f6f30cea1384fe7bf7e08e29237a89722f5e90217e51051f"
+}

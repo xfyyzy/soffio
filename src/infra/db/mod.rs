@@ -1,5 +1,6 @@
 //! Postgres-backed repository implementations.
 
+pub(crate) mod api_keys;
 mod audit;
 mod jobs;
 mod navigation;
@@ -9,9 +10,11 @@ mod settings;
 mod tags;
 mod timezone;
 mod uploads;
+mod util;
 
 pub use posts::{PersistedPostSection, PersistedPostSectionOwned};
 pub use timezone::DbTimeZone;
+pub use util::map_sqlx_error;
 
 use std::sync::Arc;
 

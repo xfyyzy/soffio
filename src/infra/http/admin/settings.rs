@@ -11,6 +11,7 @@ use thiserror::Error;
 use crate::application::admin::settings::{AdminSettingsError, UpdateSettingsCommand};
 use crate::application::error::HttpError;
 use crate::domain::entities::SiteSettingsRecord;
+use crate::infra::http::repo_error_to_http;
 use crate::presentation::{admin::views as admin_views, views::render_template_response};
 
 use super::{
@@ -628,12 +629,7 @@ fn admin_settings_error(source: &'static str, err: AdminSettingsError) -> HttpEr
             "Settings request could not be processed",
             format!("Invalid field `{field}`"),
         ),
-        AdminSettingsError::Repo(repo) => HttpError::from_error(
-            source,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error",
-            &repo,
-        ),
+        AdminSettingsError::Repo(repo) => repo_error_to_http(source, repo),
     }
 }
 

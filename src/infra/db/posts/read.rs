@@ -12,6 +12,7 @@ use crate::domain::types::PostStatus;
 
 use super::PostgresRepositories;
 use super::types::PostRow;
+use crate::infra::db::map_sqlx_error;
 
 impl PostgresRepositories {
     pub fn stream_all_posts(&self) -> BoxStream<'_, Result<PostRecord, RepoError>> {
@@ -107,7 +108,7 @@ impl PostsRepo for PostgresRepositories {
             .build_query_as::<PostRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let mut records = Vec::with_capacity(rows.len());
         let has_more = (rows.len() as i64) > limit;
@@ -154,7 +155,7 @@ impl PostsRepo for PostgresRepositories {
             .build_query_scalar()
             .fetch_one(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         Self::convert_count(count)
     }
@@ -201,7 +202,7 @@ impl PostsRepo for PostgresRepositories {
             .build_query_scalar()
             .fetch_one(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         Self::convert_count(count)
     }
@@ -232,7 +233,7 @@ impl PostsRepo for PostgresRepositories {
             .build_query_as::<MonthRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let mut counts = Vec::with_capacity(rows.len());
         for row in rows {
@@ -282,7 +283,7 @@ impl PostsRepo for PostgresRepositories {
             .build_query_as::<TagRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
 
         let mut counts = Vec::with_capacity(rows.len());
         for row in rows {
@@ -316,7 +317,7 @@ impl PostsRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(PostRecord::from))
     }
@@ -340,7 +341,7 @@ impl PostsRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(row.map(PostRecord::from))
     }

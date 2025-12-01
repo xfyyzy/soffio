@@ -10,6 +10,7 @@ use apalis::{
     layers::WorkerBuilderExt,
     prelude::{Data, Monitor, WorkerBuilder, WorkerFactoryFn},
 };
+use apalis_cron::CronStream;
 use apalis_sql::{Config as ApalisSqlConfig, postgres::PostgresStorage};
 use futures::stream::TryStreamExt;
 use soffio::{
@@ -21,10 +22,12 @@ use soffio::{
             posts::AdminPostService, settings::AdminSettingsService, tags::AdminTagService,
             uploads::AdminUploadService,
         },
+        api_keys::ApiKeyService,
         chrome::ChromeService,
         feed::FeedService,
         jobs::{
-            JobWorkerContext, process_cache_invalidation_job, process_publish_page_job,
+            ExpireApiKeysContext, JobWorkerContext, expire_api_keys_schedule,
+            process_cache_invalidation_job, process_expire_api_keys_job, process_publish_page_job,
             process_publish_post_job,
         },
         page::PageService,
@@ -35,9 +38,9 @@ use soffio::{
             process_render_post_sections_job, process_render_summary_job, render_service,
         },
         repos::{
-            AuditRepo, JobsRepo, NavigationRepo, NavigationWriteRepo, PagesRepo, PagesWriteRepo,
-            PostsRepo, PostsWriteRepo, SectionsRepo, SettingsRepo, TagsRepo, TagsWriteRepo,
-            UploadsRepo,
+            ApiKeysRepo, AuditRepo, JobsRepo, NavigationRepo, NavigationWriteRepo, PagesRepo,
+            PagesWriteRepo, PostsRepo, PostsWriteRepo, SectionsRepo, SettingsRepo, TagsRepo,
+            TagsWriteRepo, UploadsRepo,
         },
         site,
     },
@@ -49,7 +52,7 @@ use soffio::{
         cache_warmer::CacheWarmer,
         db::PostgresRepositories,
         error::InfraError,
-        http::{self, AdminState, HttpState},
+        http::{self, AdminState, ApiState, HttpState, RouterState},
         telemetry,
         uploads::UploadStorage,
     },
@@ -109,10 +112,14 @@ async fn run_serve(settings: config::Settings) -> Result<(), AppError> {
 
     warm_initial_cache(&app.http_state).await?;
 
-    let monitor_handle =
-        spawn_job_monitor(job_repositories, app.job_context.clone(), &settings.jobs);
+    let monitor_handle = spawn_job_monitor(
+        job_repositories,
+        app.job_context.clone(),
+        app.api_keys.clone(),
+        &settings.jobs,
+    );
 
-    let result = serve_http(&settings, app.http_state, app.admin_state).await;
+    let result = serve_http(&settings, app.http_state, app.admin_state, app.api_state).await;
 
     monitor_handle.abort();
     let _ = monitor_handle.await;
@@ -201,7 +208,9 @@ async fn run_import_site(
 struct ApplicationContext {
     http_state: HttpState,
     admin_state: AdminState,
+    api_state: ApiState,
     job_context: JobWorkerContext,
+    api_keys: Arc<ApiKeyService>,
 }
 
 fn build_site_services(
@@ -272,6 +281,7 @@ fn build_application_context(
     let pages_repo: Arc<dyn PagesRepo> = http_repositories.clone();
     let pages_write_repo: Arc<dyn PagesWriteRepo> = http_repositories.clone();
     let uploads_repo: Arc<dyn UploadsRepo> = http_repositories.clone();
+    let api_keys_repo: Arc<dyn ApiKeysRepo> = http_repositories.clone();
     let audit_repo: Arc<dyn AuditRepo> = http_repositories.clone();
     let jobs_repo: Arc<dyn JobsRepo> = http_repositories.clone();
 
@@ -319,6 +329,7 @@ fn build_application_context(
         audit_service.clone(),
     ));
     let admin_audit_service = Arc::new(audit_service);
+    let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
 
     let upload_storage = Arc::new(
         UploadStorage::new(settings.uploads.directory.clone())
@@ -346,6 +357,7 @@ fn build_application_context(
             tags_repo.clone(),
             navigation_repo.clone(),
             uploads_repo.clone(),
+            api_keys_repo.clone(),
         )),
         posts: admin_post_service,
         pages: admin_page_service,
@@ -357,6 +369,27 @@ fn build_application_context(
         upload_limit_bytes: settings.uploads.max_request_bytes.get(),
         jobs: admin_job_service,
         audit: admin_audit_service,
+        api_keys: api_key_service.clone(),
+    };
+
+    let rate_limiter = Arc::new(http::ApiRateLimiter::new(
+        std::time::Duration::from_secs(settings.api_rate_limit.window_seconds.get() as u64),
+        settings.api_rate_limit.max_requests.get(),
+    ));
+
+    let api_state = ApiState {
+        api_keys: admin_state.api_keys.clone(),
+        posts: admin_state.posts.clone(),
+        pages: admin_state.pages.clone(),
+        tags: admin_state.tags.clone(),
+        navigation: admin_state.navigation.clone(),
+        uploads: admin_state.uploads.clone(),
+        settings: admin_state.settings.clone(),
+        jobs: admin_state.jobs.clone(),
+        audit: admin_state.audit.clone(),
+        db: http_repositories.clone(),
+        upload_storage: upload_storage.clone(),
+        rate_limiter,
     };
 
     let render_mailbox = RenderMailbox::new();
@@ -377,7 +410,9 @@ fn build_application_context(
     Ok(ApplicationContext {
         http_state,
         admin_state,
+        api_state,
         job_context,
+        api_keys: api_key_service,
     })
 }
 
@@ -474,6 +509,7 @@ async fn warm_initial_cache(http_state: &HttpState) -> Result<(), AppError> {
 fn spawn_job_monitor(
     repositories: Arc<PostgresRepositories>,
     context: JobWorkerContext,
+    api_keys: Arc<ApiKeyService>,
     jobs: &config::JobsSettings,
 ) -> tokio::task::JoinHandle<()> {
     let render_storage = PostgresStorage::new_with_config(
@@ -557,6 +593,13 @@ fn spawn_job_monitor(
         .backend(cache_invalidation_storage)
         .build_fn(process_cache_invalidation_job);
 
+    // Cron-based API key expiration worker (runs hourly)
+    let expire_api_keys_ctx = ExpireApiKeysContext { api_keys };
+    let expire_api_keys_worker = WorkerBuilder::new("expire-api-keys-worker")
+        .data(expire_api_keys_ctx)
+        .backend(CronStream::new(expire_api_keys_schedule()))
+        .build_fn(process_expire_api_keys_job);
+
     let monitor = Monitor::new()
         .register(render_post_worker)
         .register(render_sections_worker)
@@ -565,7 +608,8 @@ fn spawn_job_monitor(
         .register(render_page_worker)
         .register(publish_post_worker)
         .register(publish_page_worker)
-        .register(cache_worker);
+        .register(cache_worker)
+        .register(expire_api_keys_worker);
 
     tokio::spawn(async move {
         if let Err(err) = monitor.run().await {
@@ -578,10 +622,20 @@ async fn serve_http(
     settings: &config::Settings,
     http_state: HttpState,
     admin_state: AdminState,
+    api_state: ApiState,
 ) -> Result<(), AppError> {
-    let public_router = http::build_router(http_state.clone());
+    let router_state = RouterState {
+        http: http_state,
+        api: api_state,
+    };
+    let public_router = http::build_router(router_state.clone());
     let upload_body_limit = settings.uploads.max_request_bytes.get() as usize;
     let admin_router = http::build_admin_router(admin_state, upload_body_limit);
+    let api_router = http::build_api_v1_router(router_state.clone());
+
+    let public_router = public_router
+        .merge(api_router)
+        .with_state(router_state.clone());
 
     let public_listener = tokio::net::TcpListener::bind(settings.server.public_addr)
         .await

@@ -1,5 +1,9 @@
 [build]
 rustflags = ["-C", "target-cpu=native"]
 
+[env]
+# Use offline SQLx metadata during builds to avoid hitting a live DATABASE_URL in CI.
+SQLX_OFFLINE = "true"
+
 [profile.release]
 split-debuginfo = "packed"

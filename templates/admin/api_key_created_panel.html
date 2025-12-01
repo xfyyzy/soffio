@@ -1,0 +1,23 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}api-key-created{% endblock %}
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}{% endblock %}
+
+{% block panel_controls %}{% endblock %}
+
+{% block panel_content %}
+  <p>{{ content.message }}</p>
+
+  <div data-role="token-display">
+    <code data-role="token-value">{{ content.token }}</code>
+    {% let copy_value = content.token.clone() %}
+    {% let copy_toast_action = content.copy_toast_action.clone() %}
+    {% let copy_button_label = "Copy" %}
+    {% let copy_success_message = "Key copied to clipboard" %}
+    {% let copy_error_message = "Copy failed" %}
+    {% let copy_button_role = "" %}
+    {% include "admin/partials/copy_button.html" %}
+  </div>
+{% endblock panel_content %}

@@ -1,6 +1,7 @@
 //! Domain entities mirrored from persistent storage.
 
 use chrono_tz::Tz;
+use serde::Serialize;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -9,7 +10,7 @@ use crate::domain::{
     uploads::UploadMetadata,
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PostRecord {
     pub id: Uuid,
     pub slug: String,
@@ -27,7 +28,7 @@ pub struct PostRecord {
     pub updated_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PostSectionRecord {
     pub id: Uuid,
     pub post_id: Uuid,
@@ -44,7 +45,7 @@ pub struct PostSectionRecord {
     pub created_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PageRecord {
     pub id: Uuid,
     pub slug: String,
@@ -59,7 +60,7 @@ pub struct PageRecord {
     pub updated_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct TagRecord {
     pub id: Uuid,
     pub slug: String,
@@ -70,7 +71,7 @@ pub struct TagRecord {
     pub updated_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct NavigationItemRecord {
     pub id: Uuid,
     pub label: String,
@@ -85,7 +86,7 @@ pub struct NavigationItemRecord {
     pub updated_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct SiteSettingsRecord {
     pub homepage_size: i32,
     pub admin_page_size: i32,
@@ -107,7 +108,7 @@ pub struct SiteSettingsRecord {
     pub updated_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct UploadRecord {
     pub id: Uuid,
     pub filename: String,
@@ -119,7 +120,7 @@ pub struct UploadRecord {
     pub created_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct AuditLogRecord {
     pub id: Uuid,
     pub actor: String,
@@ -130,7 +131,7 @@ pub struct AuditLogRecord {
     pub created_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct JobRecord {
     pub id: String,
     pub job_type: JobType,

@@ -1,6 +1,5 @@
 ---
 source: tests/admin_panels.rs
-assertion_line: 393
 expression: rendered
 ---
 <!DOCTYPE html>

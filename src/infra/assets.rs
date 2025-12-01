@@ -15,7 +15,7 @@ use mime_guess::{Mime, MimeGuess};
 use crate::application::error::ErrorReport;
 
 static STATIC_PUBLIC_ASSETS: Dir<'_> = include_dir!("$OUT_DIR/static_public");
-static STATIC_ADMIN_ASSETS: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/static/admin");
+static STATIC_ADMIN_ASSETS: Dir<'_> = include_dir!("$OUT_DIR/static_admin");
 static STATIC_SHARED_ASSETS: Dir<'_> = include_dir!("$OUT_DIR/static_common");
 
 /// Serve embedded public static assets.

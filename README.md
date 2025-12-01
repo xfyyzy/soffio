@@ -58,10 +58,22 @@ src/
 - **Caching** — response cache at `src/infra/cache.rs` plus a warmer in `src/infra/cache_warmer.rs`.
 - **Telemetry** — `tracing` + `tracing-subscriber`, bootstrapped via `src/infra/telemetry.rs`.
 
+## Headless API
+
+- Base path: `/api/v1` on the public listener.
+- Auth: `Authorization: Bearer <api_key>` (obtain/manage keys in the admin UI under “API keys”; keys are shown once). Admin workflow documented in [`docs/admin/api-keys.md`](docs/admin/api-keys.md).
+- Scopes control access (snake_case): `post_read`, `post_write`, `page_read`, `page_write`, `tag_read`, `tag_write`, `navigation_read`, `navigation_write`, `upload_read`, `upload_write`, `settings_read`, `settings_write`, `job_read`, `audit_read`.
+- Rate limit: configured via `api_rate_limit` (default: 120 requests per 60s per key).
+- Specification: [`docs/api/openapi.yaml`](docs/api/openapi.yaml).
+
 ## Development Workflow
 
 1. Run the baseline quality gates:
    ```bash
+   # point DATABASE_URL to your writable instance; SQLX_TEST_DATABASE_URL is used by `#[sqlx::test]` to create temp DBs
+   export DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev
+   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/postgres
+
    cargo fmt --all
    cargo clippy --workspace --all-targets -- -D warnings
    cargo test --workspace --all-targets

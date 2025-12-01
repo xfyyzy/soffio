@@ -13,7 +13,7 @@ use crate::{
     },
 };
 
-use super::PostgresRepositories;
+use super::{PostgresRepositories, map_sqlx_error};
 
 #[derive(sqlx::FromRow)]
 struct JobRow {
@@ -76,7 +76,7 @@ impl JobsRepo for PostgresRepositories {
         )
         .fetch_one(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(record.id)
     }
@@ -115,7 +115,7 @@ impl JobsRepo for PostgresRepositories {
         )
         .execute(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         Ok(())
     }
@@ -143,7 +143,7 @@ impl JobsRepo for PostgresRepositories {
         )
         .fetch_optional(self.pool())
         .await
-        .map_err(RepoError::from_persistence)?;
+        .map_err(map_sqlx_error)?;
 
         match row {
             Some(row) => JobRecord::try_from(row).map(Some),
@@ -219,7 +219,7 @@ impl JobsRepo for PostgresRepositories {
             .build_query_as::<JobRow>()
             .fetch_all(self.pool())
             .await
-            .map_err(RepoError::from_persistence)?;
+            .map_err(map_sqlx_error)?;
         let mut records = Vec::with_capacity(rows.len());
         for row in rows {
             records.push(JobRecord::try_from(row)?);

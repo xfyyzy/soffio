@@ -1,49 +1,32 @@
-<section data-role="tag-picker">
-  <header data-role="tag-picker-header">
-    <h3 data-role="tag-picker-title">Tags</h3>
+{% import "admin/macros/picker.html" as picker_macro %}
+
+<section data-role="picker" data-picker-type="tag">
+  <header data-role="picker-header">
+    <h3 data-role="picker-title">Tags</h3>
     {% if picker.selected.is_empty() %}
-    <span data-role="tag-picker-hint">Choose tags to help readers find this post.</span>
+    <span data-role="picker-hint">Choose tags to help readers find this post.</span>
     {% endif %}
   </header>
-  <div data-role="tag-selected">
-    <h4 data-role="tag-subtitle">Selected</h4>
+  <div data-role="picker-selected">
+    <h4 data-role="picker-subtitle">Selected</h4>
     {% if picker.selected.is_empty() %}
     <p data-role="muted">No tags selected</p>
     {% else %}
-    <div data-role="tag-chip-list">
+    <div data-role="chip-list">
       {% for tag in picker.selected %}
-      <form method="post" action="{{ picker.toggle_action }}" data-role="tag-toggle"
-        data-on-submit__prevent="(@post(`{{ picker.toggle_action }}`, { contentType: 'form' }))">
-        <input type="hidden" name="tag_state" value="{{ picker.selected_tag_ids | join(",") }}">
-        <input type="hidden" name="tag_id" value="{{ tag.id }}">
-        <button type="submit" data-role="tag-chip" data-selected="true" aria-pressed="true">
-          <span data-role="tag-chip-label">{{ tag.name }}</span>
-          <span data-role="tag-chip-slug">#{{ tag.slug }}</span>
-        </button>
-      </form>
+      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", tag.id, "tag", "true", tag.name, tag.slug, "#", true, false, 0) %}
       {% endfor %}
     </div>
     {% endif %}
   </div>
-  <div data-role="tag-options">
-    <h4 data-role="tag-subtitle">Available</h4>
+  <div data-role="picker-options">
+    <h4 data-role="picker-subtitle">Available</h4>
     {% if picker.options.is_empty() %}
     <p data-role="muted">No tags available</p>
     {% else %}
-    <div data-role="tag-chip-grid">
+    <div data-role="chip-grid">
       {% for option in picker.options %}
-      <form method="post" action="{{ picker.toggle_action }}" data-role="tag-toggle"
-        data-on-submit__prevent="(@post(`{{ picker.toggle_action }}`, { contentType: 'form' }))">
-        <input type="hidden" name="tag_state" value="{{ picker.selected_tag_ids | join(",") }}">
-        <input type="hidden" name="tag_id" value="{{ option.id }}">
-        <button type="submit" data-role="tag-chip"
-          data-selected="{% if option.is_selected %}true{% else %}false{% endif %}"
-          aria-pressed="{% if option.is_selected %}true{% else %}false{% endif %}">
-          <span data-role="tag-chip-label">{{ option.name }}</span>
-          <span data-role="tag-chip-slug">#{{ option.slug }}</span>
-          <span data-role="tag-chip-count">{{ option.usage_count }}</span>
-        </button>
-      </form>
+      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", option.id, "tag", option.is_selected, option.name, option.slug, "#", true, true, option.usage_count) %}
       {% endfor %}
     </div>
     {% endif %}

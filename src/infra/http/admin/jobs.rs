@@ -15,6 +15,7 @@ use crate::{
         repos::{JobQueryFilter, SettingsRepo},
     },
     domain::types::{JobState, JobType},
+    infra::http::repo_error_to_http,
     presentation::{admin::views as admin_views, views::render_template_response},
 };
 
@@ -508,12 +509,7 @@ fn admin_job_error(source: &'static str, err: AdminJobError) -> HttpError {
             "Job not found",
             "The requested job does not exist",
         ),
-        AdminJobError::Repo(repo) => HttpError::from_error(
-            source,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error",
-            &repo,
-        ),
+        AdminJobError::Repo(repo) => repo_error_to_http(source, repo),
     }
 }
 

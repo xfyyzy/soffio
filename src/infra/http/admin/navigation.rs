@@ -28,6 +28,7 @@ use crate::{
             stream_editor_success, template_render_http_error,
         },
     },
+    infra::http::repo_error_to_http,
     presentation::{admin::views as admin_views, views::render_template_response},
 };
 
@@ -1140,11 +1141,6 @@ fn admin_navigation_error(source: &'static str, err: AdminNavigationError) -> Ht
             "Navigation request could not be processed",
             format!("Invalid field `{field}`"),
         ),
-        AdminNavigationError::Repo(repo) => HttpError::from_error(
-            source,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error",
-            &repo,
-        ),
+        AdminNavigationError::Repo(repo) => repo_error_to_http(source, repo),
     }
 }

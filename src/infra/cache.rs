@@ -13,12 +13,14 @@ use tokio::sync::RwLock;
 #[derive(Clone, Default)]
 pub struct ResponseCache {
     entries: Arc<RwLock<HashMap<String, CachedResponse>>>,
+    seo_entries: Arc<RwLock<HashMap<SeoKey, String>>>,
 }
 
 impl ResponseCache {
     pub fn new() -> Self {
         Self {
             entries: Arc::new(RwLock::new(HashMap::new())),
+            seo_entries: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -49,7 +51,28 @@ impl ResponseCache {
     pub async fn invalidate_all(&self) {
         let mut guard = self.entries.write().await;
         guard.clear();
+
+        let mut seo_guard = self.seo_entries.write().await;
+        seo_guard.clear();
     }
+
+    pub async fn get_seo(&self, key: SeoKey) -> Option<String> {
+        let guard = self.seo_entries.read().await;
+        guard.get(&key).cloned()
+    }
+
+    pub async fn put_seo(&self, key: SeoKey, value: String) {
+        let mut guard = self.seo_entries.write().await;
+        guard.insert(key, value);
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SeoKey {
+    Sitemap,
+    Rss,
+    Atom,
+    Robots,
 }
 
 #[derive(Clone)]

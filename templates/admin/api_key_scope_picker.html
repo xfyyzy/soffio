@@ -1,0 +1,34 @@
+{% import "admin/macros/picker.html" as picker_macro %}
+
+<section data-role="picker" data-picker-type="scope">
+  <header data-role="picker-header">
+    <h3 data-role="picker-title">Scopes</h3>
+    {% if picker.selected.is_empty() %}
+    <span data-role="picker-hint">Select permissions for this API key.</span>
+    {% endif %}
+  </header>
+  <div data-role="picker-selected">
+    <h4 data-role="picker-subtitle">Selected</h4>
+    {% if picker.selected.is_empty() %}
+    <p data-role="muted">No scopes selected</p>
+    {% else %}
+    <div data-role="chip-list">
+      {% for scope in picker.selected %}
+      {% call picker_macro::chip(picker.toggle_action, "scope_state", picker.selected_values|join(","), "scope_id", scope.value, "scope", "true", scope.label, "", "", false, false, 0) %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div data-role="picker-options">
+    <h4 data-role="picker-subtitle">Available</h4>
+    {% if picker.available.is_empty() %}
+    <p data-role="muted">All scopes selected</p>
+    {% else %}
+    <div data-role="chip-grid">
+      {% for scope in picker.available %}
+      {% call picker_macro::chip(picker.toggle_action, "scope_state", picker.selected_values|join(","), "scope_id", scope.value, "scope", "false", scope.label, "", "", false, false, 0) %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>

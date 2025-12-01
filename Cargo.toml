@@ -27,8 +27,10 @@ async-trait = "0.1"
 base64 = "0.22"
 ammonia = "4"
 apalis = { version = "0.7", default-features = false, features = ["limit", "tracing"] }
+apalis-cron = { version = "0.7", default-features = false }
 apalis-sql = { version = "0.7", default-features = false, features = ["postgres"] }
 comrak = { version = "0.48", default-features = false, features = ["syntect"] }
+cron = "0.15"
 once_cell = "1"
 syntect = { version = "5.3", default-features = false, features = ["default-themes", "html", "parsing", "regex-fancy"] }
 include_dir = "0.7.4"
@@ -37,7 +39,7 @@ bytes = "1.11.0"
 lol_html = "2.7"
 http-body-util = "0.1"
 sha2 = "0.10"
-chrono-tz = "0.10.4"
+chrono-tz = { version = "0.10.4", features = ["serde"] }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 futures = "0.3"
 axum-extra = { version = "0.12.2", features = ["multipart"] }
@@ -47,9 +49,12 @@ toml = { version = "0.9", features = ["parse", "display"] }
 hex = "0.4"
 dashmap = "6.1"
 tempfile = "3.23"
+subtle = "2.6"
 
 [dev-dependencies]
 insta = { version = "1.44", features = ["glob"] }
+tower = "0.5"
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
 
 [build-dependencies]
 walkdir = "2"

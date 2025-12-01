@@ -1,6 +1,7 @@
 use axum::http::StatusCode;
 
 use crate::application::{admin::posts::AdminPostError, error::HttpError};
+use crate::infra::http::repo_error_to_http;
 
 pub(super) fn admin_post_error(source: &'static str, err: AdminPostError) -> HttpError {
     match err {
@@ -10,11 +11,6 @@ pub(super) fn admin_post_error(source: &'static str, err: AdminPostError) -> Htt
             "Post request could not be processed",
             format!("Invalid field `{field}`"),
         ),
-        AdminPostError::Repo(repo) => HttpError::from_error(
-            source,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error",
-            &repo,
-        ),
+        AdminPostError::Repo(repo) => repo_error_to_http(source, repo),
     }
 }

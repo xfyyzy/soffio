@@ -1,0 +1,102 @@
+---
+source: tests/admin_panels.rs
+expression: rendered
+---
+
+<section data-role="panel" data-admin-panel="api-key-editor">
+  <header data-role="panel-header">
+    <h2 data-role="panel-title">Create API key</h2>
+  </header>
+  <div data-role="panel-body">
+
+    <div data-role="panel-toolbar"></div>
+
+
+
+  
+  <form id="api-key-form" data-role="api-key-editor" method="post" action="/api-keys/create"
+        data-on-submit__prevent="(@post(`/api-keys/create`, { contentType: 'form' }))">
+    <label>
+      <span>Name</span>
+      <input type="text" name="name" value="" required>
+    </label>
+    <label>
+      <span>Description</span>
+      <textarea name="description" rows="3" placeholder="Optional purpose"></textarea>
+    </label>
+    
+    <label>
+      <span>Expires in</span>
+      <select name="expires_in">
+        
+        <option value="" selected>Never expires</option>
+        
+        <option value="30d" >30 days</option>
+        
+        <option value="90d" >90 days</option>
+        
+      </select>
+    </label>
+    
+    <div data-role="scope-selection-store">
+  <input type="hidden" name="scope_state" value="">
+</div>
+  </form>
+  
+
+<section data-role="picker" data-picker-type="scope">
+  <header data-role="picker-header">
+    <h3 data-role="picker-title">Scopes</h3>
+    
+    <span data-role="picker-hint">Select permissions for this API key.</span>
+    
+  </header>
+  <div data-role="picker-selected">
+    <h4 data-role="picker-subtitle">Selected</h4>
+    
+    <p data-role="muted">No scopes selected</p>
+    
+  </div>
+  <div data-role="picker-options">
+    <h4 data-role="picker-subtitle">Available</h4>
+    
+    <div data-role="chip-grid">
+      
+      <form method="post" action="/api-keys/new/scopes/toggle" data-role="chip-toggle" data-picker-type="scope"
+  data-on-submit__prevent="(@post(`/api-keys/new/scopes/toggle`, { contentType: 'form' }))">
+  <input type="hidden" name="scope_state" value="">
+  <input type="hidden" name="scope_id" value="content_read">
+  <button type="submit" data-role="chip" data-selected="false" aria-pressed="false">
+    <span data-role="chip-label">Content read</span>
+  </button>
+</form>
+      
+      <form method="post" action="/api-keys/new/scopes/toggle" data-role="chip-toggle" data-picker-type="scope"
+  data-on-submit__prevent="(@post(`/api-keys/new/scopes/toggle`, { contentType: 'form' }))">
+  <input type="hidden" name="scope_state" value="">
+  <input type="hidden" name="scope_id" value="content_write">
+  <button type="submit" data-role="chip" data-selected="false" aria-pressed="false">
+    <span data-role="chip-label">Content write</span>
+  </button>
+</form>
+      
+      <form method="post" action="/api-keys/new/scopes/toggle" data-role="chip-toggle" data-picker-type="scope"
+  data-on-submit__prevent="(@post(`/api-keys/new/scopes/toggle`, { contentType: 'form' }))">
+  <input type="hidden" name="scope_state" value="">
+  <input type="hidden" name="scope_id" value="tag_write">
+  <button type="submit" data-role="chip" data-selected="false" aria-pressed="false">
+    <span data-role="chip-label">Tag write</span>
+  </button>
+</form>
+      
+    </div>
+    
+  </div>
+</section>
+  <div data-role="form-actions">
+    <button type="submit" form="api-key-form">Create key</button>
+    
+  </div>
+
+  </div>
+</section>

@@ -1,0 +1,172 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE api_keys\n            SET name = $1,\n                description = $2,\n                scopes = $3::api_scope[],\n                updated_at = now()\n            WHERE id = $4\n            RETURNING id, name, description, prefix, hashed_secret,\n                      scopes as \"scopes: Vec<ApiScope>\",\n                      status as \"status: ApiKeyStatus\",\n                      expires_in, expires_at, revoked_at, last_used_at, created_by, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "prefix",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "hashed_secret",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 5,
+        "name": "scopes: Vec<ApiScope>",
+        "type_info": {
+          "Custom": {
+            "name": "api_scope[]",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "api_scope",
+                  "kind": {
+                    "Enum": [
+                      "post_read",
+                      "post_write",
+                      "page_read",
+                      "page_write",
+                      "tag_read",
+                      "tag_write",
+                      "navigation_read",
+                      "navigation_write",
+                      "upload_read",
+                      "upload_write",
+                      "settings_read",
+                      "settings_write",
+                      "job_read",
+                      "audit_read"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "status: ApiKeyStatus",
+        "type_info": {
+          "Custom": {
+            "name": "api_key_status",
+            "kind": {
+              "Enum": [
+                "active",
+                "revoked",
+                "expired"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "expires_in",
+        "type_info": "Interval"
+      },
+      {
+        "ordinal": 8,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "revoked_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "last_used_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_by",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "api_scope[]",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "api_scope",
+                  "kind": {
+                    "Enum": [
+                      "post_read",
+                      "post_write",
+                      "page_read",
+                      "page_write",
+                      "tag_read",
+                      "tag_write",
+                      "navigation_read",
+                      "navigation_write",
+                      "upload_read",
+                      "upload_write",
+                      "settings_read",
+                      "settings_write",
+                      "job_read",
+                      "audit_read"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a50fae84aa2d3b56824dc360777480350ce00f883ea799fe8f48714e5d170f21"
+}
