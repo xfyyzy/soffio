@@ -14,11 +14,11 @@ use axum::{
 };
 use bytes::Bytes;
 use serde::Deserialize;
+use time::format_description::well_known::{Rfc2822, Rfc3339};
 use tracing::error;
 use uuid::Uuid;
 
 use crate::{
-    application::repos::SettingsRepo,
     application::{
         chrome::ChromeService,
         error::HttpError,
@@ -40,6 +40,11 @@ use super::{
     DATASTAR_REQUEST_HEADER, RouterState, db_health_response,
     middleware::{cache_public_responses, log_responses, set_request_context},
 };
+use crate::application::pagination::{PageCursor, PageRequest, PostCursor};
+use crate::application::repos::{
+    PageQueryFilter, PagesRepo, PostListScope, PostQueryFilter, PostsRepo, SettingsRepo,
+};
+use crate::domain::types::{PageStatus, PostStatus};
 
 #[derive(Clone)]
 pub struct HttpState {
@@ -71,6 +76,10 @@ pub fn build_router(state: RouterState) -> Router<RouterState> {
         .route("/posts/_preview/{id}", get(post_preview))
         .route("/pages/_preview/{id}", get(page_preview))
         .route("/_health/db", get(public_health))
+        .route("/sitemap.xml", get(sitemap))
+        .route("/rss.xml", get(rss_feed))
+        .route("/atom.xml", get(atom_feed))
+        .route("/robots.txt", get(robots_txt))
         .route("/uploads/{*path}", get(serve_upload))
         .route("/favicon.ico", get(favicon))
         .route(
@@ -115,7 +124,8 @@ async fn index(State(state): State<HttpState>, Query(query): Query<CursorQuery>)
         .await
     {
         Ok(content) => {
-            let view = LayoutContext::new(chrome.clone(), content);
+            let canonical = canonical_url(&chrome.meta.canonical, "/");
+            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
             render_template_response(IndexTemplate { view }, StatusCode::OK)
         }
         Err(err) => feed_error_to_response(err, chrome),
@@ -142,7 +152,8 @@ async fn tag_index(
                 Ok(content) => content,
                 Err(err) => return feed_error_to_response(err, chrome),
             };
-            let view = LayoutContext::new(chrome.clone(), content);
+            let canonical = canonical_url(&chrome.meta.canonical, &format!("/tags/{tag}"));
+            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
             render_template_response(IndexTemplate { view }, StatusCode::OK)
         }
         Ok(false) => render_not_found_response(chrome),
@@ -170,7 +181,8 @@ async fn month_index(
                 Ok(content) => content,
                 Err(err) => return feed_error_to_response(err, chrome),
             };
-            let view = LayoutContext::new(chrome.clone(), content);
+            let canonical = canonical_url(&chrome.meta.canonical, &format!("/months/{month}"));
+            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
             render_template_response(IndexTemplate { view }, StatusCode::OK)
         }
         Ok(false) => render_not_found_response(chrome),
@@ -285,7 +297,8 @@ async fn post_detail(State(state): State<HttpState>, Path(slug): Path<String>) -
 
     match state.feed.post_detail(&slug).await {
         Ok(Some(content)) => {
-            let view = LayoutContext::new(chrome.clone(), content);
+            let canonical = canonical_url(&chrome.meta.canonical, &format!("/posts/{slug}"));
+            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
             render_template_response(PostTemplate { view }, StatusCode::OK)
         }
         Ok(None) => render_not_found_response(chrome),
@@ -301,7 +314,8 @@ async fn post_preview(State(state): State<HttpState>, Path(id): Path<Uuid>) -> R
 
     match state.feed.post_preview(id).await {
         Ok(Some(content)) => {
-            let view = LayoutContext::new(chrome.clone(), content);
+            let canonical = canonical_url(&chrome.meta.canonical, &format!("/posts/_preview/{id}"));
+            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
             render_template_response(PostTemplate { view }, StatusCode::OK)
         }
         Ok(None) => render_not_found_response(chrome),
@@ -317,7 +331,8 @@ async fn page_preview(State(state): State<HttpState>, Path(id): Path<Uuid>) -> R
 
     match state.pages.page_preview(id).await {
         Ok(Some(content)) => {
-            let view = LayoutContext::new(chrome.clone(), content);
+            let canonical = canonical_url(&chrome.meta.canonical, &format!("/pages/_preview/{id}"));
+            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
             render_template_response(PageTemplate { view }, StatusCode::OK)
         }
         Ok(None) => render_not_found_response(chrome),
@@ -340,7 +355,8 @@ async fn fallback_router(State(state): State<HttpState>, request: Request<Body>)
 
     match state.pages.page_view(slug).await {
         Ok(Some(page_view)) => {
-            let view = LayoutContext::new(chrome.clone(), page_view);
+            let canonical = canonical_url(&chrome.meta.canonical, &format!("/{slug}"));
+            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), page_view);
             render_template_response(PageTemplate { view }, StatusCode::OK)
         }
         Ok(None) => render_not_found_response(chrome),
@@ -418,4 +434,347 @@ fn build_upload_response(path: &str, bytes: Bytes) -> Response {
     );
 
     response
+}
+
+async fn sitemap(State(state): State<HttpState>) -> Response {
+    match build_sitemap_xml(&state).await {
+        Ok(body) => Response::builder()
+            .status(StatusCode::OK)
+            .header(CONTENT_TYPE, "application/xml")
+            .body(Body::from(body))
+            .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        Err(err) => err.into_response(),
+    }
+}
+
+async fn rss_feed(State(state): State<HttpState>) -> Response {
+    match build_rss_xml(&state).await {
+        Ok(body) => Response::builder()
+            .status(StatusCode::OK)
+            .header(CONTENT_TYPE, "application/rss+xml")
+            .body(Body::from(body))
+            .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        Err(err) => err.into_response(),
+    }
+}
+
+async fn atom_feed(State(state): State<HttpState>) -> Response {
+    match build_atom_xml(&state).await {
+        Ok(body) => Response::builder()
+            .status(StatusCode::OK)
+            .header(CONTENT_TYPE, "application/atom+xml")
+            .body(Body::from(body))
+            .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        Err(err) => err.into_response(),
+    }
+}
+
+async fn robots_txt(State(state): State<HttpState>) -> Response {
+    let settings = match state.db.load_site_settings().await {
+        Ok(s) => s,
+        Err(err) => {
+            return HttpError::new(
+                "infra::http::public::robots",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to load settings",
+                err.to_string(),
+            )
+            .into_response();
+        }
+    };
+
+    let base = normalize_public_site_url(&settings.public_site_url);
+    let sitemap_url = format!("{base}sitemap.xml");
+    let body = format!("User-agent: *\nAllow: /\nSitemap: {sitemap_url}\n");
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(CONTENT_TYPE, "text/plain; charset=utf-8")
+        .body(Body::from(body))
+        .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
+}
+
+fn canonical_url(base: &str, path: &str) -> String {
+    let root = normalize_public_site_url(base);
+    let trimmed = path.trim_start_matches('/');
+    if trimmed.is_empty() {
+        root.clone()
+    } else {
+        format!("{root}{trimmed}")
+    }
+}
+
+fn normalize_public_site_url(url: &str) -> String {
+    let trimmed = url.trim_end_matches('/');
+    format!("{trimmed}/")
+}
+
+async fn build_sitemap_xml(state: &HttpState) -> Result<String, HttpError> {
+    const SOURCE: &str = "infra::http::public::sitemap";
+
+    let settings = state.db.load_site_settings().await.map_err(|err| {
+        HttpError::new(
+            SOURCE,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to load settings",
+            err.to_string(),
+        )
+    })?;
+
+    let base = normalize_public_site_url(&settings.public_site_url);
+    let posts_repo: Arc<dyn PostsRepo> = state.db.clone();
+    let pages_repo: Arc<dyn PagesRepo> = state.db.clone();
+
+    let mut entries = Vec::new();
+
+    entries.push(sitemap_entry(&base, "/", Some(settings.updated_at)));
+
+    // Posts
+    let mut post_cursor: Option<PostCursor> = None;
+    loop {
+        let page = posts_repo
+            .list_posts(
+                PostListScope::Public,
+                &PostQueryFilter::default(),
+                PageRequest::new(200, post_cursor),
+            )
+            .await
+            .map_err(|err| {
+                HttpError::new(
+                    SOURCE,
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to list posts",
+                    err.to_string(),
+                )
+            })?;
+
+        for post in page.items.into_iter() {
+            if post.status != PostStatus::Published {
+                continue;
+            }
+            let lastmod = post.published_at.unwrap_or(post.updated_at);
+            entries.push(sitemap_entry(
+                &base,
+                &format!("/posts/{}", post.slug),
+                Some(lastmod),
+            ));
+        }
+
+        post_cursor = match page.next_cursor {
+            Some(next) => Some(PostCursor::decode(&next).map_err(|err| {
+                HttpError::new(
+                    SOURCE,
+                    StatusCode::BAD_REQUEST,
+                    "Failed to decode post cursor",
+                    err.to_string(),
+                )
+            })?),
+            None => break,
+        };
+    }
+
+    // Pages
+    let mut page_cursor: Option<PageCursor> = None;
+    loop {
+        let page = pages_repo
+            .list_pages(
+                Some(PageStatus::Published),
+                200,
+                page_cursor,
+                &PageQueryFilter::default(),
+            )
+            .await
+            .map_err(|err| {
+                HttpError::new(
+                    SOURCE,
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to list pages",
+                    err.to_string(),
+                )
+            })?;
+
+        for record in page.items.into_iter() {
+            if record.published_at.is_none() {
+                continue;
+            }
+            let lastmod = record.published_at.unwrap_or(record.updated_at);
+            entries.push(sitemap_entry(
+                &base,
+                &format!("/{}", record.slug),
+                Some(lastmod),
+            ));
+        }
+
+        page_cursor = match page.next_cursor {
+            Some(next) => Some(PageCursor::decode(&next).map_err(|err| {
+                HttpError::new(
+                    SOURCE,
+                    StatusCode::BAD_REQUEST,
+                    "Failed to decode page cursor",
+                    err.to_string(),
+                )
+            })?),
+            None => break,
+        };
+    }
+
+    let mut xml = String::from(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n",
+    );
+    for entry in entries {
+        xml.push_str(&entry);
+    }
+    xml.push_str("</urlset>\n");
+    Ok(xml)
+}
+
+fn sitemap_entry(base: &str, path: &str, lastmod: Option<time::OffsetDateTime>) -> String {
+    let loc = canonical_url(base, path);
+    let lastmod_str = lastmod
+        .and_then(|dt| dt.format(&Rfc3339).ok())
+        .unwrap_or_default();
+    if lastmod_str.is_empty() {
+        format!("  <url><loc>{loc}</loc></url>\n")
+    } else {
+        format!("  <url><loc>{loc}</loc><lastmod>{lastmod_str}</lastmod></url>\n")
+    }
+}
+
+async fn build_rss_xml(state: &HttpState) -> Result<String, HttpError> {
+    const SOURCE: &str = "infra::http::public::rss";
+
+    let settings = state.db.load_site_settings().await.map_err(|err| {
+        HttpError::new(
+            SOURCE,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to load settings",
+            err.to_string(),
+        )
+    })?;
+    let base = normalize_public_site_url(&settings.public_site_url);
+
+    let posts_repo: Arc<dyn PostsRepo> = state.db.clone();
+    let page = posts_repo
+        .list_posts(
+            PostListScope::Public,
+            &PostQueryFilter::default(),
+            PageRequest::new(100, None),
+        )
+        .await
+        .map_err(|err| {
+            HttpError::new(
+                SOURCE,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to list posts",
+                err.to_string(),
+            )
+        })?;
+
+    let mut items = String::new();
+    for post in page
+        .items
+        .into_iter()
+        .filter(|p| p.status == PostStatus::Published)
+    {
+        let published = post.published_at.unwrap_or(post.updated_at);
+        let pub_date = published
+            .format(&Rfc2822)
+            .unwrap_or_else(|_| published.to_string());
+        let link = format!("{base}posts/{}", post.slug);
+        items.push_str(&format!(
+            "    <item>\n      <title>{}</title>\n      <link>{}</link>\n      <guid>{}</guid>\n      <pubDate>{}</pubDate>\n      <description><![CDATA[{}]]></description>\n    </item>\n",
+            xml_escape(&post.title),
+            link,
+            link,
+            pub_date,
+            xml_escape(&post.excerpt),
+        ));
+    }
+
+    let channel = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>{}</title>\n    <link>{}</link>\n    <description>{}</description>\n{}  </channel>\n</rss>\n",
+        xml_escape(&settings.meta_title),
+        base,
+        xml_escape(&settings.meta_description),
+        items
+    );
+
+    Ok(channel)
+}
+
+async fn build_atom_xml(state: &HttpState) -> Result<String, HttpError> {
+    const SOURCE: &str = "infra::http::public::atom";
+
+    let settings = state.db.load_site_settings().await.map_err(|err| {
+        HttpError::new(
+            SOURCE,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to load settings",
+            err.to_string(),
+        )
+    })?;
+    let base = normalize_public_site_url(&settings.public_site_url);
+
+    let posts_repo: Arc<dyn PostsRepo> = state.db.clone();
+    let page = posts_repo
+        .list_posts(
+            PostListScope::Public,
+            &PostQueryFilter::default(),
+            PageRequest::new(100, None),
+        )
+        .await
+        .map_err(|err| {
+            HttpError::new(
+                SOURCE,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to list posts",
+                err.to_string(),
+            )
+        })?;
+
+    let updated = settings
+        .updated_at
+        .format(&Rfc3339)
+        .unwrap_or_else(|_| settings.updated_at.to_string());
+
+    let mut entries = String::new();
+    for post in page
+        .items
+        .into_iter()
+        .filter(|p| p.status == PostStatus::Published)
+    {
+        let published = post.published_at.unwrap_or(post.updated_at);
+        let published_str = published
+            .format(&Rfc3339)
+            .unwrap_or_else(|_| published.to_string());
+        let link = format!("{base}posts/{}", post.slug);
+        entries.push_str(&format!(
+            "  <entry>\n    <title>{}</title>\n    <link href=\"{}\"/>\n    <id>{}</id>\n    <updated>{}</updated>\n    <summary><![CDATA[{}]]></summary>\n  </entry>\n",
+            xml_escape(&post.title),
+            link,
+            link,
+            published_str,
+            xml_escape(&post.excerpt),
+        ));
+    }
+
+    let feed = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<feed xmlns=\"http://www.w3.org/2005/Atom\">\n  <title>{}</title>\n  <id>{}</id>\n  <updated>{}</updated>\n  <link href=\"{}atom.xml\" rel=\"self\"/>\n{}\n</feed>\n",
+        xml_escape(&settings.meta_title),
+        base,
+        updated,
+        base,
+        entries
+    );
+
+    Ok(feed)
+}
+
+fn xml_escape(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }

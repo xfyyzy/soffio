@@ -6,12 +6,6 @@ use axum::{
 };
 use thiserror::Error;
 
-pub const SITE_BASE_URL: &str = "https://soffio.dev";
-
-pub fn site_base_url() -> &'static str {
-    SITE_BASE_URL
-}
-
 #[derive(Debug, Error)]
 #[error("{public_message}")]
 pub struct TemplateRenderError {
@@ -109,6 +103,15 @@ pub struct LayoutChrome {
     pub navigation: NavigationView,
     pub footer: FooterView,
     pub meta: PageMetaView,
+}
+
+impl LayoutChrome {
+    pub fn with_canonical(self, canonical: String) -> Self {
+        Self {
+            meta: self.meta.with_canonical(canonical),
+            ..self
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -323,6 +326,13 @@ pub struct PageMetaView {
     pub description: String,
     pub og_title: String,
     pub og_description: String,
+    pub canonical: String,
+}
+
+impl PageMetaView {
+    pub fn with_canonical(self, canonical: String) -> Self {
+        Self { canonical, ..self }
+    }
 }
 
 pub fn build_tag_badges<'a, T>(tags: T) -> Vec<TagBadge>
