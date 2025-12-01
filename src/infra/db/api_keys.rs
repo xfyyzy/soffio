@@ -30,7 +30,7 @@ struct ApiKeyRow {
     updated_at: OffsetDateTime,
 }
 
-fn pg_interval_to_duration(interval: PgInterval) -> time::Duration {
+pub(crate) fn pg_interval_to_duration(interval: PgInterval) -> time::Duration {
     // PgInterval stores months, days, and microseconds
     // For simplicity, we convert assuming 30 days per month
     let total_days = (interval.months as i64) * 30 + (interval.days as i64);
@@ -38,7 +38,7 @@ fn pg_interval_to_duration(interval: PgInterval) -> time::Duration {
     time::Duration::seconds(total_seconds)
 }
 
-fn duration_to_pg_interval(duration: time::Duration) -> PgInterval {
+pub(crate) fn duration_to_pg_interval(duration: time::Duration) -> PgInterval {
     let total_seconds = duration.whole_seconds();
     let days = (total_seconds / 86400) as i32;
     let remaining_microseconds = (total_seconds % 86400) * 1_000_000;

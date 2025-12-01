@@ -4,12 +4,16 @@ use std::{collections::HashMap, fs, path::Path};
 
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, Transaction, query};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 use uuid::Uuid;
 
 use crate::{
     application::error::AppError,
-    domain::types::{NavigationDestinationType, PageStatus, PostStatus},
+    domain::{
+        api_keys::{ApiKeyStatus, ApiScope},
+        types::{NavigationDestinationType, PageStatus, PostStatus},
+    },
+    infra::db::api_keys::{duration_to_pg_interval, pg_interval_to_duration},
     infra::{db::PostgresRepositories, error::InfraError},
 };
 
@@ -42,10 +46,69 @@ pub async fn import_site(repositories: &PostgresRepositories, path: &Path) -> Re
         .map_err(map_sqlx_error)?;
 
     // Clear existing content in dependency-safe order.
-    query("TRUNCATE post_tags, navigation_items, tags, pages, posts RESTART IDENTITY CASCADE")
+    query(
+        "TRUNCATE post_tags, navigation_items, tags, pages, posts, api_keys RESTART IDENTITY CASCADE",
+    )
+    .execute(tx.as_mut())
+    .await
+    .map_err(map_sqlx_error)?;
+
+    for key in &archive.api_keys {
+        let expires_in_pg = key.expires_in.map(duration_to_pg_interval);
+        query!(
+            r#"
+            INSERT INTO api_keys (
+                id,
+                name,
+                description,
+                prefix,
+                hashed_secret,
+                scopes,
+                status,
+                expires_in,
+                expires_at,
+                revoked_at,
+                last_used_at,
+                created_by,
+                created_at,
+                updated_at
+            )
+            VALUES (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6::api_scope[],
+                $7::api_key_status,
+                $8,
+                $9,
+                $10,
+                $11,
+                $12,
+                $13,
+                $14
+            )
+            "#,
+            key.id,
+            key.name,
+            key.description,
+            key.prefix,
+            key.hashed_secret,
+            key.scopes.clone() as Vec<ApiScope>,
+            key.status as ApiKeyStatus,
+            expires_in_pg,
+            key.expires_at,
+            key.revoked_at,
+            key.last_used_at,
+            key.created_by,
+            key.created_at,
+            key.updated_at,
+        )
         .execute(tx.as_mut())
         .await
         .map_err(map_sqlx_error)?;
+    }
 
     let mut tag_ids = HashMap::new();
     for tag in &archive.tags {
@@ -293,6 +356,7 @@ async fn gather_archive(pool: &PgPool) -> Result<SiteArchive, AppError> {
     let tags = fetch_tags(pool).await?;
     let post_tags = fetch_post_tags(pool).await?;
     let navigation_items = fetch_navigation(pool).await?;
+    let api_keys = fetch_api_keys(pool).await?;
 
     Ok(SiteArchive {
         migrations,
@@ -302,6 +366,7 @@ async fn gather_archive(pool: &PgPool) -> Result<SiteArchive, AppError> {
         tags,
         post_tags,
         navigation_items,
+        api_keys,
     })
 }
 
@@ -550,6 +615,53 @@ async fn fetch_navigation(pool: &PgPool) -> Result<Vec<NavigationSnapshot>, AppE
         .collect())
 }
 
+async fn fetch_api_keys(pool: &PgPool) -> Result<Vec<ApiKeySnapshot>, AppError> {
+    let rows = query!(
+        r#"
+        SELECT
+            id,
+            name,
+            description,
+            prefix,
+            hashed_secret,
+            scopes as "scopes: Vec<ApiScope>",
+            status as "status: ApiKeyStatus",
+            expires_in,
+            expires_at,
+            revoked_at,
+            last_used_at,
+            created_by,
+            created_at,
+            updated_at
+        FROM api_keys
+        ORDER BY created_at
+        "#
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(map_sqlx_error)?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| ApiKeySnapshot {
+            id: row.id,
+            name: row.name,
+            description: row.description,
+            prefix: row.prefix,
+            hashed_secret: row.hashed_secret,
+            scopes: row.scopes,
+            status: row.status,
+            expires_in: row.expires_in.map(pg_interval_to_duration),
+            expires_at: row.expires_at,
+            revoked_at: row.revoked_at,
+            last_used_at: row.last_used_at,
+            created_by: row.created_by,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        })
+        .collect())
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct SiteArchive {
     migrations: MigrationSnapshot,
@@ -560,6 +672,8 @@ struct SiteArchive {
     #[serde(rename = "post_tags")]
     post_tags: Vec<PostTagLink>,
     navigation_items: Vec<NavigationSnapshot>,
+    #[serde(default)]
+    api_keys: Vec<ApiKeySnapshot>,
 }
 
 impl SiteArchive {
@@ -574,6 +688,7 @@ impl SiteArchive {
         });
         self.navigation_items
             .sort_by(|a, b| a.sort_order.cmp(&b.sort_order).then(a.label.cmp(&b.label)));
+        self.api_keys.sort_by(|a, b| a.prefix.cmp(&b.prefix));
         self.migrations.entries.sort_by_key(|entry| entry.version);
     }
 }
@@ -658,4 +773,27 @@ struct NavigationSnapshot {
     sort_order: i32,
     open_in_new_tab: bool,
     visible: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ApiKeySnapshot {
+    id: Uuid,
+    name: String,
+    #[serde(default)]
+    description: Option<String>,
+    prefix: String,
+    hashed_secret: Vec<u8>,
+    scopes: Vec<ApiScope>,
+    status: ApiKeyStatus,
+    #[serde(default)]
+    expires_in: Option<Duration>,
+    #[serde(default)]
+    expires_at: Option<OffsetDateTime>,
+    #[serde(default)]
+    revoked_at: Option<OffsetDateTime>,
+    #[serde(default)]
+    last_used_at: Option<OffsetDateTime>,
+    created_by: String,
+    created_at: OffsetDateTime,
+    updated_at: OffsetDateTime,
 }
