@@ -46,6 +46,10 @@ table[data-table="api-keys"] tr {
   border-bottom: 1px solid var(--border);
 }
 
+table[data-table="api-keys"] {
+  table-layout: fixed;
+}
+
 table[data-table="api-keys"] td,
 table[data-table="api-keys"] th {
   border-bottom: none;
@@ -164,9 +168,22 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
 
 /* API key table column sizing */
 table[data-table="api-keys"] [data-column="prefix"] {
-  width: 10ch;
-  min-width: 10ch;
-  max-width: 10ch;
+  width: 12ch;
+  min-width: 12ch;
+  max-width: 12ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+table[data-table="api-keys"] [data-column="name"] {
+  width: 14rem;
+  max-width: 18rem;
+}
+
+table[data-table="api-keys"] [data-column="name"] span {
+  display: inline-block;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -188,9 +205,13 @@ table[data-table="api-keys"] [data-column="status"] {
   white-space: nowrap;
 }
 
-/* Actions column: stack buttons to reclaim horizontal space for timestamps */
-table[data-table="api-keys"] [data-role="publishable-actions"] {
-  min-width: 120px;
+/* Actions column: stack buttons without changing the td display so vertical-align still works */
+table[data-table="api-keys"] td[data-role="publishable-actions"] {
+  min-width: 140px;
+  vertical-align: middle;
+}
+
+table[data-table="api-keys"] td[data-role="publishable-actions"] [data-role="row-actions"] {
   display: grid;
   grid-auto-rows: min-content;
   align-content: center;
@@ -198,8 +219,8 @@ table[data-table="api-keys"] [data-role="publishable-actions"] {
   gap: 0.35rem;
 }
 
-table[data-table="api-keys"] [data-role="publishable-actions"] a,
-table[data-table="api-keys"] [data-role="publishable-actions"] button {
+table[data-table="api-keys"] td[data-role="publishable-actions"] [data-role="row-actions"] a,
+table[data-table="api-keys"] td[data-role="publishable-actions"] [data-role="row-actions"] button {
   display: block;
   width: 100%;
   text-align: left;
@@ -210,14 +231,20 @@ table[data-table="api-keys"] td[data-column="scopes"] div[data-role="badge-row"]
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-  max-width: 14rem;
+  max-width: 100%;
 }
 
 table[data-table="api-keys"] td[data-column="description"] {
+  width: 16rem;
   max-width: 16rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+table[data-table="api-keys"] td[data-column="scopes"] {
+  width: 15rem;
+  max-width: 15rem;
 }
 
 [data-column="visible"] {
