@@ -1,6 +1,7 @@
 use axum::http::StatusCode;
 
 use crate::application::{admin::pages::AdminPageError, error::HttpError};
+use crate::infra::http::repo_error_to_http;
 
 pub(crate) fn admin_page_error(source: &'static str, err: AdminPageError) -> HttpError {
     match err {
@@ -16,11 +17,6 @@ pub(crate) fn admin_page_error(source: &'static str, err: AdminPageError) -> Htt
             "Failed to render page content",
             render.to_string(),
         ),
-        AdminPageError::Repo(repo) => HttpError::from_error(
-            source,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal server error",
-            &repo,
-        ),
+        AdminPageError::Repo(repo) => repo_error_to_http(source, repo),
     }
 }

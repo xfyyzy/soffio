@@ -38,7 +38,7 @@ use crate::{
 
 use super::{
     DATASTAR_REQUEST_HEADER, RouterState, db_health_response,
-    middleware::{cache_public_responses, log_responses},
+    middleware::{cache_public_responses, log_responses, set_request_context},
 };
 
 #[derive(Clone)]
@@ -86,6 +86,7 @@ pub fn build_router(state: RouterState) -> Router<RouterState> {
         .merge(static_routes)
         .with_state(state)
         .layer(middleware::from_fn(log_responses))
+        .layer(middleware::from_fn(set_request_context))
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -387,7 +388,14 @@ async fn favicon(State(state): State<HttpState>) -> Response {
             .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()),
         Err(err) => {
             error!(target = "soffio::http::favicon", error = %err, "failed to load favicon from settings");
-            StatusCode::SERVICE_UNAVAILABLE.into_response()
+            let mut response = StatusCode::SERVICE_UNAVAILABLE.into_response();
+            crate::application::error::ErrorReport::from_error(
+                "infra::http::public::favicon",
+                StatusCode::SERVICE_UNAVAILABLE,
+                &err,
+            )
+            .attach(&mut response);
+            response
         }
     }
 }

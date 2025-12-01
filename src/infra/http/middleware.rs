@@ -8,6 +8,7 @@ use axum::{
     response::Response,
 };
 use tracing::{error, warn};
+use uuid::Uuid;
 
 use crate::{
     application::api_keys::ApiPrincipal,
@@ -16,6 +17,23 @@ use crate::{
 };
 
 use super::DATASTAR_REQUEST_HEADER;
+
+#[derive(Clone)]
+pub struct RequestContext {
+    pub request_id: String,
+}
+
+pub async fn set_request_context(mut request: Request<Body>, next: Next) -> Response {
+    let request_id = Uuid::new_v4().to_string();
+    let ctx = RequestContext {
+        request_id: request_id.clone(),
+    };
+    request.extensions_mut().insert(ctx.clone());
+
+    let mut response = next.run(request).await;
+    response.extensions_mut().insert(ctx);
+    response
+}
 
 pub async fn cache_public_responses(
     State(cache): State<Arc<ResponseCache>>,
@@ -92,6 +110,12 @@ pub async fn log_responses(request: Request<Body>, next: Next) -> Response {
         None => (None, None),
     };
 
+    let request_id = request
+        .extensions()
+        .get::<RequestContext>()
+        .map(|ctx| ctx.request_id.clone())
+        .unwrap_or_default();
+
     let mut response = next.run(request).await;
     let status = response.status();
 
@@ -118,6 +142,7 @@ pub async fn log_responses(request: Request<Body>, next: Next) -> Response {
                 source = source,
                 detail = %detail,
                 chain = ?messages,
+                request_id = request_id,
                 api_key_id = api_key_id.as_deref().unwrap_or(""),
                 api_scopes = api_scopes.as_deref().unwrap_or(""),
                 "request failed",
@@ -133,6 +158,7 @@ pub async fn log_responses(request: Request<Body>, next: Next) -> Response {
                 source = source,
                 detail = %detail,
                 chain = ?messages,
+                request_id = request_id,
                 api_key_id = api_key_id.as_deref().unwrap_or(""),
                 api_scopes = api_scopes.as_deref().unwrap_or(""),
                 "client request error",

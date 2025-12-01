@@ -9,6 +9,26 @@ pub struct ApiErrorBody {
     pub error: ApiErrorMessage,
 }
 
+pub mod codes {
+    pub const BAD_REQUEST: &str = "bad_request";
+    pub const UNAUTHORIZED: &str = "unauthorized";
+    pub const FORBIDDEN: &str = "forbidden";
+    pub const NOT_FOUND: &str = "not_found";
+    pub const RATE_LIMITED: &str = "rate_limited";
+    pub const DUPLICATE: &str = "duplicate";
+    pub const INVALID_CURSOR: &str = "invalid_cursor";
+    pub const INVALID_INPUT: &str = "invalid_input";
+    pub const INTEGRITY: &str = "integrity_error";
+    pub const DB_TIMEOUT: &str = "db_timeout";
+    pub const REPO: &str = "repo_error";
+    pub const RENDER: &str = "render_error";
+    pub const NAVIGATION: &str = "navigation_error";
+    pub const UPLOAD: &str = "upload_error";
+    pub const SETTINGS: &str = "settings_error";
+    pub const JOBS: &str = "jobs_error";
+    pub const TAG_IN_USE: &str = "tag_in_use";
+}
+
 #[derive(Debug, Serialize)]
 pub struct ApiErrorMessage {
     pub code: String,
@@ -41,13 +61,13 @@ impl ApiError {
     }
 
     pub fn bad_request(message: &'static str, hint: Option<String>) -> Self {
-        Self::new(StatusCode::BAD_REQUEST, "bad_request", message, hint)
+        Self::new(StatusCode::BAD_REQUEST, codes::BAD_REQUEST, message, hint)
     }
 
     pub fn unauthorized() -> Self {
         Self::new(
             StatusCode::UNAUTHORIZED,
-            "unauthorized",
+            codes::UNAUTHORIZED,
             "API key required",
             None,
         )
@@ -56,20 +76,20 @@ impl ApiError {
     pub fn forbidden() -> Self {
         Self::new(
             StatusCode::FORBIDDEN,
-            "forbidden",
+            codes::FORBIDDEN,
             "API key lacks required scope",
             None,
         )
     }
 
     pub fn not_found(message: &'static str) -> Self {
-        Self::new(StatusCode::NOT_FOUND, "not_found", message, None)
+        Self::new(StatusCode::NOT_FOUND, codes::NOT_FOUND, message, None)
     }
 
     pub fn rate_limited(retry_after: u64) -> Response {
         let body = ApiErrorBody {
             error: ApiErrorMessage {
-                code: "rate_limited".to_string(),
+                code: codes::RATE_LIMITED.to_string(),
                 message: "Rate limit exceeded".to_string(),
                 hint: Some(format!("Retry after {retry_after} seconds")),
             },
@@ -80,6 +100,12 @@ impl ApiError {
                 .headers_mut()
                 .insert(axum::http::header::RETRY_AFTER, value);
         }
+        ErrorReport::from_message(
+            "infra::http::api::rate_limit",
+            StatusCode::TOO_MANY_REQUESTS,
+            format!("rate_limited: retry_after={retry_after}"),
+        )
+        .attach(&mut response);
         response
     }
 }

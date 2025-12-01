@@ -4,6 +4,8 @@ use axum::{
 };
 
 use crate::application::api_keys::ApiKeyError;
+use crate::application::error::HttpError;
+use crate::infra::http::repo_error_to_http;
 
 #[derive(Debug)]
 pub struct ApiKeyHttpError(ApiErrorKind);
@@ -13,6 +15,7 @@ enum ApiErrorKind {
     BadRequest(&'static str, Option<String>),
     NotFound(&'static str),
     Service(String),
+    Http(HttpError),
 }
 
 impl ApiKeyHttpError {
@@ -28,7 +31,10 @@ impl ApiKeyHttpError {
         match err {
             ApiKeyError::InvalidScopes => Self::bad_request("invalid scopes"),
             ApiKeyError::NotFound => Self::bad_request("key not found"),
-            ApiKeyError::Repo(repo) => Self(ApiErrorKind::Service(repo.to_string())),
+            ApiKeyError::Repo(repo) => Self(ApiErrorKind::Http(repo_error_to_http(
+                "infra::http::admin_api_keys",
+                repo,
+            ))),
         }
     }
 
@@ -43,7 +49,10 @@ impl ApiKeyHttpError {
     }
 
     pub fn from_repo(err: crate::application::repos::RepoError) -> Self {
-        Self(ApiErrorKind::Service(err.to_string()))
+        Self(ApiErrorKind::Http(repo_error_to_http(
+            "infra::http::admin_api_keys",
+            err,
+        )))
     }
 
     pub fn from_http(err: impl std::fmt::Debug) -> Self {
@@ -75,6 +84,7 @@ impl IntoResponse for ApiKeyHttpError {
                 detail,
             )
             .into_response(),
+            ApiErrorKind::Http(error) => error.into_response(),
         }
     }
 }

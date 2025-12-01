@@ -33,7 +33,7 @@ use axum::{
 
 use crate::{application::repos::SettingsRepo, infra::assets};
 
-use super::middleware::{invalidate_admin_writes, log_responses};
+use super::middleware::{invalidate_admin_writes, log_responses, set_request_context};
 use tracing::error;
 
 pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router {
@@ -176,6 +176,7 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
             invalidate_admin_writes,
         ))
         .layer(middleware::from_fn(log_responses))
+        .layer(middleware::from_fn(set_request_context))
 }
 
 async fn favicon(State(state): State<AdminState>) -> Response {
@@ -192,7 +193,14 @@ async fn favicon(State(state): State<AdminState>) -> Response {
                 error = %err,
                 "failed to load favicon from settings"
             );
-            StatusCode::SERVICE_UNAVAILABLE.into_response()
+            let mut response = StatusCode::SERVICE_UNAVAILABLE.into_response();
+            crate::application::error::ErrorReport::from_error(
+                "infra::http::admin::favicon",
+                StatusCode::SERVICE_UNAVAILABLE,
+                &err,
+            )
+            .attach(&mut response);
+            response
         }
     }
 }

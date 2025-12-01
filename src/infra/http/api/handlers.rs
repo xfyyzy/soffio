@@ -29,7 +29,7 @@ use crate::domain::types::{JobState, JobType, PageStatus, PostStatus};
 use crate::infra::uploads::UploadStorageError;
 use time::OffsetDateTime;
 
-use super::error::ApiError;
+use super::error::{ApiError, codes};
 use super::models::*;
 use super::state::ApiState;
 
@@ -972,7 +972,7 @@ pub async fn list_jobs(
         .map_err(|err| {
             ApiError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "jobs_error",
+                codes::JOBS,
                 "Failed to list jobs",
                 Some(err.to_string()),
             )
@@ -1027,30 +1027,38 @@ fn repo_to_api(err: RepoError) -> ApiError {
     match err {
         RepoError::Duplicate { constraint } => ApiError::new(
             StatusCode::CONFLICT,
-            "duplicate",
+            codes::DUPLICATE,
             "Duplicate record",
             Some(constraint),
         ),
-        RepoError::Pagination(p) => ApiError::bad_request("invalid cursor", Some(p.to_string())),
+        RepoError::Pagination(p) => ApiError::new(
+            StatusCode::BAD_REQUEST,
+            codes::INVALID_CURSOR,
+            "Invalid cursor",
+            Some(p.to_string()),
+        ),
         RepoError::NotFound => ApiError::not_found("resource not found"),
-        RepoError::InvalidInput { message } => {
-            ApiError::bad_request("invalid input", Some(message))
-        }
+        RepoError::InvalidInput { message } => ApiError::new(
+            StatusCode::BAD_REQUEST,
+            codes::INVALID_INPUT,
+            "Invalid input",
+            Some(message),
+        ),
         RepoError::Integrity { message } => ApiError::new(
             StatusCode::CONFLICT,
-            "integrity_error",
+            codes::INTEGRITY,
             "Integrity constraint violated",
             Some(message),
         ),
         RepoError::Timeout => ApiError::new(
             StatusCode::SERVICE_UNAVAILABLE,
-            "db_timeout",
+            codes::DB_TIMEOUT,
             "Database timeout",
             None,
         ),
         RepoError::Persistence(msg) => ApiError::new(
             StatusCode::INTERNAL_SERVER_ERROR,
-            "repo_error",
+            codes::REPO,
             "Persistence error",
             Some(msg),
         ),
@@ -1059,21 +1067,27 @@ fn repo_to_api(err: RepoError) -> ApiError {
 
 fn post_to_api(err: AdminPostError) -> ApiError {
     match err {
-        AdminPostError::ConstraintViolation(field) => {
-            ApiError::bad_request("invalid post", Some(field.to_string()))
-        }
+        AdminPostError::ConstraintViolation(field) => ApiError::new(
+            StatusCode::BAD_REQUEST,
+            codes::INVALID_INPUT,
+            "Invalid post",
+            Some(field.to_string()),
+        ),
         AdminPostError::Repo(repo) => repo_to_api(repo),
     }
 }
 
 fn page_to_api(err: AdminPageError) -> ApiError {
     match err {
-        AdminPageError::ConstraintViolation(field) => {
-            ApiError::bad_request("invalid page", Some(field.to_string()))
-        }
+        AdminPageError::ConstraintViolation(field) => ApiError::new(
+            StatusCode::BAD_REQUEST,
+            codes::INVALID_INPUT,
+            "Invalid page",
+            Some(field.to_string()),
+        ),
         AdminPageError::Render(render_err) => ApiError::new(
             StatusCode::BAD_REQUEST,
-            "render_error",
+            codes::RENDER,
             "Rendering failed",
             Some(render_err.to_string()),
         ),
@@ -1083,20 +1097,26 @@ fn page_to_api(err: AdminPageError) -> ApiError {
 
 fn tag_to_api(err: AdminTagError) -> ApiError {
     match err {
-        AdminTagError::ConstraintViolation(field) => {
-            ApiError::bad_request("invalid tag", Some(field.to_string()))
-        }
+        AdminTagError::ConstraintViolation(field) => ApiError::new(
+            StatusCode::BAD_REQUEST,
+            codes::INVALID_INPUT,
+            "Invalid tag",
+            Some(field.to_string()),
+        ),
         AdminTagError::Repo(repo) => repo_to_api(repo),
-        AdminTagError::InUse { .. } => {
-            ApiError::new(StatusCode::BAD_REQUEST, "tag_in_use", "Tag is in use", None)
-        }
+        AdminTagError::InUse { .. } => ApiError::new(
+            StatusCode::BAD_REQUEST,
+            codes::TAG_IN_USE,
+            "Tag is in use",
+            None,
+        ),
     }
 }
 
 fn nav_to_api(err: AdminNavigationError) -> ApiError {
     ApiError::new(
         StatusCode::BAD_REQUEST,
-        "navigation_error",
+        codes::NAVIGATION,
         "Navigation update failed",
         Some(err.to_string()),
     )
@@ -1112,7 +1132,7 @@ fn upload_to_api(err: AdminUploadError) -> ApiError {
 fn upload_storage_to_api(err: UploadStorageError) -> ApiError {
     ApiError::new(
         StatusCode::BAD_REQUEST,
-        "upload_error",
+        codes::UPLOAD,
         "Failed to store upload",
         Some(err.to_string()),
     )
@@ -1121,7 +1141,7 @@ fn upload_storage_to_api(err: UploadStorageError) -> ApiError {
 fn settings_to_api(err: AdminSettingsError) -> ApiError {
     ApiError::new(
         StatusCode::BAD_REQUEST,
-        "settings_error",
+        codes::SETTINGS,
         "Settings update failed",
         Some(err.to_string()),
     )

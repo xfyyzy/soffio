@@ -85,4 +85,7 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
             auth_state,
             middleware::api_auth,
         ))
+        .layer(axum_middleware::from_fn(
+            super::middleware::set_request_context,
+        ))
 }
