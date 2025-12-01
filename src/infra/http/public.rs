@@ -61,7 +61,6 @@ pub fn build_router(state: RouterState) -> Router<RouterState> {
         .route("/months/{month}", get(month_index))
         .route("/posts/{slug}", get(post_detail))
         .route("/ui/posts", get(posts_partial))
-        .route("/_health/db", get(public_health))
         .fallback(fallback_router)
         .layer(middleware::from_fn_with_state(
             cache,
@@ -71,6 +70,7 @@ pub fn build_router(state: RouterState) -> Router<RouterState> {
     let static_routes = Router::new()
         .route("/posts/_preview/{id}", get(post_preview))
         .route("/pages/_preview/{id}", get(page_preview))
+        .route("/_health/db", get(public_health))
         .route("/uploads/{*path}", get(serve_upload))
         .route("/favicon.ico", get(favicon))
         .route(
