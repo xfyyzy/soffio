@@ -39,6 +39,8 @@ You MUST:
 - **Viewing & editing aids:** `bat`, `sd`
 - **Cargo helpers:** `cargo-edit` (`cargo add`/`rm`/`set-version`), `cargo-hack`, `cargo-watch`, `cargo-expand`,
   `cargo-udeps`, `cargo-deny`, `cargo-audit`, `cargo-outdated`
+- **VCS & GitHub:** `git` and GitHub access are already configured and the `gh` CLI is installed. Use `gh` for
+  GitHub operations only when explicitly requested by the user; `git` commands remain governed by existing git rules.
 
 Fall back to plain `cargo`/POSIX tools only if necessary.
 
