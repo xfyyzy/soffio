@@ -3,7 +3,7 @@
 {% import "public/macros/feed.html" as feed %}
 
 {% block extra_styles %}
-  <link rel="stylesheet" href="/static/public/styles/feed.css">
+  <link rel="stylesheet" href="/static/public/styles/feed.css?v={{ view.asset_version }}">
 {% endblock %}
 
 {% block shell_content %}

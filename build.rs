@@ -9,6 +9,8 @@ use syntect::html::{ClassStyle, css_for_theme_with_class_style};
 use two_face::syntax;
 use walkdir::WalkDir;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() {
     prepare_public_assets().expect("failed to prepare static public assets");
     prepare_common_assets().expect("failed to prepare shared static assets");
@@ -99,6 +101,8 @@ fn prepare_public_assets() -> Result<(), String> {
     }
 
     copy_dir(&source_public, &dest_public)?;
+    append_version_to_gfm_imports(&dest_public.join("styles/page.css"))?;
+    append_version_to_gfm_imports(&dest_public.join("styles/post.css"))?;
     append_theme_css(&dest_public.join("styles/code.css"))?;
     write_syntax_pack(&out_dir)
 }
@@ -115,6 +119,7 @@ fn prepare_common_assets() -> Result<(), String> {
 
     copy_dir(&source_common, &dest_common)?;
     compile_typescript(&dest_common)?;
+    append_version_to_datastar_import(&dest_common.join("datastar-init.js"))?;
 
     Ok(())
 }
@@ -184,6 +189,26 @@ fn append_theme_css(base_path: &Path) -> Result<(), String> {
 
     fs::write(base_path, combined)
         .map_err(|err| format!("failed to write {}: {err}", base_path.display()))
+}
+
+fn append_version_to_gfm_imports(css_path: &Path) -> Result<(), String> {
+    let css = fs::read_to_string(css_path)
+        .map_err(|err| format!("failed to read {}: {err}", css_path.display()))?;
+    let rewritten = css.replace("./gfm.css", &format!("./gfm.css?v={VERSION}"));
+    fs::write(css_path, rewritten)
+        .map_err(|err| format!("failed to write {}: {err}", css_path.display()))
+}
+
+fn append_version_to_datastar_import(init_path: &Path) -> Result<(), String> {
+    if !init_path.is_file() {
+        return Ok(());
+    }
+
+    let js = fs::read_to_string(init_path)
+        .map_err(|err| format!("failed to read {}: {err}", init_path.display()))?;
+    let rewritten = js.replace("./datastar.js", &format!("./datastar.js?v={VERSION}"));
+    fs::write(init_path, rewritten)
+        .map_err(|err| format!("failed to write {}: {err}", init_path.display()))
 }
 
 fn render_theme_css() -> Result<String, String> {

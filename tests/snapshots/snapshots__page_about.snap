@@ -14,13 +14,13 @@ expression: html
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_US">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="stylesheet" href="/static/common/tokens.css">
-    <link rel="stylesheet" href="/static/public/app.css">
+    <link rel="stylesheet" href="/static/common/tokens.css?v=0.1.4">
+    <link rel="stylesheet" href="/static/public/app.css?v=0.1.4">
     
-  <link rel="stylesheet" href="/static/public/styles/page.css">
+  <link rel="stylesheet" href="/static/public/styles/page.css?v=0.1.4">
 
-    <script type="module" src="/static/common/components.js" defer></script>
-    <script type="module" src="/static/common/datastar-init.js" defer></script>
+    <script type="module" src="/static/common/components.js?v=0.1.4" defer></script>
+    <script type="module" src="/static/common/datastar-init.js?v=0.1.4" defer></script>
   </head>
   <body data-page="shell">
     
