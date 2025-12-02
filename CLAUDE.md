@@ -157,7 +157,7 @@ Run the sequence below:
 
 ### 5.4 Deliver (clear, auditable)
 
-Use a single atomic commit when possible. Use the template in §10.
+Use a single atomic commit when possible. Use the template in §11.
 
 ---
 
@@ -224,7 +224,14 @@ Use a single atomic commit when possible. Use the template in §10.
 
 ---
 
-## 9) Code Review Checklist (Claude-specific)
+## 9) Frontend Interaction & Styling
+
+- **Interaction:** Keep zero JavaScript; use the existing datastar + SSE infrastructure for fully server-driven flows. Reuse the provided patterns instead of introducing client-side JS.
+- **Selectors & styling:** Maintain the zero-class principle; use custom tags and `data-*` attributes as selectors. When adding styles, align with the existing visual language.
+
+---
+
+## 10) Code Review Checklist (Claude-specific)
 
 Before proposing any change, verify:
 
@@ -238,7 +245,7 @@ Before proposing any change, verify:
 
 ---
 
-## 10) Templates (commit)
+## 11) Templates (commit)
 
 **Commit message**
 
@@ -253,7 +260,7 @@ Tests: <added/updated tests; feature matrix?>
 
 ---
 
-## 11) Clarifications, Escalation & Stop Rules
+## 12) Clarifications, Escalation & Stop Rules
 
 - Ask when necessary for correctness. Provide: the proposed minimal diff, the invariant at risk, and the decision
   needed.
