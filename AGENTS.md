@@ -39,6 +39,8 @@ You MUST:
 - **Viewing & editing aids:** `bat`, `sd`
 - **Cargo helpers:** `cargo-edit` (`cargo add`/`rm`/`set-version`), `cargo-hack`, `cargo-watch`, `cargo-expand`,
   `cargo-udeps`, `cargo-deny`, `cargo-audit`, `cargo-outdated`
+- **VCS & GitHub:** `git` and GitHub access are already configured and the `gh` CLI is installed. Use `gh` for
+  GitHub operations only when explicitly requested by the user; `git` commands remain governed by existing git rules.
 
 Fall back to plain `cargo`/POSIX tools only if necessary.
 
@@ -187,7 +189,14 @@ Use a single atomic commit when possible. Use the template in §9.
 
 ---
 
-## 8) Templates (commit)
+## 8) Frontend Interaction & Styling
+
+- **Interaction:** Keep zero JavaScript; use the existing datastar + SSE infrastructure for fully server‑driven flows. Reuse the provided patterns instead of introducing client-side JS.
+- **Selectors & styling:** Maintain the zero‑class principle; use custom tags and `data-*` attributes as selectors. When adding styles, align with the existing visual language.
+
+---
+
+## 9) Templates (commit)
 
 **Commit message**
 
@@ -202,7 +211,7 @@ Tests: <added/updated tests; feature matrix?>
 
 ---
 
-## 9) Clarifications, Escalation & Stop Rules
+## 10) Clarifications, Escalation & Stop Rules
 
 - Ask when necessary for correctness . Provide: the proposed minimal diff, the invariant at
   risk, and the decision needed.
