@@ -2,12 +2,12 @@
 {% import "public/macros/post.html" as post %}
 
 {% block extra_styles %}
-  <link rel="stylesheet" href="/static/public/styles/post.css">
+  <link rel="stylesheet" href="/static/public/styles/post.css?v={{ view.asset_version }}">
   {% if view.content.has_code_blocks %}
-  <link rel="stylesheet" href="/static/public/styles/code.css">
+  <link rel="stylesheet" href="/static/public/styles/code.css?v={{ view.asset_version }}">
   {% endif %}
   {% if view.content.has_math_blocks %}
-  <link rel="stylesheet" href="/static/public/katex/katex.min.css">
+  <link rel="stylesheet" href="/static/public/katex/katex.min.css?v={{ view.asset_version }}">
   {% endif %}
 {% endblock %}
 

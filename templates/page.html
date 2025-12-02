@@ -1,12 +1,12 @@
 {% extends "shell.html" %}
 
 {% block extra_styles %}
-  <link rel="stylesheet" href="/static/public/styles/page.css">
+  <link rel="stylesheet" href="/static/public/styles/page.css?v={{ view.asset_version }}">
   {% if view.content.contains_code %}
-  <link rel="stylesheet" href="/static/public/styles/code.css">
+  <link rel="stylesheet" href="/static/public/styles/code.css?v={{ view.asset_version }}">
   {% endif %}
   {% if view.content.contains_math %}
-  <link rel="stylesheet" href="/static/public/katex/katex.min.css">
+  <link rel="stylesheet" href="/static/public/katex/katex.min.css?v={{ view.asset_version }}">
   {% endif %}
 {% endblock %}
 

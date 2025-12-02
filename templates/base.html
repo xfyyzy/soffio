@@ -11,11 +11,11 @@
     <meta property="og:locale" content="en_US">
     <link rel="canonical" href="{{ view.meta.canonical }}">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="stylesheet" href="/static/common/tokens.css">
-    <link rel="stylesheet" href="/static/public/app.css">
+    <link rel="stylesheet" href="/static/common/tokens.css?v={{ view.asset_version }}">
+    <link rel="stylesheet" href="/static/public/app.css?v={{ view.asset_version }}">
     {% block extra_styles %}{% endblock %}
-    <script type="module" src="/static/common/components.js" defer></script>
-    <script type="module" src="/static/common/datastar-init.js" defer></script>
+    <script type="module" src="/static/common/components.js?v={{ view.asset_version }}" defer></script>
+    <script type="module" src="/static/common/datastar-init.js?v={{ view.asset_version }}" defer></script>
   </head>
   <body data-page="shell">
     {% block content %}{% endblock %}

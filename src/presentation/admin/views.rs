@@ -39,13 +39,22 @@ pub struct AdminChrome {
 #[derive(Clone)]
 pub struct AdminLayout<T> {
     pub chrome: AdminChrome,
+    pub asset_version: String,
     pub content: T,
 }
 
 impl<T> AdminLayout<T> {
     pub fn new(chrome: AdminChrome, content: T) -> Self {
-        Self { chrome, content }
+        Self {
+            chrome,
+            asset_version: asset_version(),
+            content,
+        }
     }
+}
+
+fn asset_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
 }
 
 #[derive(Clone)]

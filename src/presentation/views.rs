@@ -120,6 +120,7 @@ pub struct LayoutContext<T> {
     pub navigation: NavigationView,
     pub footer: FooterView,
     pub meta: PageMetaView,
+    pub asset_version: String,
     pub content: T,
 }
 
@@ -130,9 +131,14 @@ impl<T> LayoutContext<T> {
             navigation: chrome.navigation,
             footer: chrome.footer,
             meta: chrome.meta,
+            asset_version: asset_version(),
             content,
         }
     }
+}
+
+fn asset_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
 }
 
 #[derive(Clone)]

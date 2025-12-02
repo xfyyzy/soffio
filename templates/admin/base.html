@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ view.chrome.meta.title }}</title>
     <meta name="description" content="{{ view.chrome.meta.description }}">
-    <link rel="stylesheet" href="/static/common/tokens.css">
-    <link rel="stylesheet" href="/static/admin/app.css">
-    <script type="module" src="/static/common/components.js" defer></script>
-    <script type="module" src="/static/common/datastar-init.js" defer></script>
+    <link rel="stylesheet" href="/static/common/tokens.css?v={{ view.asset_version }}">
+    <link rel="stylesheet" href="/static/admin/app.css?v={{ view.asset_version }}">
+    <script type="module" src="/static/common/components.js?v={{ view.asset_version }}" defer></script>
+    <script type="module" src="/static/common/datastar-init.js?v={{ view.asset_version }}" defer></script>
     {% block extra_head %}{% endblock %}
   </head>
   <body data-page="admin">
