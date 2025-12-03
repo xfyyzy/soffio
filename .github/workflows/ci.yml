@@ -82,5 +82,9 @@ jobs:
               done; \
               if [ "$ready" -ne 1 ]; then echo "soffio server not ready"; [ -f "$LOG_PATH" ] && cat "$LOG_PATH"; ps -ef | grep soffio || true; kill $srv || true; exit 1; fi && \
               cargo test --test live_api -- --ignored --nocapture && \
-              kill $srv
+              kill $srv; \
+              # avoid cache save failures due to root-owned incremental lockfiles \
+              HOST_UID=$(stat -c '%u' /work); HOST_GID=$(stat -c '%g' /work); \
+              chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true; \
+              rm -rf /work/target/debug/incremental /work/target/release/incremental || true
             '
