@@ -324,7 +324,7 @@ async fn replace_tags(ctx: &Ctx, id: Uuid, tag_ids: String) -> Result<(), CliErr
         .map_err(|e| CliError::InvalidInput(e.to_string()))?;
     let payload = PostTagsRequest { tag_ids: ids };
     let path = format!("api/v1/posts/{id}/tags");
-    ctx.request::<serde_json::Value>(Method::POST, &path, None, Some(to_value(payload)?))
+    ctx.request_unit(Method::POST, &path, None, Some(to_value(payload)?))
         .await?;
     println!("tags replaced");
     Ok(())
