@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+use crate::domain::api_keys::{ApiKeyStatus, ApiScope};
 use crate::domain::types::{NavigationDestinationType, PageStatus, PostStatus};
 
 fn default_post_status() -> PostStatus {
@@ -39,6 +40,32 @@ pub struct PostUpdateRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct PostPinRequest {
+    pub pinned: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PostTitleSlugRequest {
+    pub title: Option<String>,
+    pub slug: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PostExcerptRequest {
+    pub excerpt: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PostBodyRequest {
+    pub body_markdown: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PostSummaryRequest {
+    pub summary_markdown: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct PostStatusRequest {
     pub status: PostStatus,
     pub scheduled_at: Option<OffsetDateTime>,
@@ -72,6 +99,17 @@ pub struct PageUpdateRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct PageTitleSlugRequest {
+    pub title: Option<String>,
+    pub slug: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PageBodyRequest {
+    pub body_markdown: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct PageStatusRequest {
     pub status: PageStatus,
     pub scheduled_at: Option<OffsetDateTime>,
@@ -93,6 +131,21 @@ pub struct TagUpdateRequest {
     pub description: Option<String>,
     #[serde(default)]
     pub pinned: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TagPinRequest {
+    pub pinned: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TagNameRequest {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TagDescriptionRequest {
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -122,6 +175,33 @@ pub struct NavigationUpdateRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct NavigationLabelRequest {
+    pub label: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NavigationDestinationRequest {
+    pub destination_type: NavigationDestinationType,
+    pub destination_page_id: Option<Uuid>,
+    pub destination_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NavigationSortOrderRequest {
+    pub sort_order: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NavigationVisibilityRequest {
+    pub visible: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NavigationOpenInNewTabRequest {
+    pub open_in_new_tab: bool,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct SettingsPatchRequest {
     pub brand_title: Option<String>,
     pub brand_href: Option<String>,
@@ -138,6 +218,8 @@ pub struct SettingsPatchRequest {
     pub og_title: Option<String>,
     pub og_description: Option<String>,
     pub public_site_url: Option<String>,
+    pub global_toc_enabled: Option<bool>,
+    pub favicon_svg: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -149,4 +231,15 @@ pub struct UploadResponse {
     pub checksum: String,
     pub stored_path: String,
     pub created_at: OffsetDateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ApiKeyInfoResponse {
+    pub name: String,
+    pub prefix: String,
+    pub scopes: Vec<ApiScope>,
+    pub status: ApiKeyStatus,
+    pub expires_at: Option<OffsetDateTime>,
+    pub revoked_at: Option<OffsetDateTime>,
+    pub last_used_at: Option<OffsetDateTime>,
 }

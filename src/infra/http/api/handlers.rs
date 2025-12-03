@@ -17,6 +17,7 @@ use crate::application::admin::posts::{
 use crate::application::admin::settings::AdminSettingsError;
 use crate::application::admin::tags::{AdminTagError, CreateTagCommand, UpdateTagCommand};
 use crate::application::admin::uploads::AdminUploadError;
+use crate::application::api_keys::ApiKeyError;
 use crate::application::pagination::{
     JobCursor, NavigationCursor, PageCursor, PageRequest, PostCursor, TagCursor, UploadCursor,
 };
@@ -101,6 +102,31 @@ pub struct AuditListQuery {
     pub search: Option<String>,
     pub cursor: Option<String>,
     pub limit: Option<u32>,
+}
+
+/// -------- API Keys --------
+pub async fn get_api_key_info(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+) -> Result<Json<ApiKeyInfoResponse>, ApiError> {
+    let record = state
+        .api_keys
+        .load(principal.key_id)
+        .await
+        .map_err(api_key_to_api)?
+        .ok_or_else(|| ApiError::not_found("api key not found"))?;
+
+    let body = ApiKeyInfoResponse {
+        name: record.name,
+        prefix: record.prefix,
+        scopes: record.scopes,
+        status: record.status,
+        expires_at: record.expires_at,
+        revoked_at: record.revoked_at,
+        last_used_at: record.last_used_at,
+    };
+
+    Ok(Json(body))
 }
 
 /// -------- Posts --------
@@ -263,6 +289,181 @@ pub async fn update_post_status(
     Ok(Json(post))
 }
 
+pub async fn update_post_pin(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<PostPinRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let post = state
+        .posts
+        .update_pin_state(&actor, id, payload.pinned)
+        .await
+        .map_err(post_to_api)?;
+
+    Ok(Json(post))
+}
+
+pub async fn update_post_title_slug(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<PostTitleSlugRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    if payload.title.is_none() && payload.slug.is_none() {
+        return Err(ApiError::bad_request(
+            "at least one of title or slug must be provided",
+            None,
+        ));
+    }
+
+    let post = state
+        .posts
+        .load_post(id)
+        .await
+        .map_err(post_to_api)?
+        .ok_or_else(|| ApiError::not_found("post not found"))?;
+
+    let command = UpdatePostContentCommand {
+        id,
+        slug: payload.slug.unwrap_or_else(|| post.slug.clone()),
+        title: payload.title.unwrap_or_else(|| post.title.clone()),
+        excerpt: post.excerpt.clone(),
+        body_markdown: post.body_markdown.clone(),
+        pinned: post.pinned,
+        summary_markdown: post.summary_markdown.clone(),
+    };
+
+    let updated = state
+        .posts
+        .update_post(&actor, command)
+        .await
+        .map_err(post_to_api)?;
+
+    Ok(Json(updated))
+}
+
+pub async fn update_post_excerpt(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<PostExcerptRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let post = state
+        .posts
+        .load_post(id)
+        .await
+        .map_err(post_to_api)?
+        .ok_or_else(|| ApiError::not_found("post not found"))?;
+
+    let command = UpdatePostContentCommand {
+        id,
+        slug: post.slug.clone(),
+        title: post.title.clone(),
+        excerpt: payload.excerpt,
+        body_markdown: post.body_markdown.clone(),
+        pinned: post.pinned,
+        summary_markdown: post.summary_markdown.clone(),
+    };
+
+    let updated = state
+        .posts
+        .update_post(&actor, command)
+        .await
+        .map_err(post_to_api)?;
+
+    Ok(Json(updated))
+}
+
+pub async fn update_post_body(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<PostBodyRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let post = state
+        .posts
+        .load_post(id)
+        .await
+        .map_err(post_to_api)?
+        .ok_or_else(|| ApiError::not_found("post not found"))?;
+
+    let command = UpdatePostContentCommand {
+        id,
+        slug: post.slug.clone(),
+        title: post.title.clone(),
+        excerpt: post.excerpt.clone(),
+        body_markdown: payload.body_markdown,
+        pinned: post.pinned,
+        summary_markdown: post.summary_markdown.clone(),
+    };
+
+    let updated = state
+        .posts
+        .update_post(&actor, command)
+        .await
+        .map_err(post_to_api)?;
+
+    Ok(Json(updated))
+}
+
+pub async fn update_post_summary(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<PostSummaryRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PostWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let post = state
+        .posts
+        .load_post(id)
+        .await
+        .map_err(post_to_api)?
+        .ok_or_else(|| ApiError::not_found("post not found"))?;
+
+    let command = UpdatePostContentCommand {
+        id,
+        slug: post.slug.clone(),
+        title: post.title.clone(),
+        excerpt: post.excerpt.clone(),
+        body_markdown: post.body_markdown.clone(),
+        pinned: post.pinned,
+        summary_markdown: payload.summary_markdown,
+    };
+
+    let updated = state
+        .posts
+        .update_post(&actor, command)
+        .await
+        .map_err(post_to_api)?;
+
+    Ok(Json(updated))
+}
+
 pub async fn replace_post_tags(
     State(state): State<ApiState>,
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
@@ -422,6 +623,81 @@ pub async fn update_page(
     Ok(Json(page))
 }
 
+pub async fn update_page_title_slug(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<PageTitleSlugRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PageWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    if payload.title.is_none() && payload.slug.is_none() {
+        return Err(ApiError::bad_request(
+            "at least one of title or slug must be provided",
+            None,
+        ));
+    }
+
+    let page = state
+        .pages
+        .find_by_id(id)
+        .await
+        .map_err(page_to_api)?
+        .ok_or_else(|| ApiError::not_found("page not found"))?;
+
+    let command = UpdatePageContentCommand {
+        id,
+        slug: payload.slug.unwrap_or_else(|| page.slug.clone()),
+        title: payload.title.unwrap_or_else(|| page.title.clone()),
+        body_markdown: page.body_markdown.clone(),
+    };
+
+    let updated = state
+        .pages
+        .update_page(&actor, command)
+        .await
+        .map_err(page_to_api)?;
+
+    Ok(Json(updated))
+}
+
+pub async fn update_page_body(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<PageBodyRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PageWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let page = state
+        .pages
+        .find_by_id(id)
+        .await
+        .map_err(page_to_api)?
+        .ok_or_else(|| ApiError::not_found("page not found"))?;
+
+    let command = UpdatePageContentCommand {
+        id,
+        slug: page.slug.clone(),
+        title: page.title.clone(),
+        body_markdown: payload.body_markdown,
+    };
+
+    let updated = state
+        .pages
+        .update_page(&actor, command)
+        .await
+        .map_err(page_to_api)?;
+
+    Ok(Json(updated))
+}
+
 pub async fn update_page_status(
     State(state): State<ApiState>,
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
@@ -560,6 +836,94 @@ pub async fn update_tag(
     Ok(Json(tag))
 }
 
+pub async fn update_tag_pin(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<TagPinRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::TagWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let tag = state
+        .tags
+        .update_tag_pinned(&actor, id, payload.pinned)
+        .await
+        .map_err(tag_to_api)?;
+
+    Ok(Json(tag))
+}
+
+pub async fn update_tag_name(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<TagNameRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::TagWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let existing = state
+        .tags
+        .find_by_id(id)
+        .await
+        .map_err(tag_to_api)?
+        .ok_or_else(|| ApiError::not_found("tag not found"))?;
+
+    let command = UpdateTagCommand {
+        id,
+        name: payload.name,
+        description: existing.description.clone(),
+        pinned: existing.pinned,
+    };
+
+    let tag = state
+        .tags
+        .update_tag(&actor, command)
+        .await
+        .map_err(tag_to_api)?;
+
+    Ok(Json(tag))
+}
+
+pub async fn update_tag_description(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<TagDescriptionRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::TagWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let existing = state
+        .tags
+        .find_by_id(id)
+        .await
+        .map_err(tag_to_api)?
+        .ok_or_else(|| ApiError::not_found("tag not found"))?;
+
+    let command = UpdateTagCommand {
+        id,
+        name: existing.name.clone(),
+        description: payload.description,
+        pinned: existing.pinned,
+    };
+
+    let tag = state
+        .tags
+        .update_tag(&actor, command)
+        .await
+        .map_err(tag_to_api)?;
+
+    Ok(Json(tag))
+}
+
 pub async fn delete_tag(
     State(state): State<ApiState>,
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
@@ -670,6 +1034,196 @@ pub async fn update_navigation(
         destination_url: payload.destination_url,
         sort_order: payload.sort_order,
         visible: payload.visible,
+        open_in_new_tab: payload.open_in_new_tab,
+    };
+
+    let record = state
+        .navigation
+        .update_item(&actor, command)
+        .await
+        .map_err(nav_to_api)?;
+
+    Ok(Json(record))
+}
+
+pub async fn update_navigation_label(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<NavigationLabelRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::NavigationWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let existing = state
+        .navigation
+        .find_by_id(id)
+        .await
+        .map_err(nav_to_api)?
+        .ok_or_else(|| ApiError::not_found("navigation not found"))?;
+
+    let command = UpdateNavigationItemCommand {
+        id,
+        label: payload.label,
+        destination_type: existing.destination_type,
+        destination_page_id: existing.destination_page_id,
+        destination_url: existing.destination_url.clone(),
+        sort_order: existing.sort_order,
+        visible: existing.visible,
+        open_in_new_tab: existing.open_in_new_tab,
+    };
+
+    let record = state
+        .navigation
+        .update_item(&actor, command)
+        .await
+        .map_err(nav_to_api)?;
+
+    Ok(Json(record))
+}
+
+pub async fn update_navigation_destination(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<NavigationDestinationRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::NavigationWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let existing = state
+        .navigation
+        .find_by_id(id)
+        .await
+        .map_err(nav_to_api)?
+        .ok_or_else(|| ApiError::not_found("navigation not found"))?;
+
+    let command = UpdateNavigationItemCommand {
+        id,
+        label: existing.label.clone(),
+        destination_type: payload.destination_type,
+        destination_page_id: payload.destination_page_id,
+        destination_url: payload.destination_url,
+        sort_order: existing.sort_order,
+        visible: existing.visible,
+        open_in_new_tab: existing.open_in_new_tab,
+    };
+
+    let record = state
+        .navigation
+        .update_item(&actor, command)
+        .await
+        .map_err(nav_to_api)?;
+
+    Ok(Json(record))
+}
+
+pub async fn update_navigation_sort_order(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<NavigationSortOrderRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::NavigationWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let existing = state
+        .navigation
+        .find_by_id(id)
+        .await
+        .map_err(nav_to_api)?
+        .ok_or_else(|| ApiError::not_found("navigation not found"))?;
+
+    let command = UpdateNavigationItemCommand {
+        id,
+        label: existing.label.clone(),
+        destination_type: existing.destination_type,
+        destination_page_id: existing.destination_page_id,
+        destination_url: existing.destination_url.clone(),
+        sort_order: payload.sort_order,
+        visible: existing.visible,
+        open_in_new_tab: existing.open_in_new_tab,
+    };
+
+    let record = state
+        .navigation
+        .update_item(&actor, command)
+        .await
+        .map_err(nav_to_api)?;
+
+    Ok(Json(record))
+}
+
+pub async fn update_navigation_visibility(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<NavigationVisibilityRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::NavigationWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let existing = state
+        .navigation
+        .find_by_id(id)
+        .await
+        .map_err(nav_to_api)?
+        .ok_or_else(|| ApiError::not_found("navigation not found"))?;
+
+    let command = UpdateNavigationItemCommand {
+        id,
+        label: existing.label.clone(),
+        destination_type: existing.destination_type,
+        destination_page_id: existing.destination_page_id,
+        destination_url: existing.destination_url.clone(),
+        sort_order: existing.sort_order,
+        visible: payload.visible,
+        open_in_new_tab: existing.open_in_new_tab,
+    };
+
+    let record = state
+        .navigation
+        .update_item(&actor, command)
+        .await
+        .map_err(nav_to_api)?;
+
+    Ok(Json(record))
+}
+
+pub async fn update_navigation_open_in_new_tab(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+    Json(payload): Json<NavigationOpenInNewTabRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::NavigationWrite)
+        .map_err(|_| ApiError::forbidden())?;
+    let actor = super::state::ApiState::actor_label(&principal);
+
+    let existing = state
+        .navigation
+        .find_by_id(id)
+        .await
+        .map_err(nav_to_api)?
+        .ok_or_else(|| ApiError::not_found("navigation not found"))?;
+
+    let command = UpdateNavigationItemCommand {
+        id,
+        label: existing.label.clone(),
+        destination_type: existing.destination_type,
+        destination_page_id: existing.destination_page_id,
+        destination_url: existing.destination_url.clone(),
+        sort_order: existing.sort_order,
+        visible: existing.visible,
         open_in_new_tab: payload.open_in_new_tab,
     };
 
@@ -908,6 +1462,12 @@ pub async fn patch_settings(
     if let Some(val) = payload.public_site_url {
         current.public_site_url = val;
     }
+    if let Some(val) = payload.global_toc_enabled {
+        current.global_toc_enabled = val;
+    }
+    if let Some(val) = payload.favicon_svg {
+        current.favicon_svg = val;
+    }
 
     let command = crate::application::admin::settings::UpdateSettingsCommand {
         homepage_size: current.homepage_size,
@@ -1145,4 +1705,17 @@ fn settings_to_api(err: AdminSettingsError) -> ApiError {
         "Settings update failed",
         Some(err.to_string()),
     )
+}
+
+fn api_key_to_api(err: ApiKeyError) -> ApiError {
+    match err {
+        ApiKeyError::InvalidScopes => ApiError::new(
+            StatusCode::BAD_REQUEST,
+            codes::INVALID_INPUT,
+            "Invalid API key scopes",
+            None,
+        ),
+        ApiKeyError::NotFound => ApiError::not_found("api key not found"),
+        ApiKeyError::Repo(repo) => repo_to_api(repo),
+    }
 }

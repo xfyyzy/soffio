@@ -349,6 +349,95 @@ async fn api_can_update_post_status(pool: PgPool) {
     .expect("update post status via handler");
 }
 
+#[sqlx::test(migrations = "./migrations")]
+async fn api_can_partial_update_post(pool: PgPool) {
+    let (state, token) = build_state(pool).await;
+    let principal = state.api_keys.authenticate(&token).await.unwrap();
+
+    let post = state
+        .posts
+        .create_post(
+            "test",
+            soffio::application::admin::posts::CreatePostCommand {
+                title: "partial".into(),
+                excerpt: "orig".into(),
+                body_markdown: "# body".into(),
+                summary_markdown: Some("sum".into()),
+                status: soffio::domain::types::PostStatus::Draft,
+                pinned: false,
+                scheduled_at: None,
+                published_at: None,
+                archived_at: None,
+            },
+        )
+        .await
+        .expect("create post via service");
+
+    handlers::update_post_pin(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(post.id),
+        Json(PostPinRequest { pinned: true }),
+    )
+    .await
+    .expect("pin post");
+    let mut latest = state.posts.load_post(post.id).await.unwrap().unwrap();
+    assert!(latest.pinned);
+
+    handlers::update_post_title_slug(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(post.id),
+        Json(PostTitleSlugRequest {
+            title: Some("new title".into()),
+            slug: None,
+        }),
+    )
+    .await
+    .expect("update title");
+    latest = state.posts.load_post(post.id).await.unwrap().unwrap();
+    assert_eq!(latest.title, "new title");
+
+    handlers::update_post_excerpt(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(post.id),
+        Json(PostExcerptRequest {
+            excerpt: "new excerpt".into(),
+        }),
+    )
+    .await
+    .expect("update excerpt");
+    latest = state.posts.load_post(post.id).await.unwrap().unwrap();
+    assert_eq!(latest.excerpt, "new excerpt");
+
+    handlers::update_post_body(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(post.id),
+        Json(PostBodyRequest {
+            body_markdown: "## changed".into(),
+        }),
+    )
+    .await
+    .expect("update body");
+    latest = state.posts.load_post(post.id).await.unwrap().unwrap();
+    assert_eq!(latest.body_markdown, "## changed");
+
+    handlers::update_post_summary(
+        State(state.clone()),
+        Extension(principal),
+        axum::extract::Path(post.id),
+        Json(PostSummaryRequest {
+            summary_markdown: Some("updated summary".into()),
+        }),
+    )
+    .await
+    .expect("update summary");
+    latest = state.posts.load_post(post.id).await.unwrap().unwrap();
+    assert_eq!(latest.summary_markdown.as_deref(), Some("updated summary"));
+}
+
 // ============ Pages ============
 
 #[sqlx::test(migrations = "./migrations")]
@@ -468,6 +557,57 @@ async fn api_can_update_page_status(pool: PgPool) {
     .expect("update page status via handler");
 }
 
+#[sqlx::test(migrations = "./migrations")]
+async fn api_can_partial_update_page(pool: PgPool) {
+    let (state, token) = build_state(pool).await;
+    let principal = state.api_keys.authenticate(&token).await.unwrap();
+
+    let page = state
+        .pages
+        .create_page(
+            "test",
+            soffio::application::admin::pages::CreatePageCommand {
+                title: "page".into(),
+                body_markdown: "hello".into(),
+                status: soffio::domain::types::PageStatus::Draft,
+                scheduled_at: None,
+                published_at: None,
+                archived_at: None,
+            },
+        )
+        .await
+        .expect("create page");
+
+    handlers::update_page_title_slug(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(page.id),
+        Json(PageTitleSlugRequest {
+            title: Some("new page".into()),
+            slug: None,
+        }),
+    )
+    .await
+    .expect("update page title");
+
+    let mut latest = state.pages.find_by_id(page.id).await.unwrap().unwrap();
+    assert_eq!(latest.title, "new page");
+
+    handlers::update_page_body(
+        State(state.clone()),
+        Extension(principal),
+        axum::extract::Path(page.id),
+        Json(PageBodyRequest {
+            body_markdown: "updated body".into(),
+        }),
+    )
+    .await
+    .expect("update page body");
+
+    latest = state.pages.find_by_id(page.id).await.unwrap().unwrap();
+    assert_eq!(latest.body_markdown, "updated body");
+}
+
 // ============ Tags ============
 
 #[sqlx::test(migrations = "./migrations")]
@@ -567,6 +707,61 @@ async fn api_can_delete_tag(pool: PgPool) {
     )
     .await
     .expect("delete tag via handler");
+}
+
+#[sqlx::test(migrations = "./migrations")]
+async fn api_can_partial_update_tag(pool: PgPool) {
+    let (state, token) = build_state(pool).await;
+    let principal = state.api_keys.authenticate(&token).await.unwrap();
+
+    let tag = state
+        .tags
+        .create_tag(
+            "test",
+            soffio::application::admin::tags::CreateTagCommand {
+                name: "tag".into(),
+                description: Some("desc".into()),
+                pinned: false,
+            },
+        )
+        .await
+        .expect("create tag");
+
+    handlers::update_tag_pin(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(tag.id),
+        Json(TagPinRequest { pinned: true }),
+    )
+    .await
+    .expect("pin tag");
+
+    handlers::update_tag_name(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(tag.id),
+        Json(TagNameRequest {
+            name: "renamed".into(),
+        }),
+    )
+    .await
+    .expect("rename tag");
+
+    handlers::update_tag_description(
+        State(state.clone()),
+        Extension(principal),
+        axum::extract::Path(tag.id),
+        Json(TagDescriptionRequest {
+            description: Some("new description".into()),
+        }),
+    )
+    .await
+    .expect("update tag description");
+
+    let latest = state.tags.find_by_id(tag.id).await.unwrap().unwrap();
+    assert!(latest.pinned);
+    assert_eq!(latest.name, "renamed");
+    assert_eq!(latest.description.as_deref(), Some("new description"));
 }
 
 // ============ Navigation ============
@@ -685,6 +880,92 @@ async fn api_can_delete_navigation(pool: PgPool) {
     .expect("delete navigation via handler");
 }
 
+#[sqlx::test(migrations = "./migrations")]
+async fn api_can_partial_update_navigation(pool: PgPool) {
+    let (state, token) = build_state(pool).await;
+    let principal = state.api_keys.authenticate(&token).await.unwrap();
+
+    let nav = state
+        .navigation
+        .create_item(
+            "test",
+            soffio::application::admin::navigation::CreateNavigationItemCommand {
+                label: "Nav".into(),
+                destination_type: soffio::domain::types::NavigationDestinationType::External,
+                destination_page_id: None,
+                destination_url: Some("https://example.com".into()),
+                sort_order: 1,
+                visible: true,
+                open_in_new_tab: false,
+            },
+        )
+        .await
+        .expect("create navigation");
+
+    handlers::update_navigation_label(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(nav.id),
+        Json(NavigationLabelRequest {
+            label: "Nav Updated".into(),
+        }),
+    )
+    .await
+    .expect("update label");
+
+    handlers::update_navigation_destination(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(nav.id),
+        Json(NavigationDestinationRequest {
+            destination_type: soffio::domain::types::NavigationDestinationType::External,
+            destination_page_id: None,
+            destination_url: Some("https://example.org".into()),
+        }),
+    )
+    .await
+    .expect("update destination");
+
+    handlers::update_navigation_sort_order(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(nav.id),
+        Json(NavigationSortOrderRequest { sort_order: 5 }),
+    )
+    .await
+    .expect("update sort order");
+
+    handlers::update_navigation_visibility(
+        State(state.clone()),
+        Extension(principal.clone()),
+        axum::extract::Path(nav.id),
+        Json(NavigationVisibilityRequest { visible: false }),
+    )
+    .await
+    .expect("update visibility");
+
+    handlers::update_navigation_open_in_new_tab(
+        State(state.clone()),
+        Extension(principal),
+        axum::extract::Path(nav.id),
+        Json(NavigationOpenInNewTabRequest {
+            open_in_new_tab: true,
+        }),
+    )
+    .await
+    .expect("update open in new tab");
+
+    let latest = state.navigation.find_by_id(nav.id).await.unwrap().unwrap();
+    assert_eq!(latest.label, "Nav Updated");
+    assert_eq!(
+        latest.destination_url.as_deref(),
+        Some("https://example.org")
+    );
+    assert_eq!(latest.sort_order, 5);
+    assert!(!latest.visible);
+    assert!(latest.open_in_new_tab);
+}
+
 // ============ Uploads ============
 
 #[sqlx::test(migrations = "./migrations")]
@@ -736,6 +1017,8 @@ async fn api_can_get_and_patch_settings(pool: PgPool) {
         og_title: None,
         og_description: None,
         public_site_url: None,
+        global_toc_enabled: None,
+        favicon_svg: None,
     };
 
     let _patched = handlers::patch_settings(
@@ -745,6 +1028,45 @@ async fn api_can_get_and_patch_settings(pool: PgPool) {
     )
     .await
     .expect("patch settings via handler");
+}
+
+#[sqlx::test(migrations = "./migrations")]
+async fn api_settings_patch_includes_toc_and_favicon(pool: PgPool) {
+    let (state, token) = build_state(pool).await;
+    let principal = state.api_keys.authenticate(&token).await.unwrap();
+
+    let patch_payload = SettingsPatchRequest {
+        brand_title: None,
+        brand_href: None,
+        footer_copy: None,
+        homepage_size: None,
+        admin_page_size: None,
+        show_tag_aggregations: None,
+        show_month_aggregations: None,
+        tag_filter_limit: None,
+        month_filter_limit: None,
+        timezone: None,
+        meta_title: None,
+        meta_description: None,
+        og_title: None,
+        og_description: None,
+        public_site_url: None,
+        global_toc_enabled: Some(true),
+        favicon_svg: Some("<svg></svg>".into()),
+    };
+
+    handlers::patch_settings(
+        State(state.clone()),
+        Extension(principal),
+        Json(patch_payload),
+    )
+    .await
+    .expect("patch settings toc/favicon");
+
+    // Reload from repo to assert persisted values
+    let latest = state.settings.load().await.unwrap();
+    assert!(latest.global_toc_enabled);
+    assert_eq!(latest.favicon_svg, "<svg></svg>");
 }
 
 // ============ Jobs ============
@@ -804,6 +1126,22 @@ async fn api_can_list_audit_logs(pool: PgPool) {
     )
     .await
     .expect("list audit logs via handler");
+}
+
+// ============ API Keys ============
+
+#[sqlx::test(migrations = "./migrations")]
+async fn api_can_get_api_key_info(pool: PgPool) {
+    let (state, token) = build_state(pool).await;
+    let principal = state.api_keys.authenticate(&token).await.unwrap();
+
+    let Json(info) = handlers::get_api_key_info(State(state.clone()), Extension(principal))
+        .await
+        .expect("get api key info");
+
+    assert_eq!(info.prefix.len(), 12);
+    assert!(info.scopes.contains(&ApiScope::PostRead));
+    assert_eq!(info.status, soffio::domain::api_keys::ApiKeyStatus::Active);
 }
 
 // ============ API Key Scope Granularity ============
