@@ -1,0 +1,228 @@
+---
+source: tests/snapshots/frontend/feed.rs
+expression: html
+---
+<!DOCTYPE html>
+<html lang="en" data-theme="blue">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Soffio</title>
+    <meta name="description" content="Whispers on motion, balance, and form.">
+    <meta property="og:title" content="Soffio">
+    <meta property="og:description" content="Traces of motion, balance, and form in continual drift.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <link rel="canonical" href="http://localhost:3000/">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="stylesheet" href="/static/common/tokens.css?v=0.1.6">
+    <link rel="stylesheet" href="/static/public/app.css?v=0.1.6">
+    
+  <link rel="stylesheet" href="/static/public/styles/post.css?v=0.1.6">
+  
+  
+
+    <script type="module" src="/static/common/components.js?v=0.1.6" defer></script>
+    <script type="module" src="/static/common/datastar-init.js?v=0.1.6" defer></script>
+  </head>
+  <body data-page="shell">
+    
+<page-shell data-structure="stack" role="document">
+  
+<header data-role="banner">
+  <header-bar data-layout="row" role="presentation">
+    <h1 data-role="brand-title">
+      <a data-role="brand" href="/">
+        Soffio
+      </a>
+    </h1>
+    <nav data-role="primary-nav" aria-label="Primary navigation">
+      
+      <a
+        data-role="nav-link"
+        href="/about"
+        
+        
+      >
+        About
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="/systems-handbook"
+        
+        
+      >
+        Systems Handbook
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="https://github.com/soffio"
+        
+        target="_blank"
+        
+        
+        rel="noopener noreferrer"
+        
+      >
+        GitHub
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="https://soffio.dev/playbook"
+        
+        target="_blank"
+        
+        
+        rel="noopener noreferrer"
+        
+      >
+        Playbook
+      </a>
+      
+    </nav>
+  </header-bar>
+</header>
+
+  
+<main data-role="content">
+  <layout-frame data-layout="split" role="group" aria-label="Article layout">
+    
+    
+    <meta-column data-region="meta" role="complementary" aria-label="Article metadata">
+      <aside data-role="meta-card">
+        
+<nav data-role="post-toc" role="navigation" aria-label="Table of contents">
+  
+    
+  <ul data-role="toc-list" role="list">
+    
+  
+    
+  <li data-role="toc-item" data-level="1">
+    <a data-role="toc-link" href="#overview" title="Overview">Overview</a>
+    
+  
+    
+  </li>
+    
+  
+    
+  <li data-role="toc-item" data-level="1">
+    <a data-role="toc-link" href="#architecture" title="Pipeline Architecture">Pipeline Architecture</a>
+    
+  
+    
+  </li>
+    
+  
+    
+  <li data-role="toc-item" data-level="1">
+    <a data-role="toc-link" href="#validation" title="Validation &#38; Observability">Validation &#38; Observability</a>
+    
+  
+    
+  <ul data-role="toc-list" role="list">
+    
+  
+    
+  <li data-role="toc-item" data-level="2">
+    <a data-role="toc-link" href="#next-steps" title="Next Steps">Next Steps</a>
+    
+  
+    
+  </li>
+    
+  
+    
+  </ul>
+    
+  
+    
+  </li>
+    
+  
+    
+  </ul>
+    
+  
+</nav>
+
+      </aside>
+    </meta-column>
+    
+    <content-panel data-region="primary" role="region" aria-label="Article body">
+      <post-card data-entry="incremental-build-pipeline" role="listitem" view-transition-name="post-card-incremental-build-pipeline">
+        <article data-role="card" aria-labelledby="post-heading">
+          <section data-role="post-summary" aria-label="Key takeaways">
+            <ul><li>Crate-level DAG scheduling slashes end-to-end build latency to under five minutes per change.</li><li>Remote fingerprints and targeted linting stop unnecessary workspace rebuilds.</li><li>Trace-enriched metadata lets engineers replay failures locally without waiting on CI.</li></ul>
+          </section>
+          
+          
+
+  
+<section id="overview" data-role="post-section" data-level="1">
+  <h1>Overview</h1>
+  
+  
+
+  
+</section>
+  
+
+  
+<section id="architecture" data-role="post-section" data-level="1">
+  <h1>Pipeline Architecture</h1>
+  
+  
+
+  
+</section>
+  
+
+  
+<section id="validation" data-role="post-section" data-level="1">
+  <h1>Validation & Observability</h1>
+  
+  
+
+  
+  <div data-role="post-subsections">
+  
+
+  
+<section id="next-steps" data-role="post-section" data-level="2">
+  <h2>Next Steps</h2>
+  
+  
+
+  
+</section>
+  
+
+  
+  </div>
+  
+
+  
+</section>
+  
+
+
+        </article>
+      </post-card>
+    </content-panel>
+  </layout-frame>
+</main>
+
+  
+<footer data-role="footer">
+  <footer-copy>Stillness guides the wind; the wind reshapes stillness.</footer-copy>
+</footer>
+
+</page-shell>
+
+  </body>
+</html>

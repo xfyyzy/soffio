@@ -1,0 +1,121 @@
+---
+source: tests/snapshots/frontend/feed.rs
+expression: html
+---
+<!DOCTYPE html>
+<html lang="en" data-theme="blue">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Soffio</title>
+    <meta name="description" content="Whispers on motion, balance, and form.">
+    <meta property="og:title" content="Soffio">
+    <meta property="og:description" content="Traces of motion, balance, and form in continual drift.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <link rel="canonical" href="http://localhost:3000/">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="stylesheet" href="/static/common/tokens.css?v=0.1.6">
+    <link rel="stylesheet" href="/static/public/app.css?v=0.1.6">
+    
+  <link rel="stylesheet" href="/static/public/styles/page.css?v=0.1.6">
+  
+  
+
+    <script type="module" src="/static/common/components.js?v=0.1.6" defer></script>
+    <script type="module" src="/static/common/datastar-init.js?v=0.1.6" defer></script>
+  </head>
+  <body data-page="shell">
+    
+<page-shell data-structure="stack" role="document">
+  
+<header data-role="banner">
+  <header-bar data-layout="row" role="presentation">
+    <h1 data-role="brand-title">
+      <a data-role="brand" href="/">
+        Soffio
+      </a>
+    </h1>
+    <nav data-role="primary-nav" aria-label="Primary navigation">
+      
+      <a
+        data-role="nav-link"
+        href="/about"
+        
+        
+      >
+        About
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="/systems-handbook"
+        
+        
+      >
+        Systems Handbook
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="https://github.com/soffio"
+        
+        target="_blank"
+        
+        
+        rel="noopener noreferrer"
+        
+      >
+        GitHub
+      </a>
+      
+      <a
+        data-role="nav-link"
+        href="https://soffio.dev/playbook"
+        
+        target="_blank"
+        
+        
+        rel="noopener noreferrer"
+        
+      >
+        Playbook
+      </a>
+      
+    </nav>
+  </header-bar>
+</header>
+
+  
+<main data-role="content">
+  <layout-frame data-layout="split" role="group" aria-label="Page layout">
+    <content-panel data-region="primary" role="region" aria-label="Page body">
+      <section data-role="page-body">
+        
+        
+              <section data-role="page-section">
+                <p>
+                  Soffio Blog 记录我们在工具链迭代、工作流调优、协作机制等方面的实践。
+                  我们坚持以真实案例拆解问题，关注如何将抽象的工程原则落地成可复用的系统。
+                </p>
+                <p>
+                  架构层面我们偏向最小可行的高内聚组件；流程层面，我们鼓励持续验证和自动化审计；
+                  团队层面，我们追求透明与高信任的合作节奏。欢迎与我们交流，或在 GitHub 上关注最新进展。
+                </p>
+              </section>
+            
+        
+      </section>
+    </content-panel>
+  </layout-frame>
+</main>
+
+  
+<footer data-role="footer">
+  <footer-copy>Stillness guides the wind; the wind reshapes stillness.</footer-copy>
+</footer>
+
+</page-shell>
+
+  </body>
+</html>
