@@ -51,11 +51,17 @@ jobs:
               apk update && \
               apk add --no-cache bash binutils build-base ca-certificates clang cmake curl git libstdc++ nodejs npm pkgconf python3 && \
               rustup component add rustfmt clippy && \
-              npm install --global --unsafe-perm typescript@latest @apidevtools/swagger-cli && \
-              swagger-cli validate docs/api/openapi.yaml && \
+              npm install --global --unsafe-perm typescript@latest @redocly/cli && \
+              redocly lint docs/api/openapi.yaml && \
               cargo fmt --all -- --check && \
               cargo check --workspace --all-targets && \
               cargo clippy --workspace --all-targets -- -D warnings && \
+              cargo run --bin gen_cli_docs && \
+              if ! git diff --quiet -- docs/cli.md docs/cli.zh.md; then \
+                echo "cli docs out of date; run cargo run --bin gen_cli_docs and commit." >&2; \
+                git diff -- docs/cli.md docs/cli.zh.md; \
+                exit 1; \
+              fi && \
               cargo test --workspace --all-targets -- --nocapture && \
               cargo run --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml && \
               LOG_PATH=/tmp/soffio.log; \
@@ -76,18 +82,3 @@ jobs:
               cargo test --test live_api -- --ignored --nocapture && \
               kill $srv
             '
-
-  lint-docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: Swatinem/rust-cache@v2
-      - name: Generate CLI docs
-        run: cargo run --bin gen_cli_docs
-      - name: Ensure CLI docs are up to date
-        run: |
-          if ! git diff --quiet -- docs/cli.md docs/cli.zh.md; then
-            echo "cli docs out of date; run cargo run --bin gen_cli_docs and commit." >&2
-            git diff -- docs/cli.md docs/cli.zh.md
-            exit 1
-          fi

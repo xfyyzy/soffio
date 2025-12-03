@@ -7,7 +7,10 @@ use crate::client::CliError;
 
 pub fn read_value(val: Option<String>, file: Option<PathBuf>) -> Result<String, CliError> {
     if let Some(path) = file {
-        let data = fs::read_to_string(path).map_err(CliError::KeyFile)?;
+        let data = fs::read_to_string(&path).map_err(|source| CliError::InputFile {
+            path: path.display().to_string(),
+            source,
+        })?;
         Ok(data)
     } else if let Some(v) = val {
         Ok(v)
@@ -21,7 +24,10 @@ pub fn read_opt_value(
     file: Option<PathBuf>,
 ) -> Result<Option<String>, CliError> {
     if let Some(path) = file {
-        let data = fs::read_to_string(path).map_err(CliError::KeyFile)?;
+        let data = fs::read_to_string(&path).map_err(|source| CliError::InputFile {
+            path: path.display().to_string(),
+            source,
+        })?;
         return Ok(Some(data));
     }
     Ok(val)

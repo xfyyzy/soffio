@@ -16,6 +16,11 @@ pub enum CliError {
     MissingKey,
     #[error("failed to read key file: {0}")]
     KeyFile(std::io::Error),
+    #[error("failed to read input file {path}: {source}")]
+    InputFile {
+        path: String,
+        source: std::io::Error,
+    },
     #[error("invalid URL: {0}")]
     Url(#[from] url::ParseError),
     #[error("http error: {0}")]
@@ -79,6 +84,39 @@ impl Ctx {
 
         let resp = req.send().await?;
         Self::handle(resp).await
+    }
+
+    pub async fn request_unit(
+        &self,
+        method: Method,
+        path: &str,
+        query: Option<&[(&str, String)]>,
+        body: Option<serde_json::Value>,
+    ) -> Result<(), CliError> {
+        let mut url = self.url(path)?;
+        if let Some(q) = query {
+            url.set_query(None);
+            let mut qp = url.query_pairs_mut();
+            for (k, v) in q {
+                qp.append_pair(k, v);
+            }
+        }
+
+        let mut req = self
+            .client
+            .request(method, url)
+            .header(axum::http::header::AUTHORIZATION, self.auth_header()?);
+        if let Some(b) = body {
+            req = req.json(&b);
+        }
+
+        let resp = req.send().await?;
+        let status = resp.status();
+        if !status.is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            return Err(CliError::Server(format!("status {status} body {text}")));
+        }
+        Ok(())
     }
 
     async fn handle<T: for<'de> Deserialize<'de>>(resp: Response) -> Result<T, CliError> {
