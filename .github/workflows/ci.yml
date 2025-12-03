@@ -57,11 +57,11 @@ jobs:
               cargo check --workspace --all-targets && \
               cargo clippy --workspace --all-targets -- -D warnings && \
               cargo run --bin gen_cli_docs && \
-              # Ensure docs are regenerated and committed (compare against HEAD, not file-to-file). \
-              if ! git diff --quiet HEAD -- docs/cli.md docs/cli.zh.md; then \
+              # Ensure docs are regenerated and committed. Explicit GIT_DIR/WORK_TREE avoids absolute-path issues when mounted at /work. \
+              if ! GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff --quiet HEAD -- docs/cli.md docs/cli.zh.md; then \
                 echo "cli docs out of date; run cargo run --bin gen_cli_docs and commit." >&2; \
-                git diff --stat HEAD -- docs/cli.md docs/cli.zh.md; \
-                git diff HEAD -- docs/cli.md docs/cli.zh.md; \
+                GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff --stat HEAD -- docs/cli.md docs/cli.zh.md; \
+                GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff HEAD -- docs/cli.md docs/cli.zh.md; \
                 exit 1; \
               fi && \
               cargo test --workspace --all-targets -- --nocapture && \
