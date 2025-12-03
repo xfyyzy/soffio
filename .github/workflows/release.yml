@@ -34,6 +34,7 @@ jobs:
             -v "$HOME/.cargo:/root/.cargo" \
             -v "$HOME/.npm:/root/.npm" \
             -e BIN_NAME="${BIN_NAME}" \
+            -e BIN_CLI="${BIN_CLI}" \
             -e CPU_LEVEL="${CPU_LEVEL}" \
             -e RELEASE_TAG="${RELEASE_TAG}" \
             -w /work \
