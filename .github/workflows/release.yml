@@ -50,7 +50,11 @@ jobs:
               cp target/release/${BIN_CLI} dist/${BIN_CLI} && \
               strip dist/${BIN_NAME} dist/${BIN_CLI} || true && \
               tar_name="${BIN_NAME}-${RELEASE_TAG}-${CPU_LEVEL}-musl.tar.gz" && \
-              tar czf "${tar_name}" -C dist ${BIN_NAME} ${BIN_CLI}
+              tar czf "${tar_name}" -C dist ${BIN_NAME} ${BIN_CLI} && \
+              # fix permissions before cache save on host
+              HOST_UID=$(stat -c '%u' /work) && HOST_GID=$(stat -c '%g' /work) && \
+              chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true && \
+              rm -rf /work/target/debug/incremental /work/target/release/incremental || true
             '
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
