@@ -264,6 +264,31 @@ components:
         body_markdown: { type: string }
         summary_markdown: { type: string }
         pinned: { type: boolean, default: false }
+    PostPinRequest:
+      type: object
+      required: [pinned]
+      properties:
+        pinned: { type: boolean }
+    PostTitleSlugRequest:
+      type: object
+      description: At least one of `title` or `slug` must be provided.
+      properties:
+        title: { type: string }
+        slug: { type: string }
+    PostExcerptRequest:
+      type: object
+      required: [excerpt]
+      properties:
+        excerpt: { type: string }
+    PostBodyRequest:
+      type: object
+      required: [body_markdown]
+      properties:
+        body_markdown: { type: string }
+    PostSummaryRequest:
+      type: object
+      properties:
+        summary_markdown: { type: string }
     PostStatusRequest:
       type: object
       required: [status]
@@ -297,6 +322,17 @@ components:
         slug: { type: string }
         title: { type: string }
         body_markdown: { type: string }
+    PageTitleSlugRequest:
+      type: object
+      description: At least one of `title` or `slug` must be provided.
+      properties:
+        slug: { type: string }
+        title: { type: string }
+    PageBodyRequest:
+      type: object
+      required: [body_markdown]
+      properties:
+        body_markdown: { type: string }
     PageStatusRequest:
       type: object
       required: [status]
@@ -319,6 +355,20 @@ components:
         name: { type: string }
         description: { type: string }
         pinned: { type: boolean, default: false }
+    TagPinRequest:
+      type: object
+      required: [pinned]
+      properties:
+        pinned: { type: boolean }
+    TagNameRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+    TagDescriptionRequest:
+      type: object
+      properties:
+        description: { type: string }
     NavigationCreateRequest:
       type: object
       required: [label, destination_type, sort_order]
@@ -341,6 +391,45 @@ components:
         sort_order: { type: integer }
         visible: { type: boolean, default: false }
         open_in_new_tab: { type: boolean, default: false }
+    NavigationLabelRequest:
+      type: object
+      required: [label]
+      properties:
+        label: { type: string }
+    NavigationDestinationRequest:
+      type: object
+      required: [destination_type]
+      properties:
+        destination_type: { $ref: '#/components/schemas/NavigationDestinationType' }
+        destination_page_id: { type: string, format: uuid }
+        destination_url: { type: string }
+    NavigationSortOrderRequest:
+      type: object
+      required: [sort_order]
+      properties:
+        sort_order: { type: integer }
+    NavigationVisibilityRequest:
+      type: object
+      required: [visible]
+      properties:
+        visible: { type: boolean }
+    NavigationOpenInNewTabRequest:
+      type: object
+      required: [open_in_new_tab]
+      properties:
+        open_in_new_tab: { type: boolean }
+    ApiKeyInfoResponse:
+      type: object
+      properties:
+        name: { type: string }
+        prefix: { type: string }
+        scopes:
+          type: array
+          items: { $ref: '#/components/schemas/ApiScope' }
+        status: { $ref: '#/components/schemas/ApiKeyStatus' }
+        expires_at: { type: string, format: date-time }
+        revoked_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time }
     SettingsPatchRequest:
       type: object
       properties:
@@ -359,7 +448,21 @@ components:
         og_title: { type: string }
         og_description: { type: string }
         public_site_url: { type: string }
+        global_toc_enabled: { type: boolean }
+        favicon_svg: { type: string }
 paths:
+  /api/v1/api-keys/me:
+    get:
+      summary: Get current API key scopes
+      description: Returns metadata and scopes for the authenticated API key. Requires any valid API key.
+      responses:
+        '200':
+          description: API key info
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiKeyInfoResponse' }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
   /api/v1/posts:
     get:
       summary: List posts
@@ -411,7 +514,10 @@ paths:
   /api/v1/posts/{id}:
     patch:
       summary: Update post
-      description: Requires scope `post_write`.
+      description: >
+        Requires scope `post_write`. **Full replacement**: all fields must be sent (slug, title,
+        excerpt, body_markdown, pinned, summary_markdown). Missing or placeholder values overwrite
+        existing data. Use the dedicated subresource endpoints for partial updates.
       parameters:
         - in: path
           name: id
@@ -456,6 +562,111 @@ paths:
             schema: { $ref: '#/components/schemas/PostStatusRequest' }
       responses:
         '200': { description: Status updated }
+  /api/v1/posts/{id}/pin:
+    post:
+      summary: Update post pin state
+      description: Requires scope `post_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostPinRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '404': { description: Not found }
+  /api/v1/posts/{id}/title-slug:
+    post:
+      summary: Update post title or slug
+      description: Requires scope `post_write`. At least one of `title` or `slug` is needed; this endpoint preserves other fields.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostTitleSlugRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '404': { description: Not found }
+  /api/v1/posts/{id}/excerpt:
+    post:
+      summary: Update post excerpt
+      description: Requires scope `post_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostExcerptRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '404': { description: Not found }
+  /api/v1/posts/{id}/body:
+    post:
+      summary: Update post body
+      description: Requires scope `post_write`. Triggers re-render.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostBodyRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '404': { description: Not found }
+  /api/v1/posts/{id}/summary:
+    post:
+      summary: Update post summary
+      description: Requires scope `post_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PostSummaryRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '404': { description: Not found }
   /api/v1/posts/{id}/tags:
     post:
       summary: Replace post tags
@@ -531,7 +742,10 @@ paths:
   /api/v1/pages/{id}:
     patch:
       summary: Update page
-      description: Requires scope `page_write`.
+      description: >
+        Requires scope `page_write`. **Full replacement**: all fields must be sent (slug, title,
+        body_markdown). Missing or placeholder values overwrite existing data. Use the subresource
+        endpoints for partial updates.
       parameters:
         - in: path
           name: id
@@ -574,6 +788,48 @@ paths:
             schema: { $ref: '#/components/schemas/PageStatusRequest' }
       responses:
         '200': { description: Status updated }
+  /api/v1/pages/{id}/title-slug:
+    post:
+      summary: Update page title or slug
+      description: Requires scope `page_write`. At least one of `title` or `slug` is needed; preserves other fields.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PageTitleSlugRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Page' }
+        '404': { description: Not found }
+  /api/v1/pages/{id}/body:
+    post:
+      summary: Update page body
+      description: Requires scope `page_write`. Triggers re-render.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PageBodyRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Page' }
+        '404': { description: Not found }
   /api/v1/pages/slug/{slug}:
     get:
       summary: Get page by slug
@@ -633,7 +889,10 @@ paths:
   /api/v1/tags/{id}:
     patch:
       summary: Update tag
-      description: Requires scope `tag_write`.
+      description: >
+        Requires scope `tag_write`. **Full replacement**: all fields must be sent (name, description,
+        pinned). Missing or placeholder values overwrite existing data. Use subresource endpoints
+        for partial updates.
       parameters:
         - in: path
           name: id
@@ -660,6 +919,69 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '204': { description: Deleted }
+  /api/v1/tags/{id}/pin:
+    post:
+      summary: Update tag pin state
+      description: Requires scope `tag_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TagPinRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+        '404': { description: Not found }
+  /api/v1/tags/{id}/name:
+    post:
+      summary: Update tag name
+      description: Requires scope `tag_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TagNameRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+        '404': { description: Not found }
+  /api/v1/tags/{id}/description:
+    post:
+      summary: Update tag description
+      description: Requires scope `tag_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TagDescriptionRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+        '404': { description: Not found }
   /api/v1/navigation:
     get:
       summary: List navigation items
@@ -700,7 +1022,10 @@ paths:
   /api/v1/navigation/{id}:
     patch:
       summary: Update navigation item
-      description: Requires scope `navigation_write`.
+      description: >
+        Requires scope `navigation_write`. **Full replacement**: all fields must be sent (label,
+        destination, sort_order, visible, open_in_new_tab). Missing or placeholder values overwrite
+        existing data. Use the subresource endpoints for partial updates.
       parameters:
         - in: path
           name: id
@@ -727,6 +1052,111 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '204': { description: Deleted }
+  /api/v1/navigation/{id}/label:
+    post:
+      summary: Update navigation label
+      description: Requires scope `navigation_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NavigationLabelRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NavigationItem' }
+        '404': { description: Not found }
+  /api/v1/navigation/{id}/destination:
+    post:
+      summary: Update navigation destination
+      description: Requires scope `navigation_write`. Validates page published when destination_type=internal.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NavigationDestinationRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NavigationItem' }
+        '404': { description: Not found }
+  /api/v1/navigation/{id}/sort-order:
+    post:
+      summary: Update navigation sort order
+      description: Requires scope `navigation_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NavigationSortOrderRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NavigationItem' }
+        '404': { description: Not found }
+  /api/v1/navigation/{id}/visibility:
+    post:
+      summary: Update navigation visibility
+      description: Requires scope `navigation_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NavigationVisibilityRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NavigationItem' }
+        '404': { description: Not found }
+  /api/v1/navigation/{id}/open-in-new-tab:
+    post:
+      summary: Update navigation open-in-new-tab flag
+      description: Requires scope `navigation_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NavigationOpenInNewTabRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NavigationItem' }
+        '404': { description: Not found }
   /api/v1/uploads:
     get:
       summary: List uploads

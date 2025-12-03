@@ -9,6 +9,7 @@ permissions:
 
 env:
   BIN_NAME: soffio
+  BIN_CLI: soffio-cli
   MERMAID_CLI_IMAGE: minlag/mermaid-cli:latest
   RELEASE_TAG: ${{ github.ref_name }}
 
@@ -43,12 +44,13 @@ jobs:
               apk add --no-cache bash binutils build-base ca-certificates clang cmake curl git libstdc++ nodejs npm pkgconf python3 && \
               rustup component add rustfmt clippy && \
               npm install --global --unsafe-perm typescript@latest && \
-              RUSTFLAGS="-C target-cpu=${CPU_LEVEL}" cargo build --release && \
+              RUSTFLAGS="-C target-cpu=${CPU_LEVEL}" cargo build --release --bin ${BIN_NAME} --bin ${BIN_CLI} && \
               rm -rf dist && mkdir -p dist && \
               cp target/release/${BIN_NAME} dist/${BIN_NAME} && \
-              strip dist/${BIN_NAME} || true && \
+              cp target/release/${BIN_CLI} dist/${BIN_CLI} && \
+              strip dist/${BIN_NAME} dist/${BIN_CLI} || true && \
               tar_name="${BIN_NAME}-${RELEASE_TAG}-${CPU_LEVEL}-musl.tar.gz" && \
-              tar czf "${tar_name}" -C dist ${BIN_NAME}
+              tar czf "${tar_name}" -C dist ${BIN_NAME} ${BIN_CLI}
             '
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
@@ -68,6 +70,19 @@ jobs:
         cpu_level: [x86-64-v2, x86-64-v3]
     steps:
       - uses: actions/checkout@v6
+      - name: Cache prebuilt dir
+        uses: actions/cache@v4
+        with:
+          path: prebuilt/${{ matrix.cpu_level }}
+          key: prebuilt-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}
+      - name: Download prebuilt binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl
+          path: prebuilt/${{ matrix.cpu_level }}
+      - name: Extract prebuilt binaries
+        run: |
+          tar -xzf prebuilt/${{ matrix.cpu_level }}/${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl.tar.gz -C prebuilt/${{ matrix.cpu_level }}
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -85,6 +100,7 @@ jobs:
             TARGET_TRIPLE=x86_64-unknown-linux-musl
             TARGET_CPU=${{ matrix.cpu_level }}
             MERMAID_CLI_IMAGE=${{ env.MERMAID_CLI_IMAGE }}
+            PREBUILT_DIR=prebuilt/${{ matrix.cpu_level }}
           tags: |
             ghcr.io/${{ github.repository }}:amd64-${{ matrix.cpu_level }}
             ghcr.io/${{ github.repository }}:${{ env.RELEASE_TAG }}-amd64-${{ matrix.cpu_level }}

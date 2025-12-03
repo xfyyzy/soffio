@@ -71,6 +71,26 @@ async fn live_api_end_to_end() -> TestResult<()> {
     )
     .await?;
 
+    post_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/tags/{tag_id}/pin"),
+        &[StatusCode::OK],
+        json!({"pinned": true}),
+    )
+    .await?;
+
+    post_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/tags/{tag_id}/description"),
+        &[StatusCode::OK],
+        json!({"description": "live desc"}),
+    )
+    .await?;
+
     delete(
         &client,
         &base,
@@ -89,6 +109,21 @@ async fn live_api_end_to_end() -> TestResult<()> {
         &[StatusCode::OK],
     )
     .await?;
+
+    let key_info = get_json(
+        &client,
+        &base,
+        &config.keys.all,
+        "/api/v1/api-keys/me",
+        &[StatusCode::OK],
+    )
+    .await?;
+    let scopes = key_info
+        .get("scopes")
+        .and_then(Value::as_array)
+        .unwrap_or(&vec![])
+        .len();
+    assert!(scopes > 0, "expected at least one scope");
     get_plain(
         &client,
         &base,
@@ -139,6 +174,36 @@ async fn live_api_end_to_end() -> TestResult<()> {
             "excerpt": "updated excerpt",
             "body_markdown": "## updated",
         }),
+    )
+    .await?;
+
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}/pin"),
+        &[StatusCode::OK],
+        json!({"pinned": true}),
+    )
+    .await?;
+
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}/body"),
+        &[StatusCode::OK],
+        json!({"body_markdown": "## body live"}),
+    )
+    .await?;
+
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}/title-slug"),
+        &[StatusCode::OK],
+        json!({"title": format!("Post {suf} partial")}),
     )
     .await?;
 
@@ -294,6 +359,16 @@ async fn live_api_end_to_end() -> TestResult<()> {
     )
     .await?;
 
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/pages/{page_id}/body"),
+        &[StatusCode::OK],
+        json!({"body_markdown": "Updated body partial"}),
+    )
+    .await?;
+
     patch_json(
         &client,
         &base,
@@ -429,6 +504,26 @@ async fn live_api_end_to_end() -> TestResult<()> {
     )
     .await?;
 
+    post_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/navigation/{nav_id}/visibility"),
+        &[StatusCode::OK],
+        json!({"visible": true}),
+    )
+    .await?;
+
+    post_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/navigation/{nav_id}/sort-order"),
+        &[StatusCode::OK],
+        json!({"sort_order": 7}),
+    )
+    .await?;
+
     patch_json(
         &client,
         &base,
@@ -517,6 +612,16 @@ async fn live_api_end_to_end() -> TestResult<()> {
         "/api/v1/site/settings",
         &[StatusCode::OK],
         json!({"brand_title": "Soffio"}),
+    )
+    .await?;
+
+    patch_json(
+        &client,
+        &base,
+        &config.keys.all,
+        "/api/v1/site/settings",
+        &[StatusCode::OK],
+        json!({"global_toc_enabled": true, "favicon_svg": "<svg/>"}),
     )
     .await?;
 
@@ -736,6 +841,17 @@ async fn get_plain(
 ) -> TestResult<()> {
     let _ = request(client, base, Method::GET, path, key, expected, |r| r).await?;
     Ok(())
+}
+
+async fn get_json(
+    client: &Client,
+    base: &str,
+    key: &str,
+    path: &str,
+    expected: &[StatusCode],
+) -> TestResult<Value> {
+    let (_status, body) = request(client, base, Method::GET, path, key, expected, |r| r).await?;
+    Ok(serde_json::from_str(&body).unwrap_or(Value::Null))
 }
 
 async fn post_json(

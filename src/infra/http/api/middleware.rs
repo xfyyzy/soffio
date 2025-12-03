@@ -75,11 +75,28 @@ pub async fn api_rate_limit(
 
     let key = principal.key_id.to_string();
 
-    if !state.rate_limiter.allow(&key, &path) {
-        return ApiError::rate_limited(state.rate_limiter.retry_after_secs());
+    let (allowed, remaining) = state.rate_limiter.allow(&key, &path);
+    let retry_after = state.rate_limiter.retry_after_secs();
+
+    let mut response = if allowed {
+        next.run(request).await
+    } else {
+        ApiError::rate_limited(retry_after)
+    };
+
+    // Surface rate limit state to clients for better ergonomics.
+    if let Ok(limit) = axum::http::HeaderValue::from_str(&state.rate_limiter.limit().to_string()) {
+        response.headers_mut().insert("x-ratelimit-limit", limit);
+    }
+    if let Ok(rem) = axum::http::HeaderValue::from_str(&remaining.to_string()) {
+        response.headers_mut().insert("x-ratelimit-remaining", rem);
+    }
+    if let Ok(retry) = axum::http::HeaderValue::from_str(&retry_after.to_string()) {
+        response.headers_mut().insert("retry-after", retry.clone());
+        response.headers_mut().insert("x-ratelimit-reset", retry);
     }
 
-    next.run(request).await
+    response
 }
 
 fn extract_token(header: Option<&axum::http::HeaderValue>) -> Option<String> {

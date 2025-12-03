@@ -7,20 +7,27 @@ This guide explains how to build and run production-ready Soffio images with `de
 ## Image Layout
 
 - **Builder** — based on `rust:1.91-alpine3.20`, bundles `cargo-chef` and the TypeScript compiler, and produces a static binary via `TARGET_TRIPLE` (default `x86_64-unknown-linux-musl`) and `TARGET_CPU` (default `x86-64-v2`).
-- **Runtime** — extends `MERMAID_CLI_IMAGE` (default `minlag/mermaid-cli:latest`), adds the `soffio` binary plus a Mermaid CLI wrapper script to support server-side diagram rendering.
+- **Runtime** — extends `MERMAID_CLI_IMAGE` (default `minlag/mermaid-cli:latest`), adds the `soffio` binary plus a Mermaid CLI wrapper script to support server-side diagram rendering. The image now also ships `soffio-cli` (headless API CLI) in `/usr/local/bin` so automation inside the container can call the API directly.
 
 ## Build the Image
 
+Download the release tarball produced by CI (contains `soffio` and `soffio-cli` for the desired CPU level) and unpack it into a directory passed as `PREBUILT_DIR`:
+
 ```bash
+tar -xzf soffio-${RELEASE_TAG}-x86-64-v2-musl.tar.gz -C prebuilt/x86-64-v2
+
 docker buildx build \
   --platform linux/amd64 \
   --build-arg TARGET_TRIPLE=x86_64-unknown-linux-musl \
   --build-arg TARGET_CPU=x86-64-v2 \
+  --build-arg PREBUILT_DIR=prebuilt/x86-64-v2 \
   --build-arg MERMAID_CLI_IMAGE=minlag/mermaid-cli:10.5.1 \
   -f deploy/docker/Dockerfile \
   -t soffio:latest \
   .
 ```
+
+The Dockerfile no longer builds Rust binaries; it will fail if `PREBUILT_DIR` is missing or does not contain both executables.
 
 ## Runtime Configuration
 

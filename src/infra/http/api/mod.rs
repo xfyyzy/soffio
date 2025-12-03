@@ -20,6 +20,7 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
     let rate_state = state.clone();
 
     Router::new()
+        .route("/api/v1/api-keys/me", get(handlers::get_api_key_info))
         .route(
             "/api/v1/posts",
             get(handlers::list_posts).post(handlers::create_post),
@@ -27,6 +28,20 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         .route(
             "/api/v1/posts/{id}",
             patch(handlers::update_post).delete(handlers::delete_post),
+        )
+        .route("/api/v1/posts/{id}/pin", post(handlers::update_post_pin))
+        .route(
+            "/api/v1/posts/{id}/title-slug",
+            post(handlers::update_post_title_slug),
+        )
+        .route(
+            "/api/v1/posts/{id}/excerpt",
+            post(handlers::update_post_excerpt),
+        )
+        .route("/api/v1/posts/{id}/body", post(handlers::update_post_body))
+        .route(
+            "/api/v1/posts/{id}/summary",
+            post(handlers::update_post_summary),
         )
         .route(
             "/api/v1/posts/{id}/status",
@@ -43,6 +58,11 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
             patch(handlers::update_page).delete(handlers::delete_page),
         )
         .route(
+            "/api/v1/pages/{id}/title-slug",
+            post(handlers::update_page_title_slug),
+        )
+        .route("/api/v1/pages/{id}/body", post(handlers::update_page_body))
+        .route(
             "/api/v1/pages/{id}/status",
             post(handlers::update_page_status),
         )
@@ -55,6 +75,12 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
             "/api/v1/tags/{id}",
             patch(handlers::update_tag).delete(handlers::delete_tag),
         )
+        .route("/api/v1/tags/{id}/pin", post(handlers::update_tag_pin))
+        .route("/api/v1/tags/{id}/name", post(handlers::update_tag_name))
+        .route(
+            "/api/v1/tags/{id}/description",
+            post(handlers::update_tag_description),
+        )
         .route(
             "/api/v1/navigation",
             get(handlers::list_navigation).post(handlers::create_navigation),
@@ -62,6 +88,26 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         .route(
             "/api/v1/navigation/{id}",
             patch(handlers::update_navigation).delete(handlers::delete_navigation),
+        )
+        .route(
+            "/api/v1/navigation/{id}/label",
+            post(handlers::update_navigation_label),
+        )
+        .route(
+            "/api/v1/navigation/{id}/destination",
+            post(handlers::update_navigation_destination),
+        )
+        .route(
+            "/api/v1/navigation/{id}/sort-order",
+            post(handlers::update_navigation_sort_order),
+        )
+        .route(
+            "/api/v1/navigation/{id}/visibility",
+            post(handlers::update_navigation_visibility),
+        )
+        .route(
+            "/api/v1/navigation/{id}/open-in-new-tab",
+            post(handlers::update_navigation_open_in_new_tab),
         )
         .route(
             "/api/v1/uploads",

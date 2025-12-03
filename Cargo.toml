@@ -3,6 +3,10 @@ name = "soffio"
 version = "0.1.4"
 edition = "2024"
 
+[[bin]]
+name = "soffio-cli"
+path = "src/bin/soffio_cli/main.rs"
+
 [dependencies]
 askama = "0.14"
 axum = { version = "0.8", features = ["macros", "multipart"] }
@@ -50,11 +54,15 @@ hex = "0.4"
 dashmap = "6.1"
 tempfile = "3.23"
 subtle = "2.6"
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
 
 [dev-dependencies]
 insta = { version = "1.44", features = ["glob"] }
 tower = "0.5"
 reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
+httpmock = "0.7"
+assert_cmd = "2"
+predicates = "3"
 
 [build-dependencies]
 walkdir = "2"

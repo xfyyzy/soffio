@@ -68,6 +68,28 @@ src/
 - 限流：独立配置 `api_rate_limit`（默认 60 秒内每密钥 120 次）。
 - 规范：参见 [`docs/api/openapi.yaml`](docs/api/openapi.yaml)。
 
+## soffio-cli
+
+Headless API 的命令行客户端。生成式命令矩阵与使用指南见 [`docs/cli.zh.md`](docs/cli.zh.md)。
+
+快速开始：
+
+```
+cargo build --release --bin soffio-cli
+SOFFIO_SITE_URL=https://your.site \
+SOFFIO_API_KEY_FILE=~/.config/soffio/key \
+./target/release/soffio-cli api-keys me
+```
+
+从文件创建文章示例：
+
+```
+./target/release/soffio-cli posts create \
+  --title "标题" --excerpt "摘要" \
+  --body-file ./post.md --summary-file ./post.summary.md \
+  --status published
+```
+
 ## 开发工作流
 
 1. 运行格式化与静态检查：
