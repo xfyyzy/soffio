@@ -218,13 +218,6 @@ components:
         payload_text: { type: string }
         created_at: { type: string, format: date-time }
       required: [id, actor, action, entity_type, created_at]
-    Error:
-      type: object
-      properties:
-        code: { type: string }
-        message: { type: string }
-        hint: { type: string }
-      required: [code, message]
     PostStatus:
       type: string
       enum: [draft, published, archived, error]
@@ -430,6 +423,33 @@ components:
         expires_at: { type: string, format: date-time }
         revoked_at: { type: string, format: date-time }
         last_used_at: { type: string, format: date-time }
+    ApiKeyStatus:
+      type: string
+      description: Lifecycle status of an API key
+      enum:
+        - active
+        - revoked
+        - expired
+        - disabled
+        - pending
+    ApiScope:
+      type: string
+      description: API scopes controlling headless access
+      enum:
+        - post_read
+        - post_write
+        - page_read
+        - page_write
+        - tag_read
+        - tag_write
+        - navigation_read
+        - navigation_write
+        - upload_read
+        - upload_write
+        - settings_read
+        - settings_write
+        - job_read
+        - audit_read
     SettingsPatchRequest:
       type: object
       properties:
