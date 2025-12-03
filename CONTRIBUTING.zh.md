@@ -31,6 +31,8 @@
    cargo check --workspace --all-targets
    cargo clippy --workspace --all-targets -- -D warnings
    cargo test --workspace --all-targets -- --nocapture
+   # 如果改动了 soffio-cli 的命令/选项，请重新生成文档：
+   cargo run --bin gen_cli_docs
    ```
 5. **提交信息**：遵循 `AGENTS.md` 的模板（如 `feat(scope): summary`），在正文中说明不变量、边界层级与测试情况。
 6. **代码审查**：

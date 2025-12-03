@@ -76,3 +76,18 @@ jobs:
               cargo test --test live_api -- --ignored --nocapture && \
               kill $srv
             '
+
+  lint-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: Swatinem/rust-cache@v2
+      - name: Generate CLI docs
+        run: cargo run --bin gen_cli_docs
+      - name: Ensure CLI docs are up to date
+        run: |
+          if ! git diff --quiet -- docs/cli.md docs/cli.zh.md; then
+            echo "cli docs out of date; run cargo run --bin gen_cli_docs and commit." >&2
+            git diff -- docs/cli.md docs/cli.zh.md
+            exit 1
+          fi

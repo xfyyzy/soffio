@@ -9,21 +9,28 @@
 - **Builder**：基于 `rust:1.91-alpine3.20`，集成 `cargo-chef` 与 TypeScript 编译器，通过 `TARGET_TRIPLE`（默认
   `x86_64-unknown-linux-musl`）与 `TARGET_CPU`（默认 `x86-64-v2`）编译静态二进制。
 - **Runtime**：继承 `MERMAID_CLI_IMAGE`（默认 `minlag/mermaid-cli:latest`），同时注入 `soffio` 二进制与 Mermaid CLI
-  包装脚本，提供服务端图表渲染能力。
+  包装脚本，提供服务端图表渲染能力。镜像还包含 `/usr/local/bin/soffio-cli`，方便在容器内部通过 headless API 进行自动化。
 
 
 ## 构建镜像
 
+先下载 CI 生成的发行包（包含目标 CPU 级别的 `soffio` 与 `soffio-cli`），解压到 `PREBUILT_DIR`，再进行构建：
+
 ```bash
+tar -xzf soffio-${RELEASE_TAG}-x86-64-v2-musl.tar.gz -C prebuilt/x86-64-v2
+
 docker buildx build \
   --platform linux/amd64 \
   --build-arg TARGET_TRIPLE=x86_64-unknown-linux-musl \
   --build-arg TARGET_CPU=x86-64-v2 \
+  --build-arg PREBUILT_DIR=prebuilt/x86-64-v2 \
   --build-arg MERMAID_CLI_IMAGE=minlag/mermaid-cli:10.5.1 \
   -f deploy/docker/Dockerfile \
   -t soffio:latest \
   .
 ```
+
+Dockerfile 现在只复制预编译产物，如果目录缺失或不包含两个可执行文件会直接失败。
 
 
 

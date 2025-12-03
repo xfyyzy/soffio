@@ -66,6 +66,28 @@ src/
 - Rate limit: configured via `api_rate_limit` (default: 120 requests per 60s per key).
 - Specification: [`docs/api/openapi.yaml`](docs/api/openapi.yaml).
 
+## soffio-cli
+
+Headless API CLI for admins and automation. See [`docs/cli.md`](docs/cli.md) for the generated command matrix and full usage guide.
+
+Quick start:
+
+```
+cargo build --release --bin soffio-cli
+SOFFIO_SITE_URL=https://your.site \
+SOFFIO_API_KEY_FILE=~/.config/soffio/key \
+./target/release/soffio-cli api-keys me
+```
+
+Create a post from files:
+
+```
+./target/release/soffio-cli posts create \
+  --title "Title" --excerpt "Summary" \
+  --body-file ./post.md --summary-file ./post.summary.md \
+  --status published
+```
+
 ## Development Workflow
 
 1. Run the baseline quality gates:

@@ -29,6 +29,8 @@ All contributors must follow `CODE_OF_CONDUCT.md`. If you encounter improper beh
    cargo check --workspace --all-targets
    cargo clippy --workspace --all-targets -- -D warnings
    cargo test --workspace --all-targets -- --nocapture
+   # If you change soffio-cli commands/options, regenerate docs:
+   cargo run --bin gen_cli_docs
    ```
 5. **Commit messages**: Follow the template in `AGENTS.md` (e.g., `feat(scope): summary`). Document invariants, touched boundaries, and test coverage in the body.
 6. **Code review**:
