@@ -1,4 +1,3 @@
-use askama::Template;
 use async_trait::async_trait;
 use axum::body::Body;
 use http_body_util::BodyExt;
@@ -12,17 +11,20 @@ use soffio::application::chrome::ChromeService;
 pub use soffio::application::feed as feed_render;
 pub use soffio::application::feed::{FeedFilter, FeedService};
 use soffio::application::page::PageService;
-use soffio::application::pagination::{PageRequest, PostCursor};
+use soffio::application::pagination::{
+    CursorPage, NavigationCursor, PageCursor, PageRequest, PostCursor, TagCursor,
+};
 use soffio::application::repos::{
-    NavigationRepo, PageQueryFilter, PagesRepo, PostListScope, PostQueryFilter, PostsRepo,
-    RepoError, SectionsRepo, SettingsRepo, TagWithCount, TagsRepo,
+    NavigationQueryFilter, NavigationRepo, PageQueryFilter, PagesRepo, PostListScope,
+    PostQueryFilter, PostTagCount, PostsRepo, RepoError, SectionsRepo, SettingsRepo, TagListRecord,
+    TagQueryFilter, TagWithCount, TagsRepo,
 };
 use soffio::domain::entities::{
     NavigationItemRecord, PageRecord, PostRecord, PostSectionRecord, SiteSettingsRecord, TagRecord,
 };
 use soffio::domain::types::{NavigationDestinationType, PageStatus, PostStatus};
 pub use soffio::domain::{navigation, pages, posts};
-use soffio::presentation::views::{LayoutContext, PostsPartial};
+use soffio::presentation::views::LayoutContext;
 
 pub fn feed_service() -> FeedService {
     let repo = Arc::new(StaticContentRepo::new());
@@ -88,6 +90,26 @@ impl StaticContentRepo {
                 (None, None) => true,
             })
             .collect()
+    }
+
+    fn sorted_posts(
+        &self,
+        scope: PostListScope,
+        filter: &PostQueryFilter,
+    ) -> Vec<&'static posts::Post> {
+        let mut posts = match scope {
+            PostListScope::Public => self
+                .filtered_posts(filter)
+                .into_iter()
+                .filter(|post| post.date <= OffsetDateTime::now_utc().date())
+                .collect::<Vec<_>>(),
+            PostListScope::Admin { status } => match status {
+                Some(PostStatus::Published) | None => self.filtered_posts(filter),
+                _ => Vec::new(),
+            },
+        };
+        posts.sort_by_key(|post| std::cmp::Reverse(post.date));
+        posts
     }
 
     fn post_uuid(slug: &str) -> Uuid {
@@ -222,15 +244,16 @@ impl StaticContentRepo {
     }
 
     fn page_records(&self) -> Vec<PageRecord> {
-        pages::all()
+        let slugs = ["about", "systems-handbook"];
+        slugs
             .iter()
-            .enumerate()
-            .map(|(idx, page)| PageRecord {
-                id: Self::deterministic_uuid(&["page", page.slug]),
-                slug: page.slug.to_string(),
-                title: page.title.to_string(),
-                body_markdown: page.body.to_string(),
-                rendered_html: String::new(),
+            .filter_map(|slug| pages::pages().find_by_slug(slug))
+            .map(|page| PageRecord {
+                id: Self::deterministic_uuid(&["page", page.slug.as_str()]),
+                slug: page.slug.as_str().to_string(),
+                title: page.slug.as_str().to_string(),
+                body_markdown: page.content_html.clone(),
+                rendered_html: page.content_html.clone(),
                 status: PageStatus::Published,
                 scheduled_at: None,
                 published_at: Some(OffsetDateTime::UNIX_EPOCH),
@@ -270,27 +293,42 @@ impl PostsRepo for StaticContentRepo {
         filter: &PostQueryFilter,
         page: PageRequest<PostCursor>,
     ) -> Result<CursorPage<PostRecord>, RepoError> {
-        let mut posts = match scope {
-            PostListScope::Public => self
-                .filtered_posts(filter)
-                .into_iter()
-                .filter(|post| post.date <= OffsetDateTime::now_utc().date())
-                .collect::<Vec<_>>(),
-            PostListScope::Admin { status } => match status {
-                Some(PostStatus::Published) | None => self.filtered_posts(filter),
-                _ => Vec::new(),
-            },
-        };
-        posts.sort_by_key(|post| std::cmp::Reverse(post.date));
-
+        let posts = self.sorted_posts(scope, filter);
         let limit = page.limit.clamp(1, 100) as usize;
-        let slice = posts.into_iter().take(limit).collect::<Vec<_>>();
-        let records = slice.iter().map(|post| Self::record_for(post)).collect();
-        Ok(CursorPage::new(records, None))
+
+        let start = page
+            .cursor
+            .as_ref()
+            .and_then(|cursor| {
+                posts
+                    .iter()
+                    .position(|post| Self::post_uuid(post.slug) == cursor.id())
+                    .map(|idx| idx + 1)
+            })
+            .unwrap_or(0);
+
+        let slice = posts
+            .iter()
+            .skip(start)
+            .take(limit)
+            .cloned()
+            .collect::<Vec<_>>();
+        let records: Vec<PostRecord> = slice.iter().map(|post| Self::record_for(post)).collect();
+
+        let next_cursor = posts.get(start + limit).map(|post| {
+            PostCursor::published(
+                post.date.with_time(time!(00:00:00)).assume_utc(),
+                Self::post_uuid(post.slug),
+                false,
+            )
+            .encode()
+        });
+
+        Ok(CursorPage::new(records, next_cursor))
     }
 
     async fn find_by_slug(&self, slug: &str) -> Result<Option<PostRecord>, RepoError> {
-        Ok(posts::find(slug).map(Self::record_for))
+        Ok(posts::find_by_slug(slug).map(Self::record_for))
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<PostRecord>, RepoError> {
@@ -306,17 +344,7 @@ impl PostsRepo for StaticContentRepo {
         scope: PostListScope,
         filter: &PostQueryFilter,
     ) -> Result<Vec<posts::MonthCount>, RepoError> {
-        let posts: Vec<&posts::Post> = match scope {
-            PostListScope::Public => self
-                .filtered_posts(filter)
-                .into_iter()
-                .filter(|post| post.date <= OffsetDateTime::now_utc().date())
-                .collect(),
-            PostListScope::Admin { status } => match status {
-                Some(PostStatus::Published) | None => self.filtered_posts(filter),
-                _ => Vec::new(),
-            },
-        };
+        let posts: Vec<&posts::Post> = self.sorted_posts(scope, filter);
 
         let mut counts: BTreeMap<String, (String, usize)> = BTreeMap::new();
         for post in posts {
@@ -341,35 +369,44 @@ impl PostsRepo for StaticContentRepo {
         scope: PostListScope,
         filter: &PostQueryFilter,
     ) -> Result<u64, RepoError> {
-        let posts = self.filtered_posts(filter);
-        let filtered = match scope {
-            PostListScope::Public => posts
-                .into_iter()
-                .filter(|post| post.date <= OffsetDateTime::now_utc().date())
-                .count(),
-            PostListScope::Admin { status } => match status {
-                Some(PostStatus::Published) | None => posts.len(),
-                _ => 0,
-            },
-        };
-        Ok(filtered as u64)
+        let posts = self.sorted_posts(scope, filter);
+        Ok(posts.len() as u64)
     }
 
-    async fn append_payload(
+    async fn count_posts_before(
         &self,
+        scope: PostListScope,
         filter: &PostQueryFilter,
-        cursor: Option<&PostCursor>,
-    ) -> Result<soffio::application::feed::AppendPayload, RepoError> {
-        let posts = self.filtered_posts(filter);
-        let items = posts
+        cursor: &PostCursor,
+    ) -> Result<u64, RepoError> {
+        let posts = self.sorted_posts(scope, filter);
+        let idx = posts
             .iter()
-            .map(|post| Self::record_for(post))
-            .collect::<Vec<_>>();
-        Ok(soffio::application::feed::AppendPayload {
-            posts: items,
-            next_cursor: cursor.map(|c| c.encode()),
-            total_remaining: 0,
-        })
+            .position(|post| Self::post_uuid(post.slug) == cursor.id())
+            .unwrap_or(0);
+        Ok(idx as u64)
+    }
+
+    async fn list_tag_counts(
+        &self,
+        scope: PostListScope,
+        filter: &PostQueryFilter,
+    ) -> Result<Vec<PostTagCount>, RepoError> {
+        let posts = self.sorted_posts(scope, filter);
+        let mut counts: BTreeMap<&str, u64> = BTreeMap::new();
+        for post in posts {
+            for tag in post.tags {
+                *counts.entry(tag).or_default() += 1;
+            }
+        }
+        Ok(counts
+            .into_iter()
+            .map(|(slug, count)| PostTagCount {
+                slug: slug.to_string(),
+                name: slug.to_string(),
+                count,
+            })
+            .collect())
     }
 }
 
@@ -391,6 +428,113 @@ impl TagsRepo for StaticContentRepo {
         Ok(self.tag_records())
     }
 
+    async fn find_by_slug(&self, slug: &str) -> Result<Option<TagRecord>, RepoError> {
+        Ok(self.tag_records().into_iter().find(|tag| tag.slug == slug))
+    }
+
+    async fn count_usage(&self, id: Uuid) -> Result<u64, RepoError> {
+        let slug = self
+            .tag_records()
+            .into_iter()
+            .find(|tag| tag.id == id)
+            .map(|t| t.slug)
+            .unwrap_or_default();
+        Ok(self
+            .all_posts()
+            .into_iter()
+            .filter(|post| post.tags.contains(&slug.as_str()))
+            .count() as u64)
+    }
+
+    async fn list_admin_tags(
+        &self,
+        _pinned: Option<bool>,
+        filter: &TagQueryFilter,
+        page: PageRequest<TagCursor>,
+    ) -> Result<CursorPage<TagListRecord>, RepoError> {
+        let mut tags = self.tag_records();
+
+        if let Some(search) = &filter.search {
+            let needle = search.to_lowercase();
+            tags.retain(|tag| {
+                tag.slug.contains(&needle) || tag.name.to_lowercase().contains(&needle)
+            });
+        }
+
+        let start = page
+            .cursor
+            .as_ref()
+            .and_then(|cursor| tags.iter().position(|tag| tag.id == cursor.id()))
+            .map(|idx| idx + 1)
+            .unwrap_or(0);
+
+        let limit = page.limit.clamp(1, 100) as usize;
+        let slice = tags.iter().skip(start).take(limit);
+        let records: Vec<TagListRecord> = slice
+            .map(|tag| TagListRecord {
+                id: tag.id,
+                slug: tag.slug.clone(),
+                name: tag.name.clone(),
+                description: tag.description.clone(),
+                pinned: tag.pinned,
+                usage_count: self
+                    .all_posts()
+                    .into_iter()
+                    .filter(|post| post.tags.contains(&tag.slug.as_str()))
+                    .count() as u64,
+                primary_time: tag.created_at,
+                updated_at: Some(tag.updated_at),
+                created_at: tag.created_at,
+            })
+            .collect();
+
+        let next_cursor = tags
+            .get(start + limit)
+            .map(|tag| TagCursor::new(tag.pinned, tag.created_at, tag.id).encode());
+
+        Ok(CursorPage::new(records, next_cursor))
+    }
+
+    async fn count_tags(
+        &self,
+        _pinned: Option<bool>,
+        filter: &TagQueryFilter,
+    ) -> Result<u64, RepoError> {
+        let mut tags = self.tag_records();
+        if let Some(search) = &filter.search {
+            let needle = search.to_lowercase();
+            tags.retain(|tag| {
+                tag.slug.contains(&needle) || tag.name.to_lowercase().contains(&needle)
+            });
+        }
+        Ok(tags.len() as u64)
+    }
+
+    async fn month_counts(
+        &self,
+        _pinned: Option<bool>,
+        filter: &TagQueryFilter,
+    ) -> Result<Vec<posts::MonthCount>, RepoError> {
+        let mut months: BTreeMap<String, (String, usize)> = BTreeMap::new();
+        for post in self.filtered_posts(&PostQueryFilter {
+            tag: filter.search.clone(),
+            ..PostQueryFilter::default()
+        }) {
+            let key = posts::month_key_for(post.date);
+            let label = posts::month_label_for(post.date);
+            months
+                .entry(key)
+                .and_modify(|entry| entry.1 += 1)
+                .or_insert((label, 1));
+        }
+
+        let mut items = months
+            .into_iter()
+            .map(|(key, (label, count))| posts::MonthCount { key, label, count })
+            .collect::<Vec<_>>();
+        items.sort_by(|a, b| b.key.cmp(&a.key));
+        Ok(items)
+    }
     async fn find_by_id(&self, id: Uuid) -> Result<Option<TagRecord>, RepoError> {
         Ok(self.tag_records().into_iter().find(|tag| tag.id == id))
     }
@@ -439,7 +583,8 @@ impl SettingsRepo for StaticContentRepo {
             brand_href: "/".to_string(),
             footer_copy: "Stillness guides the wind; the wind reshapes stillness.".to_string(),
             public_site_url: "http://localhost:3000/".to_string(),
-            favicon_svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\"></svg>".to_string(),
+            favicon_svg: "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\"></svg>"
+                .to_string(),
             timezone: chrono_tz::Asia::Shanghai,
             meta_title: "Soffio".to_string(),
             meta_description: "Whispers on motion, balance, and form.".to_string(),
@@ -458,13 +603,47 @@ impl SettingsRepo for StaticContentRepo {
 impl NavigationRepo for StaticContentRepo {
     async fn list_navigation(
         &self,
-        destination: Option<NavigationDestinationType>,
-    ) -> Result<Vec<NavigationItemRecord>, RepoError> {
+        _visibility: Option<bool>,
+        filter: &NavigationQueryFilter,
+        page: PageRequest<NavigationCursor>,
+    ) -> Result<CursorPage<NavigationItemRecord>, RepoError> {
         let mut records = self.navigation_records();
-        if let Some(dest) = destination {
-            records.retain(|record| record.destination_type == dest);
+        if let Some(search) = filter.search.as_ref() {
+            let needle = search.to_lowercase();
+            records.retain(|r| r.label.to_lowercase().contains(&needle));
         }
-        Ok(records)
+
+        let start = page
+            .cursor
+            .as_ref()
+            .and_then(|cursor| records.iter().position(|nav| nav.id == cursor.id()))
+            .map(|idx| idx + 1)
+            .unwrap_or(0);
+        let limit = page.limit.clamp(1, 100) as usize;
+        let slice = records
+            .iter()
+            .skip(start)
+            .take(limit)
+            .cloned()
+            .collect::<Vec<_>>();
+        let next_cursor = records
+            .get(start + limit)
+            .map(|nav| NavigationCursor::new(nav.sort_order, nav.created_at, nav.id).encode());
+
+        Ok(CursorPage::new(slice, next_cursor))
+    }
+
+    async fn count_navigation(
+        &self,
+        _visibility: Option<bool>,
+        filter: &NavigationQueryFilter,
+    ) -> Result<u64, RepoError> {
+        let mut records = self.navigation_records();
+        if let Some(search) = filter.search.as_ref() {
+            let needle = search.to_lowercase();
+            records.retain(|r| r.label.to_lowercase().contains(&needle));
+        }
+        Ok(records.len() as u64)
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<NavigationItemRecord>, RepoError> {
@@ -480,11 +659,30 @@ impl PagesRepo for StaticContentRepo {
     async fn list_pages(
         &self,
         _status: Option<PageStatus>,
-        _limit: u32,
-        _cursor: Option<soffio::application::pagination::PageCursor>,
+        limit: u32,
+        cursor: Option<PageCursor>,
         _filter: &PageQueryFilter,
-    ) -> Result<soffio::application::pagination::CursorPage<PageRecord>, RepoError> {
-        Ok(soffio::application::pagination::CursorPage::empty())
+    ) -> Result<CursorPage<PageRecord>, RepoError> {
+        let mut pages = self.page_records();
+        pages.sort_by_key(|p| p.created_at);
+
+        let start = cursor
+            .as_ref()
+            .and_then(|c| pages.iter().position(|p| p.id == c.id()))
+            .map(|idx| idx + 1)
+            .unwrap_or(0);
+        let limit = limit.clamp(1, 100) as usize;
+        let slice = pages
+            .iter()
+            .skip(start)
+            .take(limit)
+            .cloned()
+            .collect::<Vec<_>>();
+        let next_cursor = pages
+            .get(start + limit)
+            .map(|p| PageCursor::new(p.created_at, p.id).encode());
+
+        Ok(CursorPage::new(slice, next_cursor))
     }
 
     async fn find_by_slug(&self, slug: &str) -> Result<Option<PageRecord>, RepoError> {
@@ -513,7 +711,7 @@ impl PagesRepo for StaticContentRepo {
         &self,
         _status: Option<PageStatus>,
         _filter: &PageQueryFilter,
-    ) -> Result<Vec<crate::domain::posts::MonthCount>, RepoError> {
+    ) -> Result<Vec<posts::MonthCount>, RepoError> {
         Ok(Vec::new())
     }
 }

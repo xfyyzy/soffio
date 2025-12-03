@@ -46,7 +46,7 @@ impl Ctx {
     }
 
     pub fn user_agent() -> &'static str {
-        "soffio-cli/0.1.4"
+        concat!("soffio-cli/", env!("CARGO_PKG_VERSION"))
     }
 
     pub fn auth_header(&self) -> Result<HeaderValue, CliError> {
