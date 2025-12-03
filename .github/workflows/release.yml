@@ -106,6 +106,8 @@ jobs:
             TARGET_CPU=${{ matrix.cpu_level }}
             MERMAID_CLI_IMAGE=${{ env.MERMAID_CLI_IMAGE }}
             PREBUILT_DIR=prebuilt/${{ matrix.cpu_level }}
+          cache-from: type=gha,scope=${{ github.ref_name }}-${{ matrix.cpu_level }}
+          cache-to: type=gha,mode=max,scope=${{ github.ref_name }}-${{ matrix.cpu_level }}
           tags: |
             ghcr.io/${{ github.repository }}:amd64-${{ matrix.cpu_level }}
             ghcr.io/${{ github.repository }}:${{ env.RELEASE_TAG }}-amd64-${{ matrix.cpu_level }}
