@@ -2,6 +2,9 @@
 source: tests/snapshots/frontend/feed.rs
 expression: html
 ---
+
+
+
 <filters-column data-region="filters" role="complementary" aria-label="Filter posts">
   
 <section
