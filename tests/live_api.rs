@@ -49,7 +49,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
     get_json(
         &client,
         &base,
-        &config.keys.read,
+        &config.keys.all,
         &format!("/api/v1/tags/{tag_id}"),
         &[StatusCode::OK],
     )
@@ -58,7 +58,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
     get_json(
         &client,
         &base,
-        &config.keys.read,
+        &config.keys.all,
         &format!("/api/v1/tags/slug/{tag_slug}"),
         &[StatusCode::OK],
     )
@@ -388,14 +388,14 @@ async fn live_api_end_to_end() -> TestResult<()> {
     get_json(
         &client,
         &base,
-        &config.keys.read,
+        &config.keys.all,
         &format!("/api/v1/navigation/{nav_id}"),
         &[StatusCode::OK],
     )
     .await?;
 
     // UPLOADS (register via API upload endpoint)
-    let upload_bytes = b"hi".to_vec();
+    let upload_bytes = format!("hi-{}", current_suffix()).into_bytes();
     let (upload_id, _) = post_multipart(
         &client,
         &base,
@@ -409,7 +409,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
     get_json(
         &client,
         &base,
-        &config.keys.read,
+        &config.keys.all,
         &format!("/api/v1/uploads/{upload_id}"),
         &[StatusCode::OK],
     )
