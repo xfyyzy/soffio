@@ -7,6 +7,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.7] - 2025-12-04
+### Added
+- Added read endpoints for navigation and uploads (GET by id), plus read-by-id for posts/pages and read-by-id/slug for tags; CLI gains matching `get` subcommands for posts, pages, tags, navigation, and uploads.
+- Regenerated OpenAPI spec and CLI docs to reflect the new read capabilities.
+
+### Fixed
+- Updated snapshots and static asset version query params to align with release 0.1.7.
+
 ### Added
 
 - Pending entries for the next release.
