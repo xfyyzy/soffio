@@ -84,6 +84,13 @@ impl AdminTagService {
             .map_err(AdminTagError::from)
     }
 
+    pub async fn find_by_slug(&self, slug: &str) -> Result<Option<TagRecord>, AdminTagError> {
+        self.reader
+            .find_by_slug(slug)
+            .await
+            .map_err(AdminTagError::from)
+    }
+
     pub async fn list(
         &self,
         pinned: Option<bool>,

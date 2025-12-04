@@ -199,6 +199,28 @@ pub async fn get_post(
     }
 }
 
+pub async fn get_post_by_id(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PostRead)
+        .map_err(|_| ApiError::forbidden())?;
+
+    let post = state
+        .posts
+        .reader
+        .find_by_id(id)
+        .await
+        .map_err(repo_to_api)?;
+
+    match post {
+        Some(post) => Ok(Json(post)),
+        None => Err(ApiError::not_found("post not found")),
+    }
+}
+
 pub async fn create_post(
     State(state): State<ApiState>,
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
@@ -568,6 +590,23 @@ pub async fn get_page(
     }
 }
 
+pub async fn get_page_by_id(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::PageRead)
+        .map_err(|_| ApiError::forbidden())?;
+
+    let page = state.pages.find_by_id(id).await.map_err(page_to_api)?;
+
+    match page {
+        Some(page) => Ok(Json(page)),
+        None => Err(ApiError::not_found("page not found")),
+    }
+}
+
 pub async fn create_page(
     State(state): State<ApiState>,
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
@@ -784,6 +823,40 @@ pub async fn list_tags(
     Ok(Json(page))
 }
 
+pub async fn get_tag_by_id(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::TagRead)
+        .map_err(|_| ApiError::forbidden())?;
+
+    let tag = state.tags.find_by_id(id).await.map_err(tag_to_api)?;
+
+    match tag {
+        Some(tag) => Ok(Json(tag)),
+        None => Err(ApiError::not_found("tag not found")),
+    }
+}
+
+pub async fn get_tag_by_slug(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(slug): Path<String>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::TagRead)
+        .map_err(|_| ApiError::forbidden())?;
+
+    let tag = state.tags.find_by_slug(&slug).await.map_err(tag_to_api)?;
+
+    match tag {
+        Some(tag) => Ok(Json(tag)),
+        None => Err(ApiError::not_found("tag not found")),
+    }
+}
+
 pub async fn create_tag(
     State(state): State<ApiState>,
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
@@ -984,6 +1057,23 @@ pub async fn list_navigation(
         .map_err(nav_to_api)?;
 
     Ok(Json(page))
+}
+
+pub async fn get_navigation_item(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::NavigationRead)
+        .map_err(|_| ApiError::forbidden())?;
+
+    let item = state.navigation.find_by_id(id).await.map_err(nav_to_api)?;
+
+    match item {
+        Some(record) => Ok(Json(record)),
+        None => Err(ApiError::not_found("navigation item not found")),
+    }
 }
 
 pub async fn create_navigation(
@@ -1298,6 +1388,23 @@ pub async fn list_uploads(
         .map_err(upload_to_api)?;
 
     Ok(Json(page))
+}
+
+pub async fn get_upload(
+    State(state): State<ApiState>,
+    Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, ApiError> {
+    principal
+        .requires(crate::domain::api_keys::ApiScope::UploadRead)
+        .map_err(|_| ApiError::forbidden())?;
+
+    let upload = state.uploads.find_upload(id).await.map_err(upload_to_api)?;
+
+    match upload {
+        Some(record) => Ok(Json(record)),
+        None => Err(ApiError::not_found("upload not found")),
+    }
 }
 
 pub async fn upload_file(

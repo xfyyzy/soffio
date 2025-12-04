@@ -532,6 +532,21 @@ paths:
         '401': { description: Unauthorized }
         '403': { description: Forbidden }
   /api/v1/posts/{id}:
+    get:
+      summary: Get post by id
+      description: Requires scope `post_read`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Post
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Post' }
+        '404': { description: Not found }
     patch:
       summary: Update post
       description: >
@@ -760,6 +775,21 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Page' }
   /api/v1/pages/{id}:
+    get:
+      summary: Get page by id
+      description: Requires scope `page_read`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Page' }
+        '404': { description: Not found }
     patch:
       summary: Update page
       description: >
@@ -907,6 +937,21 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Tag' }
   /api/v1/tags/{id}:
+    get:
+      summary: Get tag by id
+      description: Requires scope `tag_read`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Tag
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+        '404': { description: Not found }
     patch:
       summary: Update tag
       description: >
@@ -939,6 +984,22 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '204': { description: Deleted }
+  /api/v1/tags/slug/{slug}:
+    get:
+      summary: Get tag by slug
+      description: Requires scope `tag_read`.
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Tag
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+        '404': { description: Not found }
   /api/v1/tags/{id}/pin:
     post:
       summary: Update tag pin state
@@ -1040,6 +1101,21 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/NavigationItem' }
   /api/v1/navigation/{id}:
+    get:
+      summary: Get navigation item by id
+      description: Requires scope `navigation_read`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Navigation item
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NavigationItem' }
+        '404': { description: Not found }
     patch:
       summary: Update navigation item
       description: >
@@ -1224,6 +1300,21 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Upload' }
   /api/v1/uploads/{id}:
+    get:
+      summary: Get upload by id
+      description: Requires scope `upload_read`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Upload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Upload' }
+        '404': { description: Not found }
     delete:
       summary: Delete upload
       description: Requires scope `upload_write`.

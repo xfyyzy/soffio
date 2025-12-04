@@ -29,7 +29,7 @@ Use file flags to avoid shell quoting limits: `--body-file`, `--summary-file`, `
 | `soffio-cli api-keys me` | Show current API key metadata/scopes |
 | `soffio-cli posts` | Post management (list/read/write/status/tags) |
 | `soffio-cli posts list` | List posts with optional filters |
-| `soffio-cli posts get` | Get a post by slug |
+| `soffio-cli posts get` | Get a post by id or slug |
 | `soffio-cli posts create` | Create a post |
 | `soffio-cli posts update` | Update all mutable fields of a post |
 | `soffio-cli posts patch-title-slug` | Patch only title and slug |
@@ -42,7 +42,7 @@ Use file flags to avoid shell quoting limits: `--body-file`, `--summary-file`, `
 | `soffio-cli posts delete` | Delete a post |
 | `soffio-cli pages` | Page management |
 | `soffio-cli pages list` | List pages |
-| `soffio-cli pages get` | Get by slug |
+| `soffio-cli pages get` | Get a page by id or slug |
 | `soffio-cli pages create` | Create a page |
 | `soffio-cli pages update` | Update a page |
 | `soffio-cli pages patch-title-slug` | Patch title/slug only |
@@ -51,6 +51,7 @@ Use file flags to avoid shell quoting limits: `--body-file`, `--summary-file`, `
 | `soffio-cli pages delete` | Delete a page |
 | `soffio-cli tags` | Tag management |
 | `soffio-cli tags list` | List tags |
+| `soffio-cli tags get` | Get a tag by id or slug |
 | `soffio-cli tags create` | Create a tag |
 | `soffio-cli tags update` | Update all fields |
 | `soffio-cli tags patch-pin` | Pin or unpin |
@@ -59,6 +60,7 @@ Use file flags to avoid shell quoting limits: `--body-file`, `--summary-file`, `
 | `soffio-cli tags delete` | Delete a tag |
 | `soffio-cli navigation` | Navigation menu management |
 | `soffio-cli navigation list` | List navigation items |
+| `soffio-cli navigation get` | Get a navigation item by id |
 | `soffio-cli navigation create` | Create a navigation entry |
 | `soffio-cli navigation update` | Update all navigation fields |
 | `soffio-cli navigation patch-label` | Patch label only |
@@ -69,6 +71,7 @@ Use file flags to avoid shell quoting limits: `--body-file`, `--summary-file`, `
 | `soffio-cli navigation delete` | Delete a navigation entry |
 | `soffio-cli uploads` | Asset uploads |
 | `soffio-cli uploads list` | List uploads |
+| `soffio-cli uploads get` | Get an upload by id |
 | `soffio-cli uploads upload` | Upload a file |
 | `soffio-cli uploads delete` | Delete an upload |
 | `soffio-cli settings` | Site-wide settings |

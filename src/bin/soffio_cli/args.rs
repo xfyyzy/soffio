@@ -86,8 +86,13 @@ pub enum PostsCmd {
         #[arg(long)]
         cursor: Option<String>,
     },
-    /// Get a post by slug
-    Get { slug: String },
+    /// Get a post by id or slug
+    Get {
+        #[arg(long, required_unless_present = "slug", conflicts_with = "slug")]
+        id: Option<Uuid>,
+        #[arg(long, required_unless_present = "id", conflicts_with = "id")]
+        slug: Option<String>,
+    },
     /// Create a post
     Create {
         #[arg(long)]
@@ -220,8 +225,13 @@ pub enum PagesCmd {
         #[arg(long)]
         cursor: Option<String>,
     },
-    /// Get by slug
-    Get { slug: String },
+    /// Get a page by id or slug
+    Get {
+        #[arg(long, required_unless_present = "slug", conflicts_with = "slug")]
+        id: Option<Uuid>,
+        #[arg(long, required_unless_present = "id", conflicts_with = "id")]
+        slug: Option<String>,
+    },
     /// Create a page
     Create {
         #[arg(long)]
@@ -310,6 +320,13 @@ pub enum TagsCmd {
         #[arg(long)]
         cursor: Option<String>,
     },
+    /// Get a tag by id or slug
+    Get {
+        #[arg(long, required_unless_present = "slug", conflicts_with = "slug")]
+        id: Option<Uuid>,
+        #[arg(long, required_unless_present = "id", conflicts_with = "id")]
+        slug: Option<String>,
+    },
     /// Create a tag
     Create {
         #[arg(long)]
@@ -379,6 +396,11 @@ pub enum NavCmd {
         limit: u32,
         #[arg(long)]
         cursor: Option<String>,
+    },
+    /// Get a navigation item by id
+    Get {
+        #[arg(long)]
+        id: Uuid,
     },
     /// Create a navigation entry
     Create {
@@ -458,6 +480,11 @@ pub enum UploadsCmd {
         limit: u32,
         #[arg(long)]
         cursor: Option<String>,
+    },
+    /// Get an upload by id
+    Get {
+        #[arg(long)]
+        id: Uuid,
     },
     /// Upload a file
     Upload { file: PathBuf },

@@ -9,7 +9,7 @@ pub use state::ApiState;
 
 use axum::{
     Router, middleware as axum_middleware,
-    routing::{delete, get, patch, post},
+    routing::{get, post},
 };
 
 use crate::infra::http::RouterState;
@@ -27,7 +27,9 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         )
         .route(
             "/api/v1/posts/{id}",
-            patch(handlers::update_post).delete(handlers::delete_post),
+            get(handlers::get_post_by_id)
+                .patch(handlers::update_post)
+                .delete(handlers::delete_post),
         )
         .route("/api/v1/posts/{id}/pin", post(handlers::update_post_pin))
         .route(
@@ -55,7 +57,9 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         )
         .route(
             "/api/v1/pages/{id}",
-            patch(handlers::update_page).delete(handlers::delete_page),
+            get(handlers::get_page_by_id)
+                .patch(handlers::update_page)
+                .delete(handlers::delete_page),
         )
         .route(
             "/api/v1/pages/{id}/title-slug",
@@ -73,8 +77,11 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         )
         .route(
             "/api/v1/tags/{id}",
-            patch(handlers::update_tag).delete(handlers::delete_tag),
+            get(handlers::get_tag_by_id)
+                .patch(handlers::update_tag)
+                .delete(handlers::delete_tag),
         )
+        .route("/api/v1/tags/slug/{slug}", get(handlers::get_tag_by_slug))
         .route("/api/v1/tags/{id}/pin", post(handlers::update_tag_pin))
         .route("/api/v1/tags/{id}/name", post(handlers::update_tag_name))
         .route(
@@ -87,7 +94,9 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         )
         .route(
             "/api/v1/navigation/{id}",
-            patch(handlers::update_navigation).delete(handlers::delete_navigation),
+            get(handlers::get_navigation_item)
+                .patch(handlers::update_navigation)
+                .delete(handlers::delete_navigation),
         )
         .route(
             "/api/v1/navigation/{id}/label",
@@ -113,7 +122,10 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
             "/api/v1/uploads",
             get(handlers::list_uploads).post(handlers::upload_file),
         )
-        .route("/api/v1/uploads/{id}", delete(handlers::delete_upload))
+        .route(
+            "/api/v1/uploads/{id}",
+            get(handlers::get_upload).delete(handlers::delete_upload),
+        )
         .route(
             "/api/v1/site/settings",
             get(handlers::get_settings).patch(handlers::patch_settings),

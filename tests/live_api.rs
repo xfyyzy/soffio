@@ -36,13 +36,31 @@ async fn live_api_end_to_end() -> TestResult<()> {
 
     // TAGS
     let suf = current_suffix();
-    let (tag_id, _) = post_json(
+    let (tag_id, tag_slug) = post_json(
         &client,
         &base,
         &config.keys.all,
         "/api/v1/tags",
         &[StatusCode::CREATED],
         json!({"name": format!("test-tag-{suf}"), "description": "api test tag"}),
+    )
+    .await?;
+
+    get_json(
+        &client,
+        &base,
+        &config.keys.read,
+        &format!("/api/v1/tags/{tag_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+
+    get_json(
+        &client,
+        &base,
+        &config.keys.read,
+        &format!("/api/v1/tags/slug/{tag_slug}"),
+        &[StatusCode::OK],
     )
     .await?;
 
@@ -144,6 +162,24 @@ async fn live_api_end_to_end() -> TestResult<()> {
             "excerpt": "test excerpt",
             "body_markdown": "# hello\ncontent",
         }),
+    )
+    .await?;
+
+    get_json(
+        &client,
+        &base,
+        &config.keys.read,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+
+    get_json(
+        &client,
+        &base,
+        &config.keys.read,
+        &format!("/api/v1/posts/slug/{post_slug}"),
+        &[StatusCode::OK],
     )
     .await?;
 
@@ -327,6 +363,73 @@ async fn live_api_end_to_end() -> TestResult<()> {
             "title": format!("Test Page {suf}"),
             "body_markdown": "Hello page",
         }),
+    )
+    .await?;
+
+    // NAVIGATION
+    let (nav_id, _) = post_json(
+        &client,
+        &base,
+        &config.keys.all,
+        "/api/v1/navigation",
+        &[StatusCode::CREATED],
+        json!({
+            "label": format!("Nav {suf}"),
+            "destination_type": "external",
+            "destination_url": "https://example.com",
+            "destination_page_id": null,
+            "sort_order": 1,
+            "visible": true,
+            "open_in_new_tab": false
+        }),
+    )
+    .await?;
+
+    get_json(
+        &client,
+        &base,
+        &config.keys.read,
+        &format!("/api/v1/navigation/{nav_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+
+    // UPLOADS (register via API upload endpoint)
+    let upload_bytes = b"hi".to_vec();
+    let (upload_id, _) = post_multipart(
+        &client,
+        &base,
+        &config.keys.all,
+        "/api/v1/uploads",
+        &[StatusCode::CREATED],
+        upload_bytes,
+    )
+    .await?;
+
+    get_json(
+        &client,
+        &base,
+        &config.keys.read,
+        &format!("/api/v1/uploads/{upload_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+
+    get_json(
+        &client,
+        &base,
+        &config.keys.read,
+        &format!("/api/v1/pages/{page_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+
+    get_json(
+        &client,
+        &base,
+        &config.keys.read,
+        &format!("/api/v1/pages/slug/{page_slug}"),
+        &[StatusCode::OK],
     )
     .await?;
 

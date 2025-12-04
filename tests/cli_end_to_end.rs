@@ -5,6 +5,7 @@ use httpmock::MockServer;
 use predicates::str::contains;
 use std::io::Write;
 use tempfile::NamedTempFile;
+use uuid::Uuid;
 
 fn key_file(contents: &str) -> NamedTempFile {
     let mut file = NamedTempFile::new().expect("tmp file");
@@ -48,4 +49,174 @@ fn missing_site_fails_fast() {
         .assert()
         .failure()
         .stderr(contains("MissingSite"));
+}
+
+#[test]
+fn tags_get_by_id_hits_new_endpoint() {
+    let server = MockServer::start();
+    let tag_id = Uuid::new_v4();
+    let mock = server.mock(|when, then| {
+        when.method("GET")
+            .path(format!("/api/v1/tags/{tag_id}"));
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(format!(
+                r#"{{"id":"{tag_id}","slug":"t","name":"Tag","description":null,"pinned":false,"created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}}"#
+            ));
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("tags")
+        .arg("get")
+        .arg("--id")
+        .arg(tag_id.to_string())
+        .assert()
+        .success()
+        .stdout(contains(tag_id.to_string()));
+
+    mock.assert();
+}
+
+#[test]
+fn tags_get_by_slug_hits_new_endpoint() {
+    let server = MockServer::start();
+    let slug = "tag-slug";
+    let mock = server.mock(|when, then| {
+        when.method("GET")
+            .path(format!("/api/v1/tags/slug/{slug}"));
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(r#"{"id":"00000000-0000-0000-0000-000000000001","slug":"tag-slug","name":"Tag","description":null,"pinned":false,"created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}"#);
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("tags")
+        .arg("get")
+        .arg("--slug")
+        .arg(slug)
+        .assert()
+        .success()
+        .stdout(contains(slug));
+
+    mock.assert();
+}
+
+#[test]
+fn posts_get_by_id_hits_new_endpoint() {
+    let server = MockServer::start();
+    let post_id = Uuid::new_v4();
+    let mock = server.mock(|when, then| {
+        when.method("GET").path(format!("/api/v1/posts/{post_id}"));
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(format!(
+                r#"{{"id":"{post_id}","slug":"p","title":"Post","excerpt":"e","body_markdown":"b","summary_markdown":null,"status":"draft","pinned":false,"scheduled_at":null,"published_at":null,"archived_at":null,"created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}}"#
+            ));
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("posts")
+        .arg("get")
+        .arg("--id")
+        .arg(post_id.to_string())
+        .assert()
+        .success()
+        .stdout(contains(post_id.to_string()));
+
+    mock.assert();
+}
+
+#[test]
+fn navigation_get_by_id_hits_new_endpoint() {
+    let server = MockServer::start();
+    let nav_id = Uuid::new_v4();
+    let mock = server.mock(|when, then| {
+        when.method("GET")
+            .path(format!("/api/v1/navigation/{nav_id}"));
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(format!(
+                r#"{{"id":"{nav_id}","label":"Nav","destination_type":"url","destination_page_id":null,"destination_url":"https://example.com","sort_order":1,"visible":true,"open_in_new_tab":false,"created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}}"#
+            ));
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("navigation")
+        .arg("get")
+        .arg("--id")
+        .arg(nav_id.to_string())
+        .assert()
+        .success()
+        .stdout(contains(nav_id.to_string()));
+
+    mock.assert();
+}
+
+#[test]
+fn uploads_get_by_id_hits_new_endpoint() {
+    let server = MockServer::start();
+    let upload_id = Uuid::new_v4();
+    let mock = server.mock(|when, then| {
+        when.method("GET")
+            .path(format!("/api/v1/uploads/{upload_id}"));
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(format!(
+                r#"{{"id":"{upload_id}","filename":"file.txt","content_type":"text/plain","size_bytes":2,"checksum":"abcd","stored_path":"uploads/file.txt","metadata":{{}},"created_at":"2025-01-01T00:00:00Z"}}"#
+            ));
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("uploads")
+        .arg("get")
+        .arg("--id")
+        .arg(upload_id.to_string())
+        .assert()
+        .success()
+        .stdout(contains(upload_id.to_string()));
+
+    mock.assert();
+}
+
+#[test]
+fn pages_get_by_id_hits_new_endpoint() {
+    let server = MockServer::start();
+    let page_id = Uuid::new_v4();
+    let mock = server.mock(|when, then| {
+        when.method("GET").path(format!("/api/v1/pages/{page_id}"));
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(format!(
+                r#"{{"id":"{page_id}","slug":"page","title":"Page","body_markdown":"b","rendered_html":"<p>b</p>","status":"draft","scheduled_at":null,"published_at":null,"archived_at":null,"created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}}"#
+            ));
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("pages")
+        .arg("get")
+        .arg("--id")
+        .arg(page_id.to_string())
+        .assert()
+        .success()
+        .stdout(contains(page_id.to_string()));
+
+    mock.assert();
 }

@@ -19,6 +19,7 @@ pub async fn handle(ctx: &Ctx, cmd: UploadsCmd) -> Result<(), CliError> {
             limit,
             cursor,
         } => list(ctx, content_type, search, month, limit, cursor).await,
+        UploadsCmd::Get { id } => get(ctx, id).await,
         UploadsCmd::Upload { file } => upload(ctx, file).await,
         UploadsCmd::Delete { id } => delete(ctx, id).await,
     }
@@ -48,6 +49,13 @@ async fn list(
     let res: serde_json::Value = ctx
         .request(Method::GET, "api/v1/uploads", Some(&q), None)
         .await?;
+    print_json(&res)?;
+    Ok(())
+}
+
+async fn get(ctx: &Ctx, id: Uuid) -> Result<(), CliError> {
+    let path = format!("api/v1/uploads/{id}");
+    let res: serde_json::Value = ctx.request(Method::GET, &path, None, None).await?;
     print_json(&res)?;
     Ok(())
 }

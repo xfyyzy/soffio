@@ -22,6 +22,7 @@ pub async fn handle(ctx: &Ctx, cmd: TagsCmd) -> Result<(), CliError> {
             limit,
             cursor,
         } => list(ctx, pinned, search, month, limit, cursor).await,
+        TagsCmd::Get { id, slug } => get(ctx, id, slug).await,
         TagsCmd::Create {
             name,
             description,
@@ -70,6 +71,22 @@ async fn list(
     let res: serde_json::Value = ctx
         .request(Method::GET, "api/v1/tags", Some(&q), None)
         .await?;
+    print_json(&res)?;
+    Ok(())
+}
+
+async fn get(ctx: &Ctx, id: Option<Uuid>, slug: Option<String>) -> Result<(), CliError> {
+    let path = match (id, slug) {
+        (Some(id), None) => format!("api/v1/tags/{id}"),
+        (None, Some(slug)) => format!("api/v1/tags/slug/{slug}"),
+        _ => {
+            return Err(CliError::InvalidInput(
+                "provide exactly one of --id or --slug".to_string(),
+            ));
+        }
+    };
+
+    let res: serde_json::Value = ctx.request(Method::GET, &path, None, None).await?;
     print_json(&res)?;
     Ok(())
 }

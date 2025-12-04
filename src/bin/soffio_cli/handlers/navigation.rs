@@ -22,6 +22,7 @@ pub async fn handle(ctx: &Ctx, cmd: NavCmd) -> Result<(), CliError> {
             limit,
             cursor,
         } => list(ctx, visible, search, limit, cursor).await,
+        NavCmd::Get { id } => get(ctx, id).await,
         NavCmd::Create {
             label,
             destination_type,
@@ -137,6 +138,13 @@ async fn list(
     let res: serde_json::Value = ctx
         .request(Method::GET, "api/v1/navigation", Some(&q), None)
         .await?;
+    print_json(&res)?;
+    Ok(())
+}
+
+async fn get(ctx: &Ctx, id: Uuid) -> Result<(), CliError> {
+    let path = format!("api/v1/navigation/{id}");
+    let res: serde_json::Value = ctx.request(Method::GET, &path, None, None).await?;
     print_json(&res)?;
     Ok(())
 }

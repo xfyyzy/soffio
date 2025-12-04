@@ -34,7 +34,7 @@ pub async fn handle(ctx: &Ctx, cmd: PagesCmd) -> Result<(), CliError> {
             limit,
             cursor,
         } => list(ctx, status, search, month, limit, cursor).await,
-        PagesCmd::Get { slug } => get(ctx, slug).await,
+        PagesCmd::Get { id, slug } => get(ctx, id, slug).await,
         PagesCmd::Create {
             slug,
             title,
@@ -111,8 +111,17 @@ async fn list(
     Ok(())
 }
 
-async fn get(ctx: &Ctx, slug: String) -> Result<(), CliError> {
-    let path = format!("api/v1/pages/slug/{slug}");
+async fn get(ctx: &Ctx, id: Option<Uuid>, slug: Option<String>) -> Result<(), CliError> {
+    let path = match (id, slug) {
+        (Some(id), None) => format!("api/v1/pages/{id}"),
+        (None, Some(slug)) => format!("api/v1/pages/slug/{slug}"),
+        _ => {
+            return Err(CliError::InvalidInput(
+                "provide exactly one of --id or --slug".to_string(),
+            ));
+        }
+    };
+
     let res: serde_json::Value = ctx.request(Method::GET, &path, None, None).await?;
     print_json(&res)?;
     Ok(())

@@ -1,4 +1,7 @@
-use axum::extract::{Extension, Json, Query, State};
+use axum::body::to_bytes;
+use axum::extract::{Extension, Json, Path, Query, State};
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -25,7 +28,7 @@ use soffio::application::repos::{
     SettingsRepo, TagsRepo, TagsWriteRepo, UpdateJobStateParams, UploadsRepo,
 };
 use soffio::domain::api_keys::ApiScope;
-use soffio::domain::entities::JobRecord;
+use soffio::domain::entities::{JobRecord, UploadRecord};
 use soffio::domain::types::JobState;
 use soffio::infra::cache::ResponseCache;
 use soffio::infra::db::PostgresRepositories;
@@ -33,6 +36,7 @@ use soffio::infra::http::api::handlers;
 use soffio::infra::http::api::models::*;
 use soffio::infra::http::api::state::ApiState;
 use soffio::infra::uploads::UploadStorage;
+use uuid::Uuid;
 
 #[derive(Default)]
 struct ImmediateJobsRepo {
@@ -219,6 +223,23 @@ async fn build_state(pool: PgPool) -> (ApiState, String) {
     (api_state, issued.token)
 }
 
+async fn response_json(resp: impl IntoResponse) -> (StatusCode, serde_json::Value) {
+    let response = resp.into_response();
+    let status = response.status();
+    let body = to_bytes(response.into_body(), 1_048_576)
+        .await
+        .expect("read body");
+    let value = serde_json::from_slice(&body).expect("decode json");
+    (status, value)
+}
+
+fn string_field<'a>(value: &'a serde_json::Value, key: &str) -> &'a str {
+    value
+        .get(key)
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("")
+}
+
 // ============ Posts ============
 
 #[sqlx::test(migrations = "./migrations")]
@@ -237,13 +258,49 @@ async fn api_can_create_and_list_posts(pool: PgPool) {
         archived_at: None,
     };
 
-    let _response = handlers::create_post(
-        State(state.clone()),
-        Extension(principal.clone()),
-        Json(post_payload),
+    let (status, created_post) = response_json(
+        handlers::create_post(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Json(post_payload),
+        )
+        .await
+        .expect("create post via handler"),
     )
-    .await
-    .expect("create post via handler");
+    .await;
+
+    assert_eq!(status, StatusCode::CREATED);
+    let created_post_id = string_field(&created_post, "id").to_string();
+    let created_post_slug = string_field(&created_post, "slug").to_string();
+
+    let (status, found_by_id) = response_json(
+        handlers::get_post_by_id(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Path(created_post_id.parse().unwrap()),
+        )
+        .await
+        .expect("get post by id"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(string_field(&found_by_id, "id"), created_post_id.as_str());
+
+    let (status, found_by_slug) = response_json(
+        handlers::get_post(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Path(created_post_slug.clone()),
+        )
+        .await
+        .expect("get post by slug"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        string_field(&found_by_slug, "slug"),
+        created_post_slug.as_str()
+    );
 
     let _list = handlers::list_posts(
         State(state.clone()),
@@ -455,13 +512,49 @@ async fn api_can_create_and_list_pages(pool: PgPool) {
         archived_at: None,
     };
 
-    let _response = handlers::create_page(
-        State(state.clone()),
-        Extension(principal.clone()),
-        Json(page_payload),
+    let (status, created_page) = response_json(
+        handlers::create_page(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Json(page_payload),
+        )
+        .await
+        .expect("create page via handler"),
     )
-    .await
-    .expect("create page via handler");
+    .await;
+
+    assert_eq!(status, StatusCode::CREATED);
+    let created_page_id = string_field(&created_page, "id").to_string();
+    let created_page_slug = string_field(&created_page, "slug").to_string();
+
+    let (status, found_by_id) = response_json(
+        handlers::get_page_by_id(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Path(created_page_id.parse().unwrap()),
+        )
+        .await
+        .expect("get page by id"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(string_field(&found_by_id, "id"), created_page_id.as_str());
+
+    let (status, found_by_slug) = response_json(
+        handlers::get_page(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Path(created_page_slug.clone()),
+        )
+        .await
+        .expect("get page by slug"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        string_field(&found_by_slug, "slug"),
+        created_page_slug.as_str()
+    );
 
     let _list = handlers::list_pages(
         State(state.clone()),
@@ -621,13 +714,49 @@ async fn api_can_create_and_list_tags(pool: PgPool) {
         pinned: false,
     };
 
-    let _response = handlers::create_tag(
-        State(state.clone()),
-        Extension(principal.clone()),
-        Json(tag_payload),
+    let (status, created_tag) = response_json(
+        handlers::create_tag(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Json(tag_payload),
+        )
+        .await
+        .expect("create tag via handler"),
     )
-    .await
-    .expect("create tag via handler");
+    .await;
+
+    assert_eq!(status, StatusCode::CREATED);
+    let created_tag_id = string_field(&created_tag, "id").to_string();
+    let created_tag_slug = string_field(&created_tag, "slug").to_string();
+
+    let (status, found_by_id) = response_json(
+        handlers::get_tag_by_id(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Path(created_tag_id.parse().unwrap()),
+        )
+        .await
+        .expect("get tag by id"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(string_field(&found_by_id, "id"), created_tag_id.as_str());
+
+    let (status, found_by_slug) = response_json(
+        handlers::get_tag_by_slug(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Path(created_tag_slug.clone()),
+        )
+        .await
+        .expect("get tag by slug"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        string_field(&found_by_slug, "slug"),
+        created_tag_slug.as_str()
+    );
 
     let _list = handlers::list_tags(
         State(state.clone()),
@@ -781,13 +910,32 @@ async fn api_can_create_and_list_navigation(pool: PgPool) {
         open_in_new_tab: false,
     };
 
-    let _response = handlers::create_navigation(
-        State(state.clone()),
-        Extension(principal.clone()),
-        Json(nav_payload),
+    let (status, created_nav) = response_json(
+        handlers::create_navigation(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Json(nav_payload),
+        )
+        .await
+        .expect("create navigation via handler"),
     )
-    .await
-    .expect("create navigation via handler");
+    .await;
+
+    assert_eq!(status, StatusCode::CREATED);
+    let created_id = string_field(&created_nav, "id").to_string();
+
+    let (status, fetched) = response_json(
+        handlers::get_navigation_item(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Path(created_id.parse().unwrap()),
+        )
+        .await
+        .expect("get navigation by id"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(string_field(&fetched, "id"), created_id.as_str());
 
     let _list = handlers::list_navigation(
         State(state.clone()),
@@ -972,6 +1120,35 @@ async fn api_can_partial_update_navigation(pool: PgPool) {
 async fn api_can_list_uploads(pool: PgPool) {
     let (state, token) = build_state(pool).await;
     let principal = state.api_keys.authenticate(&token).await.unwrap();
+
+    let upload = UploadRecord {
+        id: Uuid::new_v4(),
+        filename: "demo.txt".into(),
+        content_type: "text/plain".into(),
+        size_bytes: 4,
+        checksum: "abcd".into(),
+        stored_path: "uploads/demo.txt".into(),
+        metadata: soffio::domain::uploads::UploadMetadata::default(),
+        created_at: OffsetDateTime::now_utc(),
+    };
+    state
+        .uploads
+        .register_upload("tests", upload.clone())
+        .await
+        .expect("register upload");
+
+    let (status, fetched) = response_json(
+        handlers::get_upload(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Path(upload.id),
+        )
+        .await
+        .expect("get upload by id"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(string_field(&fetched, "id"), upload.id.to_string());
 
     let _list = handlers::list_uploads(
         State(state.clone()),
