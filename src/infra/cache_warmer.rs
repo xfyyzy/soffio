@@ -9,7 +9,10 @@ use crate::{
     infra::{
         cache::{CacheStoreError, should_store_response},
         db::PostgresRepositories,
-        http::HttpState,
+        http::{
+            HttpState,
+            public::{canonical_url, page_meta, post_meta},
+        },
     },
     presentation::views::{
         IndexTemplate, LayoutChrome, LayoutContext, PageTemplate, PostTemplate,
@@ -84,9 +87,10 @@ impl CacheWarmer {
 
         let post_slugs: Vec<String> = content.posts.iter().map(|post| post.slug.clone()).collect();
 
+        let canonical = canonical_url(&chrome.meta.canonical, "/");
         let response = render_template_response(
             IndexTemplate {
-                view: LayoutContext::new(chrome.clone(), content),
+                view: LayoutContext::new(chrome.clone().with_canonical(canonical), content),
             },
             StatusCode::OK,
         );
@@ -123,9 +127,10 @@ impl CacheWarmer {
                 content.posts.iter().map(|post| post.slug.clone()).collect();
 
             let path = format!("/tags/{slug}");
+            let canonical = canonical_url(&chrome.meta.canonical, &path);
             let response = render_template_response(
                 IndexTemplate {
-                    view: LayoutContext::new(chrome.clone(), content),
+                    view: LayoutContext::new(chrome.clone().with_canonical(canonical), content),
                 },
                 StatusCode::OK,
             );
@@ -172,9 +177,11 @@ impl CacheWarmer {
                 }
             };
 
+            let canonical = canonical_url(&chrome.meta.canonical, &format!("/{slug}"));
+            let meta = page_meta(chrome, &view, canonical);
             let response = render_template_response(
                 PageTemplate {
-                    view: LayoutContext::new(chrome.clone(), view),
+                    view: LayoutContext::new(chrome.clone().with_meta(meta), view),
                 },
                 StatusCode::OK,
             );
@@ -215,14 +222,20 @@ impl CacheWarmer {
             }
         };
 
+        let path = format!("/posts/{slug}");
+        let canonical = canonical_url(&chrome.meta.canonical, &path);
         let response = render_template_response(
             PostTemplate {
-                view: LayoutContext::new(chrome.clone(), detail),
+                view: LayoutContext::new(
+                    chrome
+                        .clone()
+                        .with_meta(post_meta(chrome, &detail, canonical)),
+                    detail,
+                ),
             },
             StatusCode::OK,
         );
 
-        let path = format!("/posts/{slug}");
         self.store_if_needed(&path, response, warmed_paths).await
     }
 

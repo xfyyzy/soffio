@@ -39,6 +39,7 @@ impl PageService {
         let (contains_code, contains_math, contains_mermaid) = render_feature_flags(&rendered_html);
 
         Ok(Some(PageView {
+            title: record.title,
             content_html: rendered_html,
             contains_code,
             contains_math,
@@ -57,6 +58,7 @@ impl PageService {
             let (contains_code, contains_math, contains_mermaid) =
                 render_feature_flags(&record.rendered_html);
             PageView {
+                title: record.title,
                 content_html: record.rendered_html,
                 contains_code,
                 contains_math,

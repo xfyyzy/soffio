@@ -31,8 +31,9 @@ use crate::{
         uploads::{UploadStorage, UploadStorageError},
     },
     presentation::views::{
-        IndexTemplate, LayoutChrome, LayoutContext, PageTemplate, PostTemplate, PostsPartial,
-        render_not_found_response, render_template_response,
+        IndexTemplate, LayoutChrome, LayoutContext, PageMetaView, PageTemplate, PageView,
+        PostDetailContext, PostTemplate, PostsPartial, render_not_found_response,
+        render_template_response,
     },
 };
 
@@ -298,7 +299,8 @@ async fn post_detail(State(state): State<HttpState>, Path(slug): Path<String>) -
     match state.feed.post_detail(&slug).await {
         Ok(Some(content)) => {
             let canonical = canonical_url(&chrome.meta.canonical, &format!("/posts/{slug}"));
-            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
+            let meta = post_meta(&chrome, &content, canonical);
+            let view = LayoutContext::new(chrome.clone().with_meta(meta), content);
             render_template_response(PostTemplate { view }, StatusCode::OK)
         }
         Ok(None) => render_not_found_response(chrome),
@@ -315,7 +317,8 @@ async fn post_preview(State(state): State<HttpState>, Path(id): Path<Uuid>) -> R
     match state.feed.post_preview(id).await {
         Ok(Some(content)) => {
             let canonical = canonical_url(&chrome.meta.canonical, &format!("/posts/_preview/{id}"));
-            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
+            let meta = post_meta(&chrome, &content, canonical);
+            let view = LayoutContext::new(chrome.clone().with_meta(meta), content);
             render_template_response(PostTemplate { view }, StatusCode::OK)
         }
         Ok(None) => render_not_found_response(chrome),
@@ -332,7 +335,8 @@ async fn page_preview(State(state): State<HttpState>, Path(id): Path<Uuid>) -> R
     match state.pages.page_preview(id).await {
         Ok(Some(content)) => {
             let canonical = canonical_url(&chrome.meta.canonical, &format!("/pages/_preview/{id}"));
-            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), content);
+            let meta = page_meta(&chrome, &content, canonical);
+            let view = LayoutContext::new(chrome.clone().with_meta(meta), content);
             render_template_response(PageTemplate { view }, StatusCode::OK)
         }
         Ok(None) => render_not_found_response(chrome),
@@ -356,7 +360,8 @@ async fn fallback_router(State(state): State<HttpState>, request: Request<Body>)
     match state.pages.page_view(slug).await {
         Ok(Some(page_view)) => {
             let canonical = canonical_url(&chrome.meta.canonical, &format!("/{slug}"));
-            let view = LayoutContext::new(chrome.clone().with_canonical(canonical), page_view);
+            let meta = page_meta(&chrome, &page_view, canonical);
+            let view = LayoutContext::new(chrome.clone().with_meta(meta), page_view);
             render_template_response(PageTemplate { view }, StatusCode::OK)
         }
         Ok(None) => render_not_found_response(chrome),
@@ -528,7 +533,78 @@ async fn robots_txt(State(state): State<HttpState>) -> Response {
     plain_response(body)
 }
 
-fn canonical_url(base: &str, path: &str) -> String {
+pub(crate) fn post_meta(
+    chrome: &LayoutChrome,
+    content: &PostDetailContext,
+    canonical: String,
+) -> PageMetaView {
+    let description = fallback_description(&content.excerpt, &chrome.meta.description);
+
+    chrome
+        .meta
+        .clone()
+        .with_canonical(canonical)
+        .with_content(content.title.clone(), description)
+}
+
+pub(crate) fn page_meta(chrome: &LayoutChrome, page: &PageView, canonical: String) -> PageMetaView {
+    let derived = summarize_html(&page.content_html, 180);
+    let description = fallback_description(&derived, &chrome.meta.description);
+
+    chrome
+        .meta
+        .clone()
+        .with_canonical(canonical)
+        .with_content(page.title.clone(), description)
+}
+
+fn fallback_description(candidate: &str, fallback: &str) -> String {
+    let trimmed = candidate.trim();
+    if trimmed.is_empty() {
+        fallback.to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn summarize_html(html: &str, max_len: usize) -> String {
+    let mut text = String::with_capacity(max_len);
+    let mut in_tag = false;
+    let mut last_was_space = false;
+
+    for ch in html.chars() {
+        match ch {
+            '<' => {
+                in_tag = true;
+                continue;
+            }
+            '>' => {
+                in_tag = false;
+                last_was_space = false;
+                continue;
+            }
+            _ if in_tag => continue,
+            c if c.is_whitespace() => {
+                if !last_was_space && !text.is_empty() {
+                    text.push(' ');
+                }
+                last_was_space = true;
+            }
+            c => {
+                text.push(c);
+                last_was_space = false;
+            }
+        }
+
+        if text.len() >= max_len {
+            break;
+        }
+    }
+
+    text.trim().to_string()
+}
+
+pub(crate) fn canonical_url(base: &str, path: &str) -> String {
     let root = normalize_public_site_url(base);
     let trimmed = path.trim_start_matches('/');
     if trimmed.is_empty() {

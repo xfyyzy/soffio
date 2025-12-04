@@ -112,6 +112,10 @@ impl LayoutChrome {
             ..self
         }
     }
+
+    pub fn with_meta(self, meta: PageMetaView) -> Self {
+        Self { meta, ..self }
+    }
 }
 
 #[derive(Clone)]
@@ -272,6 +276,7 @@ pub struct PostTemplate {
 }
 
 pub struct PageView {
+    pub title: String,
     pub content_html: String,
     pub contains_code: bool,
     pub contains_math: bool,
@@ -338,6 +343,16 @@ pub struct PageMetaView {
 impl PageMetaView {
     pub fn with_canonical(self, canonical: String) -> Self {
         Self { canonical, ..self }
+    }
+
+    pub fn with_content(self, title: String, description: String) -> Self {
+        Self {
+            title: title.clone(),
+            description: description.clone(),
+            og_title: title,
+            og_description: description,
+            ..self
+        }
     }
 }
 

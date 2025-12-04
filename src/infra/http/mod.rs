@@ -1,7 +1,7 @@
 mod admin;
 pub mod api;
 mod middleware;
-mod public;
+pub(crate) mod public;
 
 pub use admin::{AdminState, build_admin_router};
 pub use api::rate_limit::ApiRateLimiter;
