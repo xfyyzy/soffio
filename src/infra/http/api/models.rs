@@ -51,6 +51,11 @@ pub struct PostTitleSlugRequest {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct PostTitleRequest {
+    pub title: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PostExcerptRequest {
     pub excerpt: String,
 }
@@ -102,6 +107,11 @@ pub struct PageUpdateRequest {
 pub struct PageTitleSlugRequest {
     pub title: Option<String>,
     pub slug: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PageTitleRequest {
+    pub title: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

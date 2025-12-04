@@ -32,7 +32,7 @@ Use file flags to avoid shell quoting limits: `--body-file`, `--summary-file`, `
 | `soffio-cli posts get` | Get a post by id or slug |
 | `soffio-cli posts create` | Create a post |
 | `soffio-cli posts update` | Update all mutable fields of a post |
-| `soffio-cli posts patch-title-slug` | Patch only title and slug |
+| `soffio-cli posts patch-title` | Patch title only |
 | `soffio-cli posts patch-excerpt` | Patch excerpt |
 | `soffio-cli posts patch-body` | Patch body (supports file input) |
 | `soffio-cli posts patch-summary` | Patch summary (supports file input) |
@@ -45,7 +45,7 @@ Use file flags to avoid shell quoting limits: `--body-file`, `--summary-file`, `
 | `soffio-cli pages get` | Get a page by id or slug |
 | `soffio-cli pages create` | Create a page |
 | `soffio-cli pages update` | Update a page |
-| `soffio-cli pages patch-title-slug` | Patch title/slug only |
+| `soffio-cli pages patch-title` | Patch title only |
 | `soffio-cli pages patch-body` | Patch body |
 | `soffio-cli pages status` | Update status and times |
 | `soffio-cli pages delete` | Delete a page |

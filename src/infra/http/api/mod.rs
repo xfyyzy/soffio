@@ -33,8 +33,8 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         )
         .route("/api/v1/posts/{id}/pin", post(handlers::update_post_pin))
         .route(
-            "/api/v1/posts/{id}/title-slug",
-            post(handlers::update_post_title_slug),
+            "/api/v1/posts/{id}/title",
+            post(handlers::update_post_title),
         )
         .route(
             "/api/v1/posts/{id}/excerpt",
@@ -62,8 +62,8 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
                 .delete(handlers::delete_page),
         )
         .route(
-            "/api/v1/pages/{id}/title-slug",
-            post(handlers::update_page_title_slug),
+            "/api/v1/pages/{id}/title",
+            post(handlers::update_page_title),
         )
         .route("/api/v1/pages/{id}/body", post(handlers::update_page_body))
         .route(

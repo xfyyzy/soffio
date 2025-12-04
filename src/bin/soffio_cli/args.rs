@@ -139,14 +139,12 @@ pub enum PostsCmd {
         #[arg(long, default_value_t = false)]
         pinned: bool,
     },
-    /// Patch only title and slug
-    PatchTitleSlug {
+    /// Patch title only
+    PatchTitle {
         #[arg(long)]
         id: Uuid,
         #[arg(long)]
-        title: Option<String>,
-        #[arg(long)]
-        slug: Option<String>,
+        title: String,
     },
     /// Patch excerpt
     PatchExcerpt {
@@ -264,14 +262,12 @@ pub enum PagesCmd {
         #[arg(long)]
         body_file: Option<PathBuf>,
     },
-    /// Patch title/slug only
-    PatchTitleSlug {
+    /// Patch title only
+    PatchTitle {
         #[arg(long)]
         id: Uuid,
         #[arg(long)]
-        title: Option<String>,
-        #[arg(long)]
-        slug: Option<String>,
+        title: String,
     },
     /// Patch body
     PatchBody {

@@ -6,7 +6,7 @@ use reqwest::Method;
 use soffio::domain::types::PostStatus;
 use soffio::infra::http::api::models::{
     PostBodyRequest, PostCreateRequest, PostExcerptRequest, PostPinRequest, PostStatusRequest,
-    PostSummaryRequest, PostTagsRequest, PostTitleSlugRequest, PostUpdateRequest,
+    PostSummaryRequest, PostTagsRequest, PostTitleRequest, PostUpdateRequest,
 };
 use uuid::Uuid;
 
@@ -78,9 +78,7 @@ pub async fn handle(ctx: &Ctx, cmd: PostsCmd) -> Result<(), CliError> {
             };
             update(ctx, input).await
         }
-        PostsCmd::PatchTitleSlug { id, title, slug } => {
-            patch_title_slug(ctx, id, title, slug).await
-        }
+        PostsCmd::PatchTitle { id, title } => patch_title(ctx, id, title).await,
         PostsCmd::PatchExcerpt { id, excerpt } => patch_excerpt(ctx, id, excerpt).await,
         PostsCmd::PatchBody {
             id,
@@ -245,14 +243,9 @@ async fn update(ctx: &Ctx, input: PostUpdateInput) -> Result<(), CliError> {
     Ok(())
 }
 
-async fn patch_title_slug(
-    ctx: &Ctx,
-    id: Uuid,
-    title: Option<String>,
-    slug: Option<String>,
-) -> Result<(), CliError> {
-    let payload = PostTitleSlugRequest { title, slug };
-    let path = format!("api/v1/posts/{id}/title-slug");
+async fn patch_title(ctx: &Ctx, id: Uuid, title: String) -> Result<(), CliError> {
+    let payload = PostTitleRequest { title };
+    let path = format!("api/v1/posts/{id}/title");
     let res: serde_json::Value = ctx
         .request(Method::POST, &path, None, Some(to_value(payload)?))
         .await?;

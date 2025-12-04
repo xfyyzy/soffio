@@ -441,13 +441,12 @@ async fn api_can_partial_update_post(pool: PgPool) {
     let mut latest = state.posts.load_post(post.id).await.unwrap().unwrap();
     assert!(latest.pinned);
 
-    handlers::update_post_title_slug(
+    handlers::update_post_title(
         State(state.clone()),
         Extension(principal.clone()),
         axum::extract::Path(post.id),
-        Json(PostTitleSlugRequest {
-            title: Some("new title".into()),
-            slug: None,
+        Json(PostTitleRequest {
+            title: "new title".into(),
         }),
     )
     .await
@@ -671,13 +670,12 @@ async fn api_can_partial_update_page(pool: PgPool) {
         .await
         .expect("create page");
 
-    handlers::update_page_title_slug(
+    handlers::update_page_title(
         State(state.clone()),
         Extension(principal.clone()),
         axum::extract::Path(page.id),
-        Json(PageTitleSlugRequest {
-            title: Some("new page".into()),
-            slug: None,
+        Json(PageTitleRequest {
+            title: "new page".into(),
         }),
     )
     .await

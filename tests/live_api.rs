@@ -237,7 +237,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
         &client,
         &base,
         &config.keys.write,
-        &format!("/api/v1/posts/{post_id}/title-slug"),
+        &format!("/api/v1/posts/{post_id}/title"),
         &[StatusCode::OK],
         json!({"title": format!("Post {suf} partial")}),
     )

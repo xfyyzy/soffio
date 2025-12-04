@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use reqwest::Method;
 use soffio::domain::types::PageStatus;
 use soffio::infra::http::api::models::{
-    PageBodyRequest, PageCreateRequest, PageStatusRequest, PageTitleSlugRequest, PageUpdateRequest,
+    PageBodyRequest, PageCreateRequest, PageStatusRequest, PageTitleRequest, PageUpdateRequest,
 };
 use uuid::Uuid;
 
@@ -64,9 +64,7 @@ pub async fn handle(ctx: &Ctx, cmd: PagesCmd) -> Result<(), CliError> {
             body,
             body_file,
         } => update(ctx, id, slug, title, body, body_file).await,
-        PagesCmd::PatchTitleSlug { id, title, slug } => {
-            patch_title_slug(ctx, id, title, slug).await
-        }
+        PagesCmd::PatchTitle { id, title } => patch_title(ctx, id, title).await,
         PagesCmd::PatchBody {
             id,
             body,
@@ -178,14 +176,9 @@ async fn update(
     Ok(())
 }
 
-async fn patch_title_slug(
-    ctx: &Ctx,
-    id: Uuid,
-    title: Option<String>,
-    slug: Option<String>,
-) -> Result<(), CliError> {
-    let payload = PageTitleSlugRequest { title, slug };
-    let path = format!("api/v1/pages/{id}/title-slug");
+async fn patch_title(ctx: &Ctx, id: Uuid, title: String) -> Result<(), CliError> {
+    let payload = PageTitleRequest { title };
+    let path = format!("api/v1/pages/{id}/title");
     let res: serde_json::Value = ctx
         .request(Method::POST, &path, None, Some(to_value(payload)?))
         .await?;

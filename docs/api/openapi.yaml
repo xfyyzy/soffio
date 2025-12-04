@@ -262,12 +262,11 @@ components:
       required: [pinned]
       properties:
         pinned: { type: boolean }
-    PostTitleSlugRequest:
+    PostTitleRequest:
       type: object
-      description: At least one of `title` or `slug` must be provided.
+      required: [title]
       properties:
         title: { type: string }
-        slug: { type: string }
     PostExcerptRequest:
       type: object
       required: [excerpt]
@@ -315,11 +314,10 @@ components:
         slug: { type: string }
         title: { type: string }
         body_markdown: { type: string }
-    PageTitleSlugRequest:
+    PageTitleRequest:
       type: object
-      description: At least one of `title` or `slug` must be provided.
+      required: [title]
       properties:
-        slug: { type: string }
         title: { type: string }
     PageBodyRequest:
       type: object
@@ -618,10 +616,10 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Post' }
         '404': { description: Not found }
-  /api/v1/posts/{id}/title-slug:
+  /api/v1/posts/{id}/title:
     post:
-      summary: Update post title or slug
-      description: Requires scope `post_write`. At least one of `title` or `slug` is needed; this endpoint preserves other fields.
+      summary: Update post title
+      description: Requires scope `post_write`. Slug is immutable and remains unchanged.
       parameters:
         - in: path
           name: id
@@ -631,7 +629,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/PostTitleSlugRequest' }
+            schema: { $ref: '#/components/schemas/PostTitleRequest' }
       responses:
         '200':
           description: Updated
@@ -838,10 +836,10 @@ paths:
             schema: { $ref: '#/components/schemas/PageStatusRequest' }
       responses:
         '200': { description: Status updated }
-  /api/v1/pages/{id}/title-slug:
+  /api/v1/pages/{id}/title:
     post:
-      summary: Update page title or slug
-      description: Requires scope `page_write`. At least one of `title` or `slug` is needed; preserves other fields.
+      summary: Update page title
+      description: Requires scope `page_write`. Slug is immutable and remains unchanged.
       parameters:
         - in: path
           name: id
@@ -851,7 +849,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/PageTitleSlugRequest' }
+            schema: { $ref: '#/components/schemas/PageTitleRequest' }
       responses:
         '200':
           description: Updated

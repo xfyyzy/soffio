@@ -331,23 +331,16 @@ pub async fn update_post_pin(
     Ok(Json(post))
 }
 
-pub async fn update_post_title_slug(
+pub async fn update_post_title(
     State(state): State<ApiState>,
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
     Path(id): Path<Uuid>,
-    Json(payload): Json<PostTitleSlugRequest>,
+    Json(payload): Json<PostTitleRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
         .requires(crate::domain::api_keys::ApiScope::PostWrite)
         .map_err(|_| ApiError::forbidden())?;
     let actor = super::state::ApiState::actor_label(&principal);
-
-    if payload.title.is_none() && payload.slug.is_none() {
-        return Err(ApiError::bad_request(
-            "at least one of title or slug must be provided",
-            None,
-        ));
-    }
 
     let post = state
         .posts
@@ -356,10 +349,14 @@ pub async fn update_post_title_slug(
         .map_err(post_to_api)?
         .ok_or_else(|| ApiError::not_found("post not found"))?;
 
+    if payload.title.trim().is_empty() {
+        return Err(ApiError::bad_request("title cannot be empty", None));
+    }
+
     let command = UpdatePostContentCommand {
         id,
-        slug: payload.slug.unwrap_or_else(|| post.slug.clone()),
-        title: payload.title.unwrap_or_else(|| post.title.clone()),
+        slug: post.slug.clone(),
+        title: payload.title,
         excerpt: post.excerpt.clone(),
         body_markdown: post.body_markdown.clone(),
         pinned: post.pinned,
@@ -662,23 +659,16 @@ pub async fn update_page(
     Ok(Json(page))
 }
 
-pub async fn update_page_title_slug(
+pub async fn update_page_title(
     State(state): State<ApiState>,
     Extension(principal): Extension<crate::application::api_keys::ApiPrincipal>,
     Path(id): Path<Uuid>,
-    Json(payload): Json<PageTitleSlugRequest>,
+    Json(payload): Json<PageTitleRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     principal
         .requires(crate::domain::api_keys::ApiScope::PageWrite)
         .map_err(|_| ApiError::forbidden())?;
     let actor = super::state::ApiState::actor_label(&principal);
-
-    if payload.title.is_none() && payload.slug.is_none() {
-        return Err(ApiError::bad_request(
-            "at least one of title or slug must be provided",
-            None,
-        ));
-    }
 
     let page = state
         .pages
@@ -687,10 +677,14 @@ pub async fn update_page_title_slug(
         .map_err(page_to_api)?
         .ok_or_else(|| ApiError::not_found("page not found"))?;
 
+    if payload.title.trim().is_empty() {
+        return Err(ApiError::bad_request("title cannot be empty", None));
+    }
+
     let command = UpdatePageContentCommand {
         id,
-        slug: payload.slug.unwrap_or_else(|| page.slug.clone()),
-        title: payload.title.unwrap_or_else(|| page.title.clone()),
+        slug: page.slug.clone(),
+        title: payload.title,
         body_markdown: page.body_markdown.clone(),
     };
 
