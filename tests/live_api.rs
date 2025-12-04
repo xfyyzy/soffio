@@ -418,7 +418,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
     get_json(
         &client,
         &base,
-        &config.keys.read,
+        &config.keys.all,
         &format!("/api/v1/pages/{page_id}"),
         &[StatusCode::OK],
     )
@@ -427,7 +427,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
     get_json(
         &client,
         &base,
-        &config.keys.read,
+        &config.keys.all,
         &format!("/api/v1/pages/slug/{page_slug}"),
         &[StatusCode::OK],
     )
