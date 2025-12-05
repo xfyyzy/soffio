@@ -101,6 +101,10 @@ After modifying queries, regenerate compile-time checked query metadata:
 cargo sqlx prepare --workspace --database-url postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev -- --all-targets
 ```
 
+**Static assets**
+
+Static assets are embedded into the binary even during development; restart the service after changing assets (CSS, templates, etc.) to ensure updates are picked up.
+
 ---
 
 ## 4) Repository Boundaries & Layout
