@@ -3132,7 +3132,7 @@ dependencies = [
 
 [[package]]
 name = "soffio"
-version = "1.0.9"
+version = "0.1.9"
 dependencies = [
  "ammonia",
  "apalis",
