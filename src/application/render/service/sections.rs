@@ -37,9 +37,12 @@ pub(crate) fn post_process(
     sanitized_html: &str,
     target: &RenderTarget,
     headings: &[HeadingInfo],
+    public_site_url: Option<&str>,
 ) -> Result<ProcessedHtml, RenderError> {
     match target {
-        RenderTarget::PostBody { .. } => process_post_html(sanitized_html, headings),
+        RenderTarget::PostBody { .. } => {
+            process_post_html(sanitized_html, headings, public_site_url)
+        }
         _ => Ok(ProcessedHtml {
             html: sanitized_html.to_string(),
             sections: None,
@@ -57,9 +60,12 @@ pub(crate) fn post_process(
 fn process_post_html(
     sanitized_html: &str,
     headings: &[HeadingInfo],
+    public_site_url: Option<&str>,
 ) -> Result<ProcessedHtml, RenderError> {
+    let site_url = public_site_url.and_then(|value| Url::parse(value).ok());
+
     if headings.is_empty() {
-        let augmentation = augment_semantics(sanitized_html)?;
+        let augmentation = augment_semantics(sanitized_html, site_url.as_ref())?;
         let metrics = build_content_metrics(&augmentation);
         let resource_hints = build_resource_hints(&augmentation);
         let contains_code = metrics.code_blocks_count > 0;
@@ -82,7 +88,7 @@ fn process_post_html(
     }
 
     let html_with_ids = apply_heading_ids(sanitized_html, headings)?;
-    let augmentation = augment_semantics(&html_with_ids)?;
+    let augmentation = augment_semantics(&html_with_ids, site_url.as_ref())?;
     let sections = build_sections(&augmentation.html, headings)?;
     let metrics = build_content_metrics(&augmentation);
     let resource_hints = build_resource_hints(&augmentation);
@@ -128,8 +134,12 @@ struct AugmentOutcome {
     state: AugmentState,
 }
 
-fn augment_semantics(html: &str) -> Result<AugmentOutcome, RenderError> {
+fn augment_semantics(
+    html: &str,
+    public_site_url: Option<&Url>,
+) -> Result<AugmentOutcome, RenderError> {
     let state = Rc::new(RefCell::new(AugmentState::default()));
+    let site_url = Rc::new(public_site_url.cloned());
 
     let rewritten = rewrite_str(
         html,
@@ -189,9 +199,10 @@ fn augment_semantics(html: &str) -> Result<AugmentOutcome, RenderError> {
                 }),
                 element!("a", {
                     let state = Rc::clone(&state);
+                    let site_url = Rc::clone(&site_url);
                     move |el| {
                         if let Some(href) = el.get_attribute("href") {
-                            let classification = classify_link(&href);
+                            let classification = classify_link(&href, site_url.as_ref().as_ref());
                             match classification {
                                 LinkKind::External { domain } => {
                                     {
@@ -208,6 +219,7 @@ fn augment_semantics(html: &str) -> Result<AugmentOutcome, RenderError> {
                                         &["noopener", "noreferrer"],
                                     );
                                     el.set_attribute("rel", &rel_value)?;
+                                    el.set_attribute("target", "_blank")?;
                                     el.set_attribute("data-link-kind", "external")?;
                                 }
                                 LinkKind::Internal => {
@@ -411,9 +423,19 @@ enum LinkKind {
     Other,
 }
 
-fn classify_link(href: &str) -> LinkKind {
+fn classify_link(href: &str, site_url: Option<&Url>) -> LinkKind {
     if href.starts_with('#') || href.is_empty() {
         return LinkKind::Anchor;
+    }
+
+    if let (Some(base), Ok(url)) = (site_url, Url::parse(href)) {
+        if same_origin(&url, base) {
+            return LinkKind::Internal;
+        }
+
+        return LinkKind::External {
+            domain: extract_domain_from_url(&url),
+        };
     }
 
     if is_external_http_url(href) {
@@ -451,6 +473,23 @@ fn extract_domain(url: &str) -> Option<String> {
             domain
         })
     })
+}
+
+fn extract_domain_from_url(url: &Url) -> Option<String> {
+    url.host_str().map(|host| {
+        let mut domain = format!("{}://{}", url.scheme(), host);
+        if let Some(port) = url.port() {
+            domain.push(':');
+            domain.push_str(&port.to_string());
+        }
+        domain
+    })
+}
+
+fn same_origin(url: &Url, base: &Url) -> bool {
+    url.scheme() == base.scheme()
+        && url.host_str() == base.host_str()
+        && url.port_or_known_default() == base.port_or_known_default()
 }
 
 fn merge_rel(existing: Option<String>, required: &[&str]) -> String {
@@ -671,4 +710,42 @@ fn assemble_sections(
     }
 
     Ok(sections)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn site(url: &str) -> Option<Url> {
+        Url::parse(url).ok()
+    }
+
+    #[test]
+    fn absolute_same_origin_counts_as_internal() {
+        let html = "<p><a href=\"https://example.com/path\">link</a></p>";
+        let outcome =
+            augment_semantics(html, site("https://example.com/").as_ref()).expect("augment");
+
+        assert!(outcome.html.contains("data-link-kind=\"internal\""));
+        assert!(!outcome.html.contains("target=\"_blank\""));
+
+        let metrics = build_content_metrics(&outcome);
+        assert_eq!(metrics.internal_links_count, 1);
+        assert_eq!(metrics.external_links_count, 0);
+    }
+
+    #[test]
+    fn external_links_open_in_new_tab_with_rel() {
+        let html = "<p><a href=\"https://other.com/page\">out</a></p>";
+        let outcome =
+            augment_semantics(html, site("https://example.com/").as_ref()).expect("augment");
+
+        assert!(outcome.html.contains("data-link-kind=\"external\""));
+        assert!(outcome.html.contains("target=\"_blank\""));
+        assert!(outcome.html.contains("rel=\"noopener noreferrer\""));
+
+        let metrics = build_content_metrics(&outcome);
+        assert_eq!(metrics.external_links_count, 1);
+        assert_eq!(metrics.internal_links_count, 0);
+    }
 }

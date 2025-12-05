@@ -105,8 +105,12 @@ impl RenderService for ComrakRenderService {
 
         let restored_html = restore_stage(sanitized_html, &rewrite_outcome);
 
-        let processed =
-            post_process_stage(&restored_html, &request.target, &rewrite_outcome.headings)?;
+        let processed = post_process_stage(
+            &restored_html,
+            &request.target,
+            &rewrite_outcome.headings,
+            request.public_site_url.as_deref(),
+        )?;
         let ProcessedHtml {
             html,
             sections,
@@ -275,6 +279,7 @@ fn post_process_stage(
     html: &str,
     target: &RenderTarget,
     headings: &[rewrite::HeadingInfo],
+    public_site_url: Option<&str>,
 ) -> Result<ProcessedHtml, RenderError> {
-    post_process(html, target, headings)
+    post_process(html, target, headings, public_site_url)
 }

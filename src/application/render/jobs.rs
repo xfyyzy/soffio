@@ -11,7 +11,7 @@ use crate::{
     application::{
         jobs::{JobWorkerContext, enqueue_job, job_failed},
         render::runtime::{InFlightError, RenderArtifact, RenderMailboxError},
-        repos::{JobsRepo, RepoError},
+        repos::{JobsRepo, RepoError, SettingsRepo},
     },
     domain::types::JobType,
     infra::db::PersistedPostSectionOwned,
@@ -282,13 +282,15 @@ pub async fn process_render_post_sections_job(
     let ctx = &*context;
     let renderer = ctx.renderer.clone();
     let tracking_id = payload.tracking_id.clone();
+    let public_site_url = load_public_site_url(ctx).await?;
 
     let request = RenderRequest::new(
         RenderTarget::PostBody {
             slug: payload.slug.clone(),
         },
         payload.markdown.clone(),
-    );
+    )
+    .with_public_site_url(&public_site_url);
 
     let output = renderer.render(&request).map_err(job_failed)?;
 
@@ -382,14 +384,18 @@ pub async fn process_render_summary_job(
     let renderer = ctx.renderer.clone();
     let tracking_id = payload.tracking_id.clone();
     let started_at = Instant::now();
+    let public_site_url = load_public_site_url(ctx).await?;
 
     let result = renderer
-        .render(&RenderRequest::new(
-            RenderTarget::PostSummary {
-                slug: payload.slug.clone(),
-            },
-            payload.summary_markdown,
-        ))
+        .render(
+            &RenderRequest::new(
+                RenderTarget::PostSummary {
+                    slug: payload.slug.clone(),
+                },
+                payload.summary_markdown,
+            )
+            .with_public_site_url(&public_site_url),
+        )
         .map_err(job_failed);
 
     match result {
@@ -421,6 +427,7 @@ pub async fn process_render_page_job(
 ) -> Result<(), ApalisError> {
     let ctx = &*context;
     let renderer = ctx.renderer.clone();
+    let public_site_url = load_public_site_url(ctx).await?;
 
     let Some(page_id) = ctx
         .repositories
@@ -439,7 +446,8 @@ pub async fn process_render_page_job(
             slug: payload.slug.clone(),
         },
         payload.markdown,
-    );
+    )
+    .with_public_site_url(&public_site_url);
 
     let output = renderer.render(&request).map_err(job_failed)?;
 
@@ -492,4 +500,23 @@ fn convert_section(
         contains_mermaid: section.contains_mermaid,
         anchor_slug: section.anchor_slug.clone(),
     })
+}
+
+async fn load_public_site_url(ctx: &JobWorkerContext) -> Result<String, ApalisError> {
+    let settings = ctx
+        .repositories
+        .load_site_settings()
+        .await
+        .map_err(job_failed)?;
+    Ok(normalize_public_site_url(&settings.public_site_url))
+}
+
+fn normalize_public_site_url(url: &str) -> String {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+
+    let without_trailing = trimmed.trim_end_matches('/');
+    format!("{without_trailing}/")
 }

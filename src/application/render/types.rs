@@ -34,6 +34,9 @@ pub struct RenderRequest {
     pub markdown: String,
     /// Optional front matter or contextual metadata encoded as JSON for future-proofing.
     pub context: Option<serde_json::Value>,
+    /// Normalised public site URL used for same-origin checks during link classification.
+    #[serde(default)]
+    pub public_site_url: Option<String>,
 }
 
 impl RenderRequest {
@@ -42,6 +45,7 @@ impl RenderRequest {
             target,
             markdown: markdown.into(),
             context: None,
+            public_site_url: None,
         }
     }
 
@@ -49,6 +53,24 @@ impl RenderRequest {
         self.context = Some(context);
         self
     }
+
+    pub fn with_public_site_url(mut self, public_site_url: impl Into<String>) -> Self {
+        let normalized = normalize_public_site_url(public_site_url.into().as_str());
+        if !normalized.is_empty() {
+            self.public_site_url = Some(normalized);
+        }
+        self
+    }
+}
+
+fn normalize_public_site_url(url: &str) -> String {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+
+    let without_trailing = trimmed.trim_end_matches('/');
+    format!("{without_trailing}/")
 }
 
 /// Section produced when rendering full posts. Pages and summaries omit sections.

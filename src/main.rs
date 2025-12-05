@@ -304,6 +304,7 @@ fn build_application_context(
         pages_write_repo.clone(),
         jobs_repo.clone(),
         audit_service.clone(),
+        settings_repo.clone(),
     ));
     let admin_tag_service = Arc::new(AdminTagService::new(
         tags_repo.clone(),

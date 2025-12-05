@@ -145,6 +145,7 @@ async fn build_state(pool: PgPool) -> (ApiState, String) {
         pages_write_repo.clone(),
         jobs_repo.clone(),
         audit_service.clone(),
+        settings_repo.clone(),
     ));
     let admin_tag_service = Arc::new(AdminTagService::new(
         tags_repo.clone(),

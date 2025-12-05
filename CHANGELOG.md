@@ -8,6 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 ### Fixed
 - Prevented settings page textareas from overflowing their panels by using border-box sizing and block display within the settings summary text styles.
+- Rendering now distinguishes internal vs external links using `public_site_url` (same-origin or relative count as internal) and forces external links to open in a new tab with `rel="noopener noreferrer"` to avoid `window.opener` risks; rendering stays pure by taking the site URL as input.
 
 ## [0.1.8] - 2025-12-04
 ### Breaking

@@ -60,8 +60,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
+    let public_site_url =
+        env::var("PUBLIC_SITE_URL").unwrap_or_else(|_| "http://localhost:3000/".to_string());
+
     let renderer = render_service();
-    let request = RenderRequest::new(render_target, markdown);
+    let request = RenderRequest::new(render_target, markdown).with_public_site_url(public_site_url);
 
     if sanitize {
         let output = renderer.render(&request)?;

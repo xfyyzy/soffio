@@ -17,7 +17,7 @@ use crate::application::render::{
 };
 use crate::application::repos::{
     CreatePageParams, JobsRepo, PageQueryFilter, PagesRepo, PagesWriteRepo, RepoError,
-    UpdatePageParams, UpdatePageStatusParams,
+    SettingsRepo, UpdatePageParams, UpdatePageStatusParams,
 };
 use crate::domain::entities::PageRecord;
 use crate::domain::{
@@ -77,6 +77,7 @@ pub struct AdminPageService {
     writer: Arc<dyn PagesWriteRepo>,
     jobs: Arc<dyn JobsRepo>,
     audit: AdminAuditService,
+    settings: Arc<dyn SettingsRepo>,
 }
 
 impl AdminPageService {
@@ -85,12 +86,14 @@ impl AdminPageService {
         writer: Arc<dyn PagesWriteRepo>,
         jobs: Arc<dyn JobsRepo>,
         audit: AdminAuditService,
+        settings: Arc<dyn SettingsRepo>,
     ) -> Self {
         Self {
             reader,
             writer,
             jobs,
             audit,
+            settings,
         }
     }
 
@@ -212,10 +215,14 @@ impl AdminPageService {
 
         let timestamps = normalize_status(status, scheduled_at, published_at, archived_at)?;
 
+        let site_settings = self.settings.load_site_settings().await?;
+        let public_site_url = normalize_public_site_url(&site_settings.public_site_url);
+
         let render_request = RenderRequest::new(
             RenderTarget::PageBody { slug: slug.clone() },
             body_markdown.clone(),
-        );
+        )
+        .with_public_site_url(&public_site_url);
         let render_output = render_service().render(&render_request)?;
 
         let params = CreatePageParams {
@@ -257,12 +264,17 @@ impl AdminPageService {
         ensure_non_empty(&command.slug, "slug")?;
         ensure_non_empty(&command.title, "title")?;
         ensure_non_empty(&command.body_markdown, "body_markdown")?;
+
+        let site_settings = self.settings.load_site_settings().await?;
+        let public_site_url = normalize_public_site_url(&site_settings.public_site_url);
+
         let render_request = RenderRequest::new(
             RenderTarget::PageBody {
                 slug: command.slug.clone(),
             },
             command.body_markdown.clone(),
-        );
+        )
+        .with_public_site_url(&public_site_url);
         let render_output = render_service().render(&render_request)?;
 
         let params = UpdatePageParams {
@@ -454,4 +466,14 @@ fn ensure_non_empty(value: &str, field: &'static str) -> Result<(), AdminPageErr
         return Err(AdminPageError::ConstraintViolation(field));
     }
     Ok(())
+}
+
+fn normalize_public_site_url(url: &str) -> String {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+
+    let without_trailing = trimmed.trim_end_matches('/');
+    format!("{without_trailing}/")
 }
