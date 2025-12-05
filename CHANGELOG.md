@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.9] - 2025-12-05
 ### Fixed
 - Prevented settings page textareas from overflowing their panels by using border-box sizing and block display within the settings summary text styles.
 - Rendering now distinguishes internal vs external links using `public_site_url` (same-origin or relative count as internal) and forces external links to open in a new tab with `rel="noopener noreferrer"` to avoid `window.opener` risks; rendering stays pure by taking the site URL as input.
