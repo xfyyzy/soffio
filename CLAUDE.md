@@ -159,6 +159,16 @@ Run the sequence below:
 
 Use a single atomic commit when possible. Use the template in §11.
 
+### 5.5 Changelog & Release discipline
+
+- Always identify and label Breaking changes in `CHANGELOG.md`.
+- Default behavior: record every codebase-related change under **Unreleased** (either in the same commit as the code change or a dedicated changelog commit).
+- Release flow (execute **only when the user explicitly requests a release**):
+  1) Update `Cargo.toml` to the user-specified version.
+  2) Run the full gate (fmt, clippy, tests, etc.) with `SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`; accept snapshot diffs from the version bump.
+  3) Update `CHANGELOG.md`: create the new version section, move Unreleased contents into it, and add any missing release details.
+  4) After user reconfirms, create the release with `gh`: tag `vX.Y.Z`, title `vX.Y.Z - <brief title>`, notes derived from that version’s changelog entry.
+
 ---
 
 ## 6) Idiomatic Rust Rules (enforced)
