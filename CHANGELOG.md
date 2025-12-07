@@ -9,6 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - Admin API key scope picker now keeps selected scopes visible in the available grid (like the tag picker), preventing option reordering when toggling many scopes.
+- Release workflow restricts target CPU flags to the musl target only, avoiding host build-script crashes when adding higher x86-64 levels.
 
 ## [0.1.10] - 2025-12-07
 ### Changed
