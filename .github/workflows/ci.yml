@@ -6,8 +6,13 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   CARGO_TERM_COLOR: always
+  CI_BUILDER_IMAGE: ghcr.io/${{ github.repository }}/soffio-ci-build:latest
 
 jobs:
   lint-and-test:
@@ -15,6 +20,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Build CI builder image (cached)
+        run: |
+          docker pull "$CI_BUILDER_IMAGE" || true
+          docker build \
+            -f deploy/docker/Dockerfile.build \
+            --build-arg INSTALL_REDOC=true \
+            --cache-from "$CI_BUILDER_IMAGE" \
+            -t soffio-ci-build:local \
+            .
 
       - name: Start Postgres (test DB)
         run: |
@@ -46,45 +61,71 @@ jobs:
             -e DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev \
             -e SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres \
             -e SQLX_OFFLINE=true \
-            rust:1.91-alpine3.20 \
+            soffio-ci-build:local \
             sh -ec '
-              apk update && \
-              apk add --no-cache bash binutils build-base ca-certificates clang cmake curl git libstdc++ nodejs npm pkgconf python3 && \
-              rustup component add rustfmt clippy && \
-              npm install --global --unsafe-perm typescript@latest @redocly/cli && \
-              redocly lint docs/api/openapi.yaml && \
-              cargo fmt --all -- --check && \
-              cargo check --workspace --all-targets && \
-              cargo clippy --workspace --all-targets -- -D warnings && \
-              cargo run --bin gen_cli_docs && \
+              set -eux; \
+              redocly lint docs/api/openapi.yaml; \
+              cargo fmt --all -- --check; \
+              cargo check --workspace --all-targets; \
+              cargo clippy --workspace --all-targets -- -D warnings; \
+              cargo run --bin gen_cli_docs; \
               # Ensure docs are regenerated and committed. Explicit GIT_DIR/WORK_TREE avoids absolute-path issues when mounted at /work. \
               if ! GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff --quiet HEAD -- docs/cli.md docs/cli.zh.md; then \
                 echo "cli docs out of date; run cargo run --bin gen_cli_docs and commit." >&2; \
                 GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff --stat HEAD -- docs/cli.md docs/cli.zh.md; \
                 GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff HEAD -- docs/cli.md docs/cli.zh.md; \
                 exit 1; \
-              fi && \
-              cargo test --workspace --all-targets -- --nocapture && \
-              cargo run --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml && \
+              fi; \
+              cargo test --workspace --all-targets -- --nocapture; \
+              cargo run --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml; \
               LOG_PATH=/tmp/soffio.log; \
-              cp soffio.toml.example /tmp/soffio.toml && \
+              cp soffio.toml.example /tmp/soffio.toml; \
               cargo run --bin soffio -- --config-file /tmp/soffio.toml serve \
                 --server-host 0.0.0.0 \
                 --server-admin-host 0.0.0.0 \
                 --server-public-port 3000 \
                 --server-admin-port 3001 \
-                >$LOG_PATH 2>&1 & \
-              srv=$! && \
+                >"$LOG_PATH" 2>&1 & \
+              srv=$!; \
               ready=0; \
               for i in $(seq 1 60); do \
                 if curl -sf http://127.0.0.1:3000/_health/db >/dev/null; then ready=1; break; fi; \
                 sleep 1; \
               done; \
-              if [ "$ready" -ne 1 ]; then echo "soffio server not ready"; [ -f "$LOG_PATH" ] && cat "$LOG_PATH"; ps -ef | grep soffio || true; kill $srv || true; exit 1; fi && \
-              cargo test --test live_api -- --ignored --nocapture && \
+              if [ "$ready" -ne 1 ]; then echo "soffio server not ready"; [ -f "$LOG_PATH" ] && cat "$LOG_PATH"; ps -ef | grep soffio || true; kill $srv || true; exit 1; fi; \
+              cargo test --test live_api -- --ignored --nocapture; \
               kill $srv; \
-              # avoid cache save failures due to root-owned incremental lockfiles \
               HOST_UID=$(stat -c '%u' /work); HOST_GID=$(stat -c '%g' /work); \
-              chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true; \
-              rm -rf /work/target/debug/incremental /work/target/release/incremental || true
+              chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true
             '
+
+  publish-ci-builder:
+    needs: lint-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build & Push CI builder image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.build
+          build-args: |
+            INSTALL_REDOC=true
+          tags: |
+            ghcr.io/${{ github.repository }}/soffio-ci-build:latest
+            ghcr.io/${{ github.repository }}/soffio-ci-build:${{ github.sha }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/soffio-ci-build:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/soffio-ci-build:buildcache,mode=max
+          push: true

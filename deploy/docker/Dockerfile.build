@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1.19.0
+
+ARG RUST_IMAGE=rust:1.91-alpine3.20
+FROM ${RUST_IMAGE}
+
+# Control optional tooling to keep the image minimal when not needed.
+ARG INSTALL_REDOC=true
+
+RUN set -eux; \
+    apk update; \
+    apk add --no-cache \
+      bash \
+      binutils \
+      build-base \
+      ca-certificates \
+      clang \
+      cmake \
+      curl \
+      git \
+      libstdc++ \
+      nodejs \
+      npm \
+      pkgconf \
+      python3; \
+    rustup component add rustfmt clippy; \
+    npm install --global --unsafe-perm typescript@latest; \
+    if [ "${INSTALL_REDOC}" = "true" ]; then \
+      npm install --global --unsafe-perm @redocly/cli; \
+    fi
+
+ENV CARGO_TERM_COLOR=always
+
+WORKDIR /work
