@@ -59,10 +59,7 @@ jobs:
               rm -rf dist && mkdir -p dist && \
               cp target/release/${BIN_NAME} dist/${BIN_NAME} && \
               cp target/release/${BIN_CLI} dist/${BIN_CLI} && \
-              cp target/release/${BIN_CLI} dist/${BIN_CLI} && \
-              ls -l dist/ && \
-              strip dist/${BIN_NAME} dist/${BIN_CLI} && \
-              ls -l dist/ && \
+              strip dist/${BIN_NAME} dist/${BIN_CLI} || true && \
               tar_name="${BIN_NAME}-${RELEASE_TAG}-${CPU_LEVEL}-musl.tar.gz" && \
               tar czf "${tar_name}" -C dist ${BIN_NAME} ${BIN_CLI} && \
               # fix permissions before cache save on host
