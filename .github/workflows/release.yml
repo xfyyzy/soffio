@@ -40,6 +40,7 @@ jobs:
       - name: Build (Alpine musl)
         env:
           CPU_LEVEL: ${{ matrix.cpu_level }}
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: -C target-cpu=${{ matrix.cpu_level }}
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/work" \
@@ -48,12 +49,13 @@ jobs:
             -e BIN_NAME="${BIN_NAME}" \
             -e BIN_CLI="${BIN_CLI}" \
             -e CPU_LEVEL="${CPU_LEVEL}" \
+            -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS}" \
             -e RELEASE_TAG="${RELEASE_TAG}" \
             -w /work \
             "$RELEASE_BUILDER_IMAGE" \
             sh -ec '
               set -eux
-              RUSTFLAGS="-C target-cpu=${CPU_LEVEL}" cargo build --release --bin ${BIN_NAME} --bin ${BIN_CLI} && \
+              cargo build --release --bin ${BIN_NAME} --bin ${BIN_CLI} && \
               rm -rf dist && mkdir -p dist && \
               cp target/release/${BIN_NAME} dist/${BIN_NAME} && \
               cp target/release/${BIN_CLI} dist/${BIN_CLI} && \
