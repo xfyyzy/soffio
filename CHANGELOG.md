@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.10] - 2025-12-07
+### Changed
+- CI and release workflows now build and reuse lightweight builder images (with optional redocly via build-arg) to avoid per-run toolchain setup and speed up pipelines; no runtime code changes.
+
 ## [0.1.9] - 2025-12-05
 ### Fixed
 - Prevented settings page textareas from overflowing their panels by using border-box sizing and block display within the settings summary text styles.
