@@ -722,10 +722,12 @@ fn snapshot_admin_api_keys_panel() {
             AdminApiScopeOption {
                 value: "content_read".into(),
                 label: "Content read".into(),
+                is_selected: false,
             },
             AdminApiScopeOption {
                 value: "content_write".into(),
                 label: "Content write".into(),
+                is_selected: false,
             },
         ],
     };
@@ -749,14 +751,17 @@ fn snapshot_admin_api_key_new_panel() {
                 AdminApiScopeOption {
                     value: "content_read".into(),
                     label: "Content read".into(),
+                    is_selected: false,
                 },
                 AdminApiScopeOption {
                     value: "content_write".into(),
                     label: "Content write".into(),
+                    is_selected: false,
                 },
                 AdminApiScopeOption {
                     value: "tag_write".into(),
                     label: "Tag write".into(),
+                    is_selected: false,
                 },
             ],
             selected_values: Vec::new(),

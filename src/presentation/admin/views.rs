@@ -894,6 +894,7 @@ pub struct AdminPostTagSelectionStoreTemplate {
 pub struct AdminApiScopeOption {
     pub value: String,
     pub label: String,
+    pub is_selected: bool,
 }
 
 #[derive(Clone)]

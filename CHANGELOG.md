@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- Admin API key scope picker now keeps selected scopes visible in the available grid (like the tag picker), preventing option reordering when toggling many scopes.
+
 ## [0.1.10] - 2025-12-07
 ### Changed
 - CI and release workflows now build and reuse lightweight builder images (with optional redocly via build-arg) to avoid per-run toolchain setup and speed up pipelines; no runtime code changes.
