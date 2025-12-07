@@ -21,15 +21,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Build CI builder image (cached)
-        run: |
-          docker pull "$CI_BUILDER_IMAGE" || true
-          docker build \
-            -f deploy/docker/Dockerfile.build \
-            --build-arg INSTALL_REDOC=true \
-            --cache-from "$CI_BUILDER_IMAGE" \
-            -t soffio-ci-build:local \
-            .
+      - name: Login to GHCR (for builder image)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull CI builder image
+        run: docker pull "$CI_BUILDER_IMAGE"
 
       - name: Start Postgres (test DB)
         run: |
@@ -48,6 +48,7 @@ jobs:
       - name: Cache cargo build
         uses: Swatinem/rust-cache@v2
         with:
+          shared-key: ci-default
           cache-on-failure: true
 
       - name: Lint, Spec Check & Test (Alpine musl)
@@ -61,7 +62,7 @@ jobs:
             -e DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev \
             -e SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres \
             -e SQLX_OFFLINE=true \
-            soffio-ci-build:local \
+            "$CI_BUILDER_IMAGE" \
             sh -ec '
               set -eux; \
               redocly lint docs/api/openapi.yaml; \
