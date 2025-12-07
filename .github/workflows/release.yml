@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        cpu_level: [x86-64-v2, x86-64-v3]
+        cpu_level: [x86-64-v2, x86-64-v3, x86-64-v4]
     steps:
       - uses: actions/checkout@v6
       - name: Login to GHCR (for builder image)
@@ -81,7 +81,7 @@ jobs:
     needs: build-binaries
     strategy:
       matrix:
-        cpu_level: [x86-64-v2, x86-64-v3]
+        cpu_level: [x86-64-v2, x86-64-v3, x86-64-v4]
     steps:
       - uses: actions/checkout@v6
       - name: Cache prebuilt dir
