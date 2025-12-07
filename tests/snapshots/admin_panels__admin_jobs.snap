@@ -9,10 +9,10 @@ expression: rendered
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Jobs</title>
     <meta name="description" content="Job queue">
-    <link rel="stylesheet" href="/static/common/tokens.css?v=0.1.10">
-    <link rel="stylesheet" href="/static/admin/app.css?v=0.1.10">
-    <script type="module" src="/static/common/components.js?v=0.1.10" defer></script>
-    <script type="module" src="/static/common/datastar-init.js?v=0.1.10" defer></script>
+    <link rel="stylesheet" href="/static/common/tokens.css?v=0.1.11">
+    <link rel="stylesheet" href="/static/admin/app.css?v=0.1.11">
+    <script type="module" src="/static/common/components.js?v=0.1.11" defer></script>
+    <script type="module" src="/static/common/datastar-init.js?v=0.1.11" defer></script>
     
   </head>
   <body data-page="admin">
