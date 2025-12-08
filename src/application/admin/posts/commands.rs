@@ -304,7 +304,14 @@ impl AdminPostService {
     }
 
     async fn enqueue_render_jobs(&self, post: &PostRecord) -> Result<(), AdminPostError> {
-        enqueue_render_post_job(self.jobs.as_ref(), post.slug.clone(), None).await?;
+        enqueue_render_post_job(
+            self.jobs.as_ref(),
+            post.slug.clone(),
+            post.body_markdown.clone(),
+            post.summary_markdown.clone(),
+            None,
+        )
+        .await?;
 
         Ok(())
     }

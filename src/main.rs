@@ -477,6 +477,8 @@ async fn render_post(ctx: &JobWorkerContext, post: PostRecord) -> Result<(), App
     process_render_post_job(
         RenderPostJobPayload {
             slug: post.slug.clone(),
+            body_markdown: post.body_markdown.clone(),
+            summary_markdown: post.summary_markdown.clone(),
         },
         Data::new(ctx.clone()),
     )

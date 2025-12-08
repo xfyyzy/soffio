@@ -171,6 +171,7 @@ Use a single atomic commit when possible. Use the template in §9.
 - **Never hold a lock across `.await`.**
 - **No blocking I/O** in async contexts (use adapters or `spawn_blocking`).
 - Document `Send`/`Sync` expectations when crossing threads/runtimes.
+- **Async job payloads:** Job payloads should carry complete execution context. Workers should not re-read mutable data that was available at enqueue time; this prevents race conditions when separate connection pools are used for HTTP requests and job workers. Exception: scheduled/delayed jobs that intentionally need the latest state at execution time.
 
 **Unsafe & FFI**
 

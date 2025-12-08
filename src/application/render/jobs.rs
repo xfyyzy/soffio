@@ -20,15 +20,26 @@ use crate::{
 use super::types::{RenderRequest, RenderService, RenderTarget, RenderedSection};
 
 /// Schedules a top-level post render container job.
+///
+/// The payload carries `body_markdown` and `summary_markdown` inline to avoid
+/// race conditions: the job worker uses these values directly instead of
+/// re-reading from the database (which might return stale data due to separate
+/// connection pools).
 pub async fn enqueue_render_post_job<J: JobsRepo + ?Sized>(
     repo: &J,
     slug: String,
+    body_markdown: String,
+    summary_markdown: Option<String>,
     scheduled_at: Option<OffsetDateTime>,
 ) -> Result<String, RepoError> {
     enqueue_job(
         repo,
         JobType::RenderPost,
-        &RenderPostJobPayload { slug },
+        &RenderPostJobPayload {
+            slug,
+            body_markdown,
+            summary_markdown,
+        },
         scheduled_at,
         25,
         0,
@@ -56,6 +67,8 @@ pub async fn enqueue_render_page_job<J: JobsRepo + ?Sized>(
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RenderPostJobPayload {
     pub slug: String,
+    pub body_markdown: String,
+    pub summary_markdown: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -111,24 +124,22 @@ pub async fn process_render_post_job(
     let ctx = &*context;
     let repositories = ctx.repositories.clone();
 
-    use sqlx::Row;
+    // Use payload data directly to avoid race conditions with separate connection pools.
+    // The body_markdown and summary_markdown were captured at enqueue time.
+    let body_markdown = payload.body_markdown.clone();
+    let summary_markdown = payload.summary_markdown.clone();
 
-    let Some(row) =
-        sqlx::query("SELECT id, body_markdown, summary_markdown FROM posts WHERE slug = $1")
-            .bind(&payload.slug)
-            .fetch_optional(repositories.pool())
-            .await
-            .map_err(job_failed)?
+    // Only fetch post_id from database (immutable identifier).
+    let Some(post_id) = sqlx::query_scalar!("SELECT id FROM posts WHERE slug = $1", payload.slug)
+        .fetch_optional(repositories.pool())
+        .await
+        .map_err(job_failed)?
     else {
         return Err(job_failed(JobConsistencyError::new(format!(
             "post `{}` not found",
             payload.slug
         ))));
     };
-
-    let post_id: Uuid = row.try_get("id").map_err(job_failed)?;
-    let body_markdown: String = row.try_get("body_markdown").map_err(job_failed)?;
-    let summary_markdown: Option<String> = row.try_get("summary_markdown").map_err(job_failed)?;
 
     let guard = match ctx.inflight_renders.acquire(post_id) {
         Ok(guard) => guard,
@@ -520,3 +531,66 @@ fn normalize_public_site_url(url: &str) -> String {
     let without_trailing = trimmed.trim_end_matches('/');
     format!("{without_trailing}/")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Verifies that RenderPostJobPayload correctly serializes and deserializes
+    /// body_markdown and summary_markdown fields. This is critical for the race
+    /// condition fix: the payload must carry complete content so the worker
+    /// doesn't need to re-read from the database.
+    #[test]
+    fn render_post_payload_carries_complete_content() {
+        let payload = RenderPostJobPayload {
+            slug: "test-post".into(),
+            body_markdown: "# Heading\n\nParagraph with **bold** text.".into(),
+            summary_markdown: Some("Summary content here.".into()),
+        };
+
+        let json = serde_json::to_string(&payload).unwrap();
+        let deserialized: RenderPostJobPayload = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.slug, "test-post");
+        assert_eq!(
+            deserialized.body_markdown,
+            "# Heading\n\nParagraph with **bold** text."
+        );
+        assert_eq!(
+            deserialized.summary_markdown,
+            Some("Summary content here.".into())
+        );
+    }
+
+    /// Verifies that RenderPostJobPayload handles None summary_markdown correctly.
+    #[test]
+    fn render_post_payload_handles_none_summary() {
+        let payload = RenderPostJobPayload {
+            slug: "no-summary".into(),
+            body_markdown: "Body only".into(),
+            summary_markdown: None,
+        };
+
+        let json = serde_json::to_string(&payload).unwrap();
+        let deserialized: RenderPostJobPayload = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.summary_markdown, None);
+    }
+
+    /// Verifies that large markdown content is preserved through serialization.
+    #[test]
+    fn render_post_payload_preserves_large_content() {
+        let large_body = "# Title\n\n".to_string() + &"Lorem ipsum dolor sit amet. ".repeat(1000);
+        let payload = RenderPostJobPayload {
+            slug: "large-post".into(),
+            body_markdown: large_body.clone(),
+            summary_markdown: Some("Short summary".into()),
+        };
+
+        let json = serde_json::to_string(&payload).unwrap();
+        let deserialized: RenderPostJobPayload = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.body_markdown, large_body);
+    }
+}
+

@@ -7,6 +7,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **Render job race condition**: `RenderPostJobPayload` now carries `body_markdown` and `summary_markdown` inline instead of re-reading from the database. This prevents a race condition where the job worker (using a separate connection pool) could read stale data before the HTTP request's write was fully visible.
+
+### Added
+- Unit tests for `RenderPostJobPayload` serialization to ensure payload integrity.
+- Integration test `live_api_post_body_renders_immediately` validating that body patches trigger immediate rendering with correct content.
+- Documented async job payload architecture principle in AGENTS.md §5: job payloads should carry complete execution context to avoid cross-pool read inconsistencies.
+
 ## [0.1.11] - 2025-12-08
 
 ### Fixed
