@@ -143,6 +143,10 @@ Use a single atomic commit when possible. Use the template in §9.
 
 ## 5) Idiomatic Rust Rules (enforced)
 
+**Language**
+
+- Use English for all code comments, documentation, commit messages, and user-facing text in the codebase.
+
 **Types & invariants**
 
 - Encode invariants in types (enums/newtypes/state machines). Illegal states should be unrepresentable.
