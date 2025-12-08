@@ -90,7 +90,7 @@ jobs:
           path: prebuilt/${{ matrix.cpu_level }}
           key: prebuilt-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}
       - name: Download prebuilt binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl
           path: prebuilt/${{ matrix.cpu_level }}
