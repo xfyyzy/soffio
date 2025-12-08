@@ -1079,12 +1079,7 @@ async fn get_public_page(client: &Client, base: &str, path: &str) -> TestResult<
         .map_err(|e| map_net_err(e, &url))?;
 
     if !resp.status().is_success() {
-        return Err(format!(
-            "GET {} failed with status {}",
-            url,
-            resp.status()
-        )
-        .into());
+        return Err(format!("GET {} failed with status {}", url, resp.status()).into());
     }
 
     Ok(resp.text().await.unwrap_or_default())
@@ -1158,7 +1153,11 @@ async fn live_api_cache_invalidation_on_update() -> TestResult<()> {
         first_fetch.contains("Original Body") || first_fetch.contains(&original_title),
         "First fetch should contain original content. Got: {}...{}",
         &first_fetch[..first_fetch.len().min(200)],
-        if first_fetch.len() > 400 { &first_fetch[first_fetch.len()-200..] } else { "" }
+        if first_fetch.len() > 400 {
+            &first_fetch[first_fetch.len() - 200..]
+        } else {
+            ""
+        }
     );
 
     // Step 5: Update the post via API
@@ -1193,7 +1192,11 @@ async fn live_api_cache_invalidation_on_update() -> TestResult<()> {
          This indicates the API middleware is not invalidating the cache. \
          Got: {}...{}",
         &second_fetch[..second_fetch.len().min(200)],
-        if second_fetch.len() > 400 { &second_fetch[second_fetch.len()-200..] } else { "" }
+        if second_fetch.len() > 400 {
+            &second_fetch[second_fetch.len() - 200..]
+        } else {
+            ""
+        }
     );
 
     // Cleanup: delete the test post

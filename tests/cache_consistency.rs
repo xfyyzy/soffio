@@ -89,10 +89,18 @@ mod response_cache_tests {
         let cache = ResponseCache::new();
 
         // Put SEO entries
-        cache.put_seo(SeoKey::Sitemap, "<xml>sitemap</xml>".to_string()).await;
-        cache.put_seo(SeoKey::Rss, "<xml>rss</xml>".to_string()).await;
-        cache.put_seo(SeoKey::Atom, "<xml>atom</xml>".to_string()).await;
-        cache.put_seo(SeoKey::Robots, "User-agent: *".to_string()).await;
+        cache
+            .put_seo(SeoKey::Sitemap, "<xml>sitemap</xml>".to_string())
+            .await;
+        cache
+            .put_seo(SeoKey::Rss, "<xml>rss</xml>".to_string())
+            .await;
+        cache
+            .put_seo(SeoKey::Atom, "<xml>atom</xml>".to_string())
+            .await;
+        cache
+            .put_seo(SeoKey::Robots, "User-agent: *".to_string())
+            .await;
 
         // Verify they're cached
         assert!(cache.get_seo(SeoKey::Sitemap).await.is_some());

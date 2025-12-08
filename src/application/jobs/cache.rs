@@ -49,8 +49,8 @@ pub async fn enqueue_cache_warm_job<J: JobsRepo + ?Sized>(
         crate::domain::types::JobType::WarmCache,
         &payload,
         None,
-        1,  // low priority
-        3,  // fewer retries since it's best-effort
+        1, // low priority
+        3, // fewer retries since it's best-effort
     )
     .await
 }

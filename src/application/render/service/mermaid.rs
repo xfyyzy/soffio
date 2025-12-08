@@ -266,10 +266,7 @@ SVG
             args.contains("--output"),
             "CLI args missing --output: {args}"
         );
-        assert!(
-            args.contains("--svgId"),
-            "CLI args missing --svgId: {args}"
-        );
+        assert!(args.contains("--svgId"), "CLI args missing --svgId: {args}");
         assert!(
             args.contains("mermaid-"),
             "CLI args --svgId should contain 'mermaid-' prefix: {args}"
