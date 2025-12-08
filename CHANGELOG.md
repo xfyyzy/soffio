@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- CI and release workflows now explicitly use `--target` to enable Cargo's cross-compilation mode, ensuring build.rs and proc-macros use host default instruction set and are not polluted by target-specific CPU flags; fixes intermittent SIGILL errors when cached build artifacts run on different GitHub runner CPUs.
+
 ## [0.1.11] - 2025-12-07
 
 ### Fixed

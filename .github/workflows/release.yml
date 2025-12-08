@@ -55,10 +55,10 @@ jobs:
             "$RELEASE_BUILDER_IMAGE" \
             sh -ec '
               set -eux
-              cargo build --release --bin ${BIN_NAME} --bin ${BIN_CLI} && \
+              cargo build --release --target x86_64-unknown-linux-musl --bin ${BIN_NAME} --bin ${BIN_CLI} && \
               rm -rf dist && mkdir -p dist && \
-              cp target/release/${BIN_NAME} dist/${BIN_NAME} && \
-              cp target/release/${BIN_CLI} dist/${BIN_CLI} && \
+              cp target/x86_64-unknown-linux-musl/release/${BIN_NAME} dist/${BIN_NAME} && \
+              cp target/x86_64-unknown-linux-musl/release/${BIN_CLI} dist/${BIN_CLI} && \
               strip dist/${BIN_NAME} dist/${BIN_CLI} || true && \
               tar_name="${BIN_NAME}-${RELEASE_TAG}-${CPU_LEVEL}-musl.tar.gz" && \
               tar czf "${tar_name}" -C dist ${BIN_NAME} ${BIN_CLI} && \

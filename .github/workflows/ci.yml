@@ -52,6 +52,10 @@ jobs:
           cache-on-failure: true
 
       - name: Lint, Spec Check & Test (Alpine musl)
+        env:
+          # Override native in config.toml with a safe baseline for target code.
+          # build.rs uses host default instruction set (unaffected by this flag).
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS: -C target-cpu=x86-64-v2
         run: |
           docker run --rm \
             --network=host \
@@ -62,14 +66,15 @@ jobs:
             -e DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev \
             -e SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres \
             -e SQLX_OFFLINE=true \
+            -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS}" \
             "$CI_BUILDER_IMAGE" \
             sh -ec '
               set -eux; \
               redocly lint docs/api/openapi.yaml; \
               cargo fmt --all -- --check; \
-              cargo check --workspace --all-targets; \
-              cargo clippy --workspace --all-targets -- -D warnings; \
-              cargo run --bin gen_cli_docs; \
+              cargo check --workspace --all-targets --target x86_64-unknown-linux-musl; \
+              cargo clippy --workspace --all-targets --target x86_64-unknown-linux-musl -- -D warnings; \
+              cargo run --target x86_64-unknown-linux-musl --bin gen_cli_docs; \
               # Ensure docs are regenerated and committed. Explicit GIT_DIR/WORK_TREE avoids absolute-path issues when mounted at /work. \
               if ! GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff --quiet HEAD -- docs/cli.md docs/cli.zh.md; then \
                 echo "cli docs out of date; run cargo run --bin gen_cli_docs and commit." >&2; \
@@ -77,11 +82,11 @@ jobs:
                 GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff HEAD -- docs/cli.md docs/cli.zh.md; \
                 exit 1; \
               fi; \
-              cargo test --workspace --all-targets -- --nocapture; \
-              cargo run --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml; \
+              cargo test --workspace --all-targets --target x86_64-unknown-linux-musl -- --nocapture; \
+              cargo run --target x86_64-unknown-linux-musl --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml; \
               LOG_PATH=/tmp/soffio.log; \
               cp soffio.toml.example /tmp/soffio.toml; \
-              cargo run --bin soffio -- --config-file /tmp/soffio.toml serve \
+              cargo run --target x86_64-unknown-linux-musl --bin soffio -- --config-file /tmp/soffio.toml serve \
                 --server-host 0.0.0.0 \
                 --server-admin-host 0.0.0.0 \
                 --server-public-port 3000 \
@@ -94,7 +99,7 @@ jobs:
                 sleep 1; \
               done; \
               if [ "$ready" -ne 1 ]; then echo "soffio server not ready"; [ -f "$LOG_PATH" ] && cat "$LOG_PATH"; ps -ef | grep soffio || true; kill $srv || true; exit 1; fi; \
-              cargo test --test live_api -- --ignored --nocapture; \
+              cargo test --target x86_64-unknown-linux-musl --test live_api -- --ignored --nocapture; \
               kill $srv; \
               HOST_UID=$(stat -c '%u' /work); HOST_GID=$(stat -c '%g' /work); \
               chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true
