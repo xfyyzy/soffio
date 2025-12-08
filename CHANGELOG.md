@@ -7,30 +7,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.11] - 2025-12-08
+
 ### Fixed
 - **API cache invalidation**: API routes (`/api/v1/*`) now correctly invalidate the public response cache after write operations, ensuring content modified via `soffio-cli` is immediately reflected on the public site. Previously, API writes did not trigger cache invalidation, causing stale content to be served.
 - Removed redundant cache invalidation calls from service layer (`AdminPostService`, `AdminPageService`), keeping cache logic in the HTTP middleware where it belongs.
 - CI and release workflows now explicitly use `--target` to enable Cargo's cross-compilation mode, ensuring build.rs and proc-macros use host default instruction set and are not polluted by target-specific CPU flags; fixes intermittent SIGILL errors when cached build artifacts run on different GitHub runner CPUs.
 - Local development no longer forces cross-compilation target; `.cargo/config.toml` now only applies musl settings when `--target` is explicitly passed.
 - **Mermaid SVG id collision**: Mermaid diagrams now render with unique SVG ids (`mermaid-{hash}`) instead of the default `my-svg`, preventing CSS/JS conflicts when multiple diagrams appear on the same page.
+- Admin API key scope picker now keeps selected scopes visible in the available grid (like the tag picker), preventing option reordering when toggling many scopes.
+- Release workflow restricts target CPU flags to the musl target only, avoiding host build-script crashes when adding higher x86-64 levels.
 
 ### Added
 - Async cache warming: after API write operations, a `WarmCache` job is asynchronously enqueued to pre-warm commonly accessed pages (home, pinned tags, navigation pages). This maintains consistent user experience without blocking API responses.
 - `CacheWarmDebouncer`: prevents redundant cache warming when multiple writes occur in quick succession (5-second debounce window).
 - Cache consistency E2E tests (`live_api_cache_invalidation_on_update`, `live_api_cache_invalidation_on_page_update`) that verify public pages are updated immediately after API modifications.
+- Release artifacts and Docker images now also target `x86-64-v4` alongside v2/v3.
 
 ### Changed
 - AGENTS.md now requires English for all code comments, documentation, commit messages, and user-facing text.
 - AGENTS.md now prohibits `git commit --amend` unless explicitly requested by the user.
-
-## [0.1.11] - 2025-12-07
-
-### Fixed
-- Admin API key scope picker now keeps selected scopes visible in the available grid (like the tag picker), preventing option reordering when toggling many scopes.
-- Release workflow restricts target CPU flags to the musl target only, avoiding host build-script crashes when adding higher x86-64 levels.
-
-### Added
-- Release artifacts and Docker images now also target `x86-64-v4` alongside v2/v3.
 
 ## [0.1.10] - 2025-12-07
 ### Changed
