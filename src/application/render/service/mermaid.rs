@@ -87,6 +87,7 @@ impl MermaidRenderer {
         let output_path = output_file.path().to_path_buf();
 
         let cli_started_at = Instant::now();
+        let svg_id = format!("mermaid-{}", &cache_key[..12]); // Use first 12 chars of hash for readable unique id
         let output = Command::new(&self.cli_path)
             .arg("--input")
             .arg(input_file.path())
@@ -94,6 +95,8 @@ impl MermaidRenderer {
             .arg(&output_path)
             .arg("--outputFormat")
             .arg("svg")
+            .arg("--svgId")
+            .arg(&svg_id)
             .arg("--quiet")
             .stdin(Stdio::null())
             .stdout(Stdio::null())
@@ -262,6 +265,14 @@ SVG
         assert!(
             args.contains("--output"),
             "CLI args missing --output: {args}"
+        );
+        assert!(
+            args.contains("--svgId"),
+            "CLI args missing --svgId: {args}"
+        );
+        assert!(
+            args.contains("mermaid-"),
+            "CLI args --svgId should contain 'mermaid-' prefix: {args}"
         );
     }
 

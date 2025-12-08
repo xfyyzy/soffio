@@ -12,6 +12,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Removed redundant cache invalidation calls from service layer (`AdminPostService`, `AdminPageService`), keeping cache logic in the HTTP middleware where it belongs.
 - CI and release workflows now explicitly use `--target` to enable Cargo's cross-compilation mode, ensuring build.rs and proc-macros use host default instruction set and are not polluted by target-specific CPU flags; fixes intermittent SIGILL errors when cached build artifacts run on different GitHub runner CPUs.
 - Local development no longer forces cross-compilation target; `.cargo/config.toml` now only applies musl settings when `--target` is explicitly passed.
+- **Mermaid SVG id collision**: Mermaid diagrams now render with unique SVG ids (`mermaid-{hash}`) instead of the default `my-svg`, preventing CSS/JS conflicts when multiple diagrams appear on the same page.
 
 ### Added
 - Async cache warming: after API write operations, a `WarmCache` job is asynchronously enqueued to pre-warm commonly accessed pages (home, pinned tags, navigation pages). This maintains consistent user experience without blocking API responses.
