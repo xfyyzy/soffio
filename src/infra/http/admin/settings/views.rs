@@ -1,224 +1,34 @@
-use askama::Template;
-use axum::{
-    extract::{Form, State},
-    http::StatusCode,
-    response::{IntoResponse, Response},
-};
-use chrono_tz::Tz;
-use serde::Deserialize;
-use thiserror::Error;
+//! View building functions for settings.
 
-use crate::application::admin::settings::{AdminSettingsError, UpdateSettingsCommand};
-use crate::application::error::HttpError;
 use crate::domain::entities::SiteSettingsRecord;
-use crate::infra::http::repo_error_to_http;
-use crate::presentation::{admin::views as admin_views, views::render_template_response};
+use crate::presentation::admin::views as admin_views;
 
-use super::{
-    AdminState,
-    selectors::PANEL,
-    shared::{Toast, datastar_replace, push_toasts, template_render_http_error},
-};
+pub(super) const SETTINGS_FORM_ACTION: &str = "/settings/edit";
 
-const SOURCE_BASE: &str = "infra::http::admin_settings";
-const SETTINGS_FORM_ACTION: &str = "/settings/edit";
-
-#[derive(Debug, Clone, Deserialize)]
-pub(super) struct AdminSettingsForm {
-    homepage_size: String,
-    admin_page_size: String,
-    show_tag_aggregations: Option<String>,
-    show_month_aggregations: Option<String>,
-    tag_filter_limit: String,
-    month_filter_limit: String,
-    global_toc_enabled: Option<String>,
-    brand_title: String,
-    brand_href: String,
-    footer_copy: String,
-    public_site_url: String,
-    favicon_svg: String,
-    timezone: String,
-    meta_title: String,
-    meta_description: String,
-    og_title: String,
-    og_description: String,
+pub(super) struct EditFieldValues {
+    pub(super) homepage_size: String,
+    pub(super) admin_page_size: String,
+    pub(super) tag_filter_limit: String,
+    pub(super) month_filter_limit: String,
+    pub(super) timezone: String,
+    pub(super) show_tag_aggregations: bool,
+    pub(super) show_month_aggregations: bool,
+    pub(super) global_toc_enabled: bool,
+    pub(super) brand_title: String,
+    pub(super) brand_href: String,
+    pub(super) footer_copy: String,
+    pub(super) public_site_url: String,
+    pub(super) favicon_svg: String,
+    pub(super) meta_title: String,
+    pub(super) meta_description: String,
+    pub(super) og_title: String,
+    pub(super) og_description: String,
+    pub(super) updated_at: String,
 }
 
-#[derive(Debug, Error)]
-enum AdminSettingsFormError {
-    #[error("`{field}` must be a positive integer")]
-    InvalidInteger { field: &'static str },
-    #[error("`{field}` must be greater than zero")]
-    NonPositive { field: &'static str },
-    #[error("`{value}` is not a recognised timezone")]
-    InvalidTimezone { value: String },
-    #[error("`{field}` must be an SVG document")]
-    InvalidFavicon {
-        field: &'static str,
-        reason: &'static str,
-    },
-}
-
-impl AdminSettingsForm {
-    const MAX_FAVICON_SVG_LENGTH: usize = 8 * 1024;
-
-    fn to_command(&self) -> Result<UpdateSettingsCommand, AdminSettingsFormError> {
-        let homepage_size = parse_positive_i32(self.homepage_size.trim(), "homepage_size")?;
-        let admin_page_size = parse_positive_i32(self.admin_page_size.trim(), "admin_page_size")?;
-        let tag_filter_limit =
-            parse_positive_i32(self.tag_filter_limit.trim(), "tag_filter_limit")?;
-        let month_filter_limit =
-            parse_positive_i32(self.month_filter_limit.trim(), "month_filter_limit")?;
-
-        let timezone = self.timezone.trim().parse::<Tz>().map_err(|_| {
-            AdminSettingsFormError::InvalidTimezone {
-                value: self.timezone.trim().to_string(),
-            }
-        })?;
-
-        let favicon_svg = self.favicon_svg.trim();
-        validate_favicon_svg(favicon_svg)?;
-
-        Ok(UpdateSettingsCommand {
-            homepage_size,
-            admin_page_size,
-            show_tag_aggregations: self.show_tag_aggregations.is_some(),
-            show_month_aggregations: self.show_month_aggregations.is_some(),
-            tag_filter_limit,
-            month_filter_limit,
-            global_toc_enabled: self.global_toc_enabled.is_some(),
-            brand_title: self.brand_title.trim().to_string(),
-            brand_href: self.brand_href.trim().to_string(),
-            footer_copy: self.footer_copy.trim().to_string(),
-            public_site_url: self.public_site_url.trim().to_string(),
-            favicon_svg: favicon_svg.to_string(),
-            timezone,
-            meta_title: self.meta_title.trim().to_string(),
-            meta_description: self.meta_description.trim().to_string(),
-            og_title: self.og_title.trim().to_string(),
-            og_description: self.og_description.trim().to_string(),
-        })
-    }
-
-    fn to_edit_view(&self, updated_at: String) -> admin_views::AdminSettingsEditView {
-        build_edit_view(EditFieldValues {
-            homepage_size: self.homepage_size.trim().to_string(),
-            admin_page_size: self.admin_page_size.trim().to_string(),
-            tag_filter_limit: self.tag_filter_limit.trim().to_string(),
-            month_filter_limit: self.month_filter_limit.trim().to_string(),
-            timezone: self.timezone.trim().to_string(),
-            show_tag_aggregations: self.show_tag_aggregations.is_some(),
-            show_month_aggregations: self.show_month_aggregations.is_some(),
-            global_toc_enabled: self.global_toc_enabled.is_some(),
-            brand_title: self.brand_title.trim().to_string(),
-            brand_href: self.brand_href.trim().to_string(),
-            footer_copy: self.footer_copy.trim().to_string(),
-            public_site_url: self.public_site_url.trim().to_string(),
-            favicon_svg: self.favicon_svg.trim().to_string(),
-            meta_title: self.meta_title.trim().to_string(),
-            meta_description: self.meta_description.trim().to_string(),
-            og_title: self.og_title.trim().to_string(),
-            og_description: self.og_description.trim().to_string(),
-            updated_at,
-        })
-    }
-}
-
-pub(super) async fn admin_settings(State(state): State<AdminState>) -> Response {
-    let chrome = match state.chrome.load("/settings").await {
-        Ok(chrome) => chrome,
-        Err(err) => return err.into_response(),
-    };
-
-    let settings = match state.settings.load().await {
-        Ok(settings) => settings,
-        Err(err) => return admin_settings_error(SOURCE_BASE, err).into_response(),
-    };
-
-    let content = summary_view_from_record(&settings);
-    let view = admin_views::AdminLayout::new(chrome, content);
-    render_template_response(admin_views::AdminSettingsTemplate { view }, StatusCode::OK)
-}
-
-pub(super) async fn admin_settings_edit(State(state): State<AdminState>) -> Response {
-    let chrome = match state.chrome.load("/settings/edit").await {
-        Ok(chrome) => chrome,
-        Err(err) => return err.into_response(),
-    };
-
-    let settings = match state.settings.load().await {
-        Ok(settings) => settings,
-        Err(err) => {
-            return admin_settings_error("infra::http::admin_settings_edit", err).into_response();
-        }
-    };
-
-    let content = edit_view_from_record(&settings);
-    let view = admin_views::AdminLayout::new(chrome, content);
-    render_template_response(
-        admin_views::AdminSettingsEditTemplate { view },
-        StatusCode::OK,
-    )
-}
-
-pub(super) async fn admin_settings_update(
-    State(state): State<AdminState>,
-    Form(form): Form<AdminSettingsForm>,
-) -> Response {
-    let original = match state.settings.load().await {
-        Ok(settings) => settings,
-        Err(err) => {
-            return admin_settings_error("infra::http::admin_settings_update_load", err)
-                .into_response();
-        }
-    };
-
-    let original_updated = admin_views::format_timestamp(original.updated_at, original.timezone);
-
-    let command = match form.to_command() {
-        Ok(command) => command,
-        Err(err) => {
-            let content = form.to_edit_view(original_updated);
-            return render_editor_with_toast(
-                content,
-                &[Toast::error(err.to_string())],
-                "infra::http::admin_settings_update",
-            )
-            .into_response();
-        }
-    };
-
-    let actor = "admin";
-    match state.settings.update(actor, command).await {
-        Ok(updated) => {
-            let content = edit_view_from_record(&updated);
-            render_editor_with_toast(
-                content,
-                &[Toast::success("Site settings updated successfully")],
-                "infra::http::admin_settings_update",
-            )
-            .into_response()
-        }
-        Err(err) => match err {
-            AdminSettingsError::ConstraintViolation(field) => {
-                let content = form.to_edit_view(original_updated);
-                render_editor_with_toast(
-                    content,
-                    &[Toast::error(format!("Field `{field}` cannot be empty"))],
-                    "infra::http::admin_settings_update",
-                )
-                .into_response()
-            }
-            AdminSettingsError::Repo(repo) => admin_settings_error(
-                "infra::http::admin_settings_update",
-                AdminSettingsError::Repo(repo),
-            )
-            .into_response(),
-        },
-    }
-}
-
-fn summary_view_from_record(record: &SiteSettingsRecord) -> admin_views::AdminSettingsSummaryView {
+pub(super) fn summary_view_from_record(
+    record: &SiteSettingsRecord,
+) -> admin_views::AdminSettingsSummaryView {
     let (simple_fields, multiline_fields) = summary_fields(record);
 
     admin_views::AdminSettingsSummaryView {
@@ -230,7 +40,9 @@ fn summary_view_from_record(record: &SiteSettingsRecord) -> admin_views::AdminSe
     }
 }
 
-fn edit_view_from_record(record: &SiteSettingsRecord) -> admin_views::AdminSettingsEditView {
+pub(super) fn edit_view_from_record(
+    record: &SiteSettingsRecord,
+) -> admin_views::AdminSettingsEditView {
     let timezone = record.timezone;
     build_edit_view(EditFieldValues {
         homepage_size: record.homepage_size.to_string(),
@@ -252,75 +64,6 @@ fn edit_view_from_record(record: &SiteSettingsRecord) -> admin_views::AdminSetti
         og_description: record.og_description.clone(),
         updated_at: admin_views::format_timestamp(record.updated_at, timezone),
     })
-}
-
-fn render_editor_with_toast(
-    content: admin_views::AdminSettingsEditView,
-    toasts: &[Toast],
-    template_source: &'static str,
-) -> Response {
-    let panel_html = match render_settings_editor_panel(&content, template_source) {
-        Ok(html) => html,
-        Err(err) => return err.into_response(),
-    };
-
-    let mut stream = datastar_replace(PANEL, panel_html);
-    if let Err(err) = push_toasts(&mut stream, toasts) {
-        return err.into_response();
-    }
-
-    stream.into_response()
-}
-
-fn render_settings_editor_panel(
-    content: &admin_views::AdminSettingsEditView,
-    template_source: &'static str,
-) -> Result<String, HttpError> {
-    let template = admin_views::AdminSettingsEditPanelTemplate {
-        content: content.clone(),
-    };
-
-    template.render().map_err(|err| {
-        template_render_http_error(template_source, "Template rendering failed", err)
-    })
-}
-
-fn parse_positive_i32(value: &str, field: &'static str) -> Result<i32, AdminSettingsFormError> {
-    let parsed = value
-        .parse::<i32>()
-        .map_err(|_| AdminSettingsFormError::InvalidInteger { field })?;
-    if parsed <= 0 {
-        return Err(AdminSettingsFormError::NonPositive { field });
-    }
-    Ok(parsed)
-}
-
-fn validate_favicon_svg(value: &str) -> Result<(), AdminSettingsFormError> {
-    if value.is_empty() {
-        return Err(AdminSettingsFormError::InvalidFavicon {
-            field: "favicon_svg",
-            reason: "cannot be empty",
-        });
-    }
-    if value.len() > AdminSettingsForm::MAX_FAVICON_SVG_LENGTH {
-        return Err(AdminSettingsFormError::InvalidFavicon {
-            field: "favicon_svg",
-            reason: "exceeds maximum length",
-        });
-    }
-    if !value.to_ascii_lowercase().contains("<svg") {
-        return Err(AdminSettingsFormError::InvalidFavicon {
-            field: "favicon_svg",
-            reason: "missing <svg> element",
-        });
-    }
-    if value.to_ascii_lowercase().contains("<script") {
-        return Err(AdminSettingsFormError::InvalidFavicon {
-            field: "favicon_svg",
-            reason: "scripts are not allowed",
-        });
-    }
-    Ok(())
 }
 
 fn summary_fields(
@@ -396,28 +139,7 @@ fn summary_fields(
     (simple, multiline)
 }
 
-struct EditFieldValues {
-    homepage_size: String,
-    admin_page_size: String,
-    tag_filter_limit: String,
-    month_filter_limit: String,
-    timezone: String,
-    show_tag_aggregations: bool,
-    show_month_aggregations: bool,
-    global_toc_enabled: bool,
-    brand_title: String,
-    brand_href: String,
-    footer_copy: String,
-    public_site_url: String,
-    favicon_svg: String,
-    meta_title: String,
-    meta_description: String,
-    og_title: String,
-    og_description: String,
-    updated_at: String,
-}
-
-fn build_edit_view(values: EditFieldValues) -> admin_views::AdminSettingsEditView {
+pub(super) fn build_edit_view(values: EditFieldValues) -> admin_views::AdminSettingsEditView {
     let EditFieldValues {
         homepage_size,
         admin_page_size,
@@ -619,18 +341,6 @@ fn summary_badge_field(label: &str, enabled: bool) -> admin_views::AdminSettings
 
 fn settings_toggle_id(suffix: &str) -> String {
     format!("settings-toggle-{}", suffix)
-}
-
-fn admin_settings_error(source: &'static str, err: AdminSettingsError) -> HttpError {
-    match err {
-        AdminSettingsError::ConstraintViolation(field) => HttpError::new(
-            source,
-            StatusCode::BAD_REQUEST,
-            "Settings request could not be processed",
-            format!("Invalid field `{field}`"),
-        ),
-        AdminSettingsError::Repo(repo) => repo_error_to_http(source, repo),
-    }
 }
 
 #[cfg(test)]
