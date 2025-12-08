@@ -179,7 +179,7 @@ pub(super) async fn build_post_panel_html(
         .map_err(|err| admin_post_error(error_source, err))?;
 
     let cursor_state = CursorState::default();
-    super::handlers::apply_pagination_links(&mut content, &cursor_state);
+    super::pagination::apply_pagination_links(&mut content, &cursor_state);
 
     render_post_panel_html(&content, template_source)
 }
