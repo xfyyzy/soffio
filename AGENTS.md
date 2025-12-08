@@ -129,6 +129,8 @@ run the sequence below:
 
 Use a single atomic commit when possible. Use the template in §9.
 
+- **Do not use `git commit --amend`** unless the user explicitly requests it.
+
 ### 4.5 Changelog & Release discipline
 
 - Always identify and label Breaking changes in `CHANGELOG.md`.
