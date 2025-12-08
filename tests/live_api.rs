@@ -371,7 +371,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
     .await?;
 
     // NAVIGATION
-    let (nav_id, _) = post_json(
+    let (nav_id_1, _) = post_json(
         &client,
         &base,
         &config.keys.all,
@@ -393,7 +393,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
         &client,
         &base,
         &config.keys.all,
-        &format!("/api/v1/navigation/{nav_id}"),
+        &format!("/api/v1/navigation/{nav_id_1}"),
         &[StatusCode::OK],
     )
     .await?;
@@ -559,7 +559,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
     )
     .await?;
 
-    let (nav_id, _) = post_json(
+    let (nav_id_2, _) = post_json(
         &client,
         &base,
         &config.keys.all,
@@ -599,7 +599,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
         &client,
         &base,
         &config.keys.all,
-        &format!("/api/v1/navigation/{nav_id}"),
+        &format!("/api/v1/navigation/{nav_id_2}"),
         &[StatusCode::OK],
         json!({
             "label": format!("Nav {suf} updated"),
@@ -615,7 +615,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
         &client,
         &base,
         &config.keys.all,
-        &format!("/api/v1/navigation/{nav_id}/visibility"),
+        &format!("/api/v1/navigation/{nav_id_2}/visibility"),
         &[StatusCode::OK],
         json!({"visible": true}),
     )
@@ -625,7 +625,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
         &client,
         &base,
         &config.keys.all,
-        &format!("/api/v1/navigation/{nav_id}/sort-order"),
+        &format!("/api/v1/navigation/{nav_id_2}/sort-order"),
         &[StatusCode::OK],
         json!({"sort_order": 7}),
     )
@@ -635,7 +635,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
         &client,
         &base,
         &config.keys.expired,
-        &format!("/api/v1/navigation/{nav_id}"),
+        &format!("/api/v1/navigation/{nav_id_2}"),
         &[
             StatusCode::UNAUTHORIZED,
             StatusCode::FORBIDDEN,
@@ -783,11 +783,21 @@ async fn live_api_end_to_end() -> TestResult<()> {
     .await?;
 
     // CLEANUP (positive delete + negative delete per resource)
+    // Delete first navigation
     delete(
         &client,
         &base,
         &config.keys.all,
-        &format!("/api/v1/navigation/{nav_id}"),
+        &format!("/api/v1/navigation/{nav_id_1}"),
+        &[StatusCode::NO_CONTENT],
+    )
+    .await?;
+    // Delete second navigation
+    delete(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/navigation/{nav_id_2}"),
         &[StatusCode::NO_CONTENT],
     )
     .await?;
@@ -795,7 +805,7 @@ async fn live_api_end_to_end() -> TestResult<()> {
         &client,
         &base,
         &config.keys.read,
-        &format!("/api/v1/navigation/{nav_id}"),
+        &format!("/api/v1/navigation/{nav_id_2}"),
         &[
             StatusCode::UNAUTHORIZED,
             StatusCode::FORBIDDEN,
