@@ -65,6 +65,7 @@ pub enum JobType {
     PublishPost,
     PublishPage,
     InvalidateCache,
+    WarmCache,
 }
 
 impl JobType {
@@ -78,6 +79,7 @@ impl JobType {
             JobType::PublishPost => "publish_post",
             JobType::PublishPage => "publish_page",
             JobType::InvalidateCache => "invalidate_cache",
+            JobType::WarmCache => "warm_cache",
         }
     }
 }
@@ -95,6 +97,7 @@ impl TryFrom<&str> for JobType {
             "publish_post" => Ok(JobType::PublishPost),
             "publish_page" => Ok(JobType::PublishPage),
             "invalidate_cache" => Ok(JobType::InvalidateCache),
+            "warm_cache" => Ok(JobType::WarmCache),
             _ => Err(()),
         }
     }

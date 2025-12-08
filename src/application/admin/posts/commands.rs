@@ -4,8 +4,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::application::jobs::{
-    CACHE_INVALIDATION_WAIT_TIMEOUT, PUBLISH_JOB_WAIT_TIMEOUT, enqueue_cache_invalidation_job,
-    enqueue_publish_post_job, wait_for_job_completion,
+    PUBLISH_JOB_WAIT_TIMEOUT, enqueue_publish_post_job, wait_for_job_completion,
 };
 use crate::application::render::enqueue_render_post_job;
 use crate::application::repos::{
@@ -95,7 +94,6 @@ impl AdminPostService {
             .await?;
 
         self.enqueue_render_jobs(&post).await?;
-        self.invalidate_cache("post.create").await?;
 
         Ok(post)
     }
@@ -139,7 +137,6 @@ impl AdminPostService {
             .await?;
 
         self.enqueue_render_jobs(&post).await?;
-        self.invalidate_cache("post.update").await?;
 
         Ok(post)
     }
@@ -174,7 +171,6 @@ impl AdminPostService {
             }
 
             self.record_status_audit(actor, &post).await?;
-            self.invalidate_cache("post.publish").await?;
             Ok(post)
         } else {
             let normalized = normalize_status(
@@ -194,7 +190,6 @@ impl AdminPostService {
 
             let post = self.writer.update_post_status(params).await?;
             self.record_status_audit(actor, &post).await?;
-            self.invalidate_cache("post.status").await?;
             Ok(post)
         }
     }
@@ -211,7 +206,6 @@ impl AdminPostService {
             )
             .await?;
 
-        self.invalidate_cache("post.delete").await?;
         Ok(())
     }
 
@@ -247,7 +241,6 @@ impl AdminPostService {
             )
             .await?;
 
-        self.invalidate_cache("post.pin").await?;
         Ok(post)
     }
 
@@ -285,7 +278,6 @@ impl AdminPostService {
             )
             .await?;
 
-        self.invalidate_cache("post.tags").await?;
         Ok(())
     }
 
@@ -314,14 +306,6 @@ impl AdminPostService {
     async fn enqueue_render_jobs(&self, post: &PostRecord) -> Result<(), AdminPostError> {
         enqueue_render_post_job(self.jobs.as_ref(), post.slug.clone(), None).await?;
 
-        Ok(())
-    }
-
-    async fn invalidate_cache(&self, reason: &str) -> Result<(), AdminPostError> {
-        let job_id =
-            enqueue_cache_invalidation_job(self.jobs.as_ref(), Some(reason.to_string())).await?;
-        wait_for_job_completion(self.jobs.as_ref(), &job_id, CACHE_INVALIDATION_WAIT_TIMEOUT)
-            .await?;
         Ok(())
     }
 

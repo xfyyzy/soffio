@@ -118,6 +118,7 @@ fn job_type_label(job_type: JobType) -> &'static str {
         JobType::PublishPost => "Publish Post",
         JobType::PublishPage => "Publish Page",
         JobType::InvalidateCache => "Invalidate Cache",
+        JobType::WarmCache => "Warm Cache",
     }
 }
 
@@ -246,6 +247,7 @@ fn job_type_options(selected: Option<JobType>) -> Vec<admin_views::AdminJobFilte
         JobType::PublishPost,
         JobType::PublishPage,
         JobType::InvalidateCache,
+        JobType::WarmCache,
     ] {
         options.push(admin_views::AdminJobFilterOption {
             value: job_type.as_str().to_string(),

@@ -8,9 +8,13 @@ use chrono::Utc;
 use reqwest::{Client, Method, StatusCode, multipart};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{collections::HashSet, fs, path::Path};
+use std::{collections::HashSet, fs, path::Path, time::Duration};
 
 type TestResult<T> = Result<T, Box<dyn std::error::Error>>;
+
+/// Brief delay to allow cache invalidation to propagate.
+/// The middleware invalidates synchronously, but we add a small margin for safety.
+const CACHE_PROPAGATION_DELAY: Duration = Duration::from_millis(100);
 
 #[derive(Deserialize)]
 struct SeedConfig {
@@ -1053,4 +1057,228 @@ fn map_net_err(err: reqwest::Error, url: &str) -> Box<dyn std::error::Error> {
     } else {
         err.into()
     }
+}
+
+/// Fetches a public page without authentication.
+async fn get_public_page(client: &Client, base: &str, path: &str) -> TestResult<String> {
+    let url = format!("{}{}", base, path);
+    let resp = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| map_net_err(e, &url))?;
+
+    if !resp.status().is_success() {
+        return Err(format!(
+            "GET {} failed with status {}",
+            url,
+            resp.status()
+        )
+        .into());
+    }
+
+    Ok(resp.text().await.unwrap_or_default())
+}
+
+/// Cache consistency test: verifies that API modifications invalidate the public cache.
+///
+/// This test would have caught the original bug where soffio-cli operations
+/// (via the API) did not trigger cache invalidation, causing stale content
+/// to be served on the public site.
+///
+/// Test flow:
+/// 1. Create a post via API with unique content
+/// 2. Publish the post via API
+/// 3. Fetch the public post page to warm the cache
+/// 4. Verify the original content is present
+/// 5. Update the post content via API (PATCH)
+/// 6. Immediately fetch the public page again
+/// 7. Verify the updated content is present (cache was invalidated)
+#[tokio::test]
+#[ignore]
+async fn live_api_cache_invalidation_on_update() -> TestResult<()> {
+    let config = load_config()?;
+    let client = Client::builder().build()?;
+    let base = config.base_url.trim_end_matches('/').to_string();
+
+    let suf = current_suffix();
+    let original_title = format!("Cache Test Original {suf}");
+    let updated_title = format!("Cache Test Updated {suf}");
+    let original_body = format!("# Original Body {suf}\n\nThis is the original content.");
+    let updated_body = format!("# Updated Body {suf}\n\nThis content was updated via API.");
+
+    // Step 1: Create a post
+    let (post_id, post_slug) = post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        "/api/v1/posts",
+        &[StatusCode::CREATED],
+        json!({
+            "title": original_title,
+            "excerpt": "Cache invalidation test post",
+            "body_markdown": original_body,
+        }),
+    )
+    .await?;
+
+    assert!(!post_id.is_empty(), "post_id should not be empty");
+    assert!(!post_slug.is_empty(), "post_slug should not be empty");
+
+    // Step 2: Publish the post
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}/status"),
+        &[StatusCode::OK],
+        json!({"status": "published"}),
+    )
+    .await?;
+
+    // Small delay to ensure publish job completes
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // Step 3: Fetch the public page to warm the cache
+    let public_path = format!("/posts/{post_slug}");
+    let first_fetch = get_public_page(&client, &base, &public_path).await?;
+
+    // Step 4: Verify original content is present
+    assert!(
+        first_fetch.contains("Original Body") || first_fetch.contains(&original_title),
+        "First fetch should contain original content. Got: {}...{}",
+        &first_fetch[..first_fetch.len().min(200)],
+        if first_fetch.len() > 400 { &first_fetch[first_fetch.len()-200..] } else { "" }
+    );
+
+    // Step 5: Update the post via API
+    patch_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::OK],
+        json!({
+            "slug": post_slug,
+            "title": updated_title,
+            "excerpt": "Updated excerpt",
+            "body_markdown": updated_body,
+        }),
+    )
+    .await?;
+
+    // Brief delay to allow cache invalidation to propagate
+    tokio::time::sleep(CACHE_PROPAGATION_DELAY).await;
+
+    // Step 6: Immediately fetch the public page again
+    let second_fetch = get_public_page(&client, &base, &public_path).await?;
+
+    // Step 7: Verify the UPDATED content is present (cache was invalidated!)
+    // If this assertion fails, it means the cache was NOT invalidated by the API update.
+    // This is exactly the bug we fixed: API routes were missing the invalidate_admin_writes middleware.
+    assert!(
+        second_fetch.contains("Updated Body") || second_fetch.contains(&updated_title),
+        "CACHE BUG DETECTED: Second fetch should contain UPDATED content, \
+         but it still shows stale cached content. \
+         This indicates the API middleware is not invalidating the cache. \
+         Got: {}...{}",
+        &second_fetch[..second_fetch.len().min(200)],
+        if second_fetch.len() > 400 { &second_fetch[second_fetch.len()-200..] } else { "" }
+    );
+
+    // Cleanup: delete the test post
+    delete(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::NO_CONTENT],
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Cache consistency test for page updates via API.
+#[tokio::test]
+#[ignore]
+async fn live_api_cache_invalidation_on_page_update() -> TestResult<()> {
+    let config = load_config()?;
+    let client = Client::builder().build()?;
+    let base = config.base_url.trim_end_matches('/').to_string();
+
+    let suf = current_suffix();
+    let original_body = format!("# Original Page {suf}");
+    let updated_body = format!("# Updated Page {suf}");
+
+    // Create a page
+    let (page_id, page_slug) = post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        "/api/v1/pages",
+        &[StatusCode::CREATED],
+        json!({
+            "title": format!("Cache Test Page {suf}"),
+            "body_markdown": original_body,
+        }),
+    )
+    .await?;
+
+    // Publish the page
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/pages/{page_id}/status"),
+        &[StatusCode::OK],
+        json!({"status": "published"}),
+    )
+    .await?;
+
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // Fetch public page to warm cache
+    let public_path = format!("/{page_slug}");
+    let first_fetch = get_public_page(&client, &base, &public_path).await?;
+    assert!(
+        first_fetch.contains("Original Page"),
+        "First fetch should contain original content"
+    );
+
+    // Update via API
+    patch_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/pages/{page_id}"),
+        &[StatusCode::OK],
+        json!({
+            "slug": page_slug,
+            "title": format!("Cache Test Page Updated {suf}"),
+            "body_markdown": updated_body,
+        }),
+    )
+    .await?;
+
+    tokio::time::sleep(CACHE_PROPAGATION_DELAY).await;
+
+    // Verify cache was invalidated
+    let second_fetch = get_public_page(&client, &base, &public_path).await?;
+    assert!(
+        second_fetch.contains("Updated Page"),
+        "CACHE BUG: Page content should be updated after API modification"
+    );
+
+    // Cleanup
+    delete(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/pages/{page_id}"),
+        &[StatusCode::NO_CONTENT],
+    )
+    .await?;
+
+    Ok(())
 }

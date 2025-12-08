@@ -1,11 +1,8 @@
-[build]
-# Explicitly specify target to enable Cargo's "cross-compilation mode".
-# This ensures rustflags only apply to target compilation, not build.rs / proc-macro.
-target = "x86_64-unknown-linux-musl"
-
+# Per-target settings for cross-compilation.
+# These only apply when building with --target x86_64-unknown-linux-musl
+# (used by CI/Release workflows).
 [target.x86_64-unknown-linux-musl]
-# Use native optimization for local development, only applies to target compilation.
-# CI/Release will override this via environment variables.
+# CI/Release override this via CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS.
 rustflags = ["-C", "target-cpu=native"]
 
 [env]

@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use axum::{
     body::Body,
@@ -9,6 +13,60 @@ use bytes::Bytes;
 use http_body_util::BodyExt;
 use thiserror::Error;
 use tokio::sync::RwLock;
+
+/// Default debounce window for cache warming.
+/// Multiple write operations within this window will only trigger one warm.
+pub const DEFAULT_CACHE_WARM_DEBOUNCE: Duration = Duration::from_secs(5);
+
+/// Debouncer to prevent frequent cache warming operations.
+///
+/// When multiple write operations occur in quick succession, we only want to
+/// warm the cache once after a brief delay, rather than warming after each operation.
+#[derive(Clone, Default)]
+pub struct CacheWarmDebouncer {
+    last_warm: Arc<RwLock<Option<Instant>>>,
+    debounce_window: Duration,
+}
+
+impl CacheWarmDebouncer {
+    pub fn new(debounce_window: Duration) -> Self {
+        Self {
+            last_warm: Arc::new(RwLock::new(None)),
+            debounce_window,
+        }
+    }
+
+    /// Check if warming should proceed based on the debounce window.
+    /// Returns true if enough time has passed since the last warm.
+    pub async fn should_warm(&self) -> bool {
+        let guard = self.last_warm.read().await;
+        match *guard {
+            Some(last) => last.elapsed() >= self.debounce_window,
+            None => true,
+        }
+    }
+
+    /// Mark that warming has started.
+    /// Call this when a cache warm job is successfully enqueued.
+    pub async fn mark_warm_requested(&self) {
+        let mut guard = self.last_warm.write().await;
+        *guard = Some(Instant::now());
+    }
+
+    /// Attempt to start warming if debounce window has passed.
+    /// Returns true if warming should proceed, false if skipped due to debouncing.
+    pub async fn try_warm(&self) -> bool {
+        let mut guard = self.last_warm.write().await;
+        let should_warm = match *guard {
+            Some(last) => last.elapsed() >= self.debounce_window,
+            None => true,
+        };
+        if should_warm {
+            *guard = Some(Instant::now());
+        }
+        should_warm
+    }
+}
 
 #[derive(Clone, Default)]
 pub struct ResponseCache {
@@ -154,5 +212,57 @@ pub async fn buffer_response(
             let rebuilt = Response::from_parts(parts, Body::empty());
             Err((rebuilt, CacheStoreError::Buffer(error.to_string())))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn debouncer_allows_first_warm() {
+        let debouncer = CacheWarmDebouncer::new(Duration::from_secs(5));
+
+        // First warm should always be allowed
+        assert!(debouncer.should_warm().await);
+        assert!(debouncer.try_warm().await);
+    }
+
+    #[tokio::test]
+    async fn debouncer_blocks_rapid_requests() {
+        let debouncer = CacheWarmDebouncer::new(Duration::from_millis(100));
+
+        // First warm succeeds
+        assert!(debouncer.try_warm().await);
+
+        // Immediate second warm should be blocked
+        assert!(!debouncer.should_warm().await);
+        assert!(!debouncer.try_warm().await);
+    }
+
+    #[tokio::test]
+    async fn debouncer_allows_after_window() {
+        let debouncer = CacheWarmDebouncer::new(Duration::from_millis(50));
+
+        // First warm succeeds
+        assert!(debouncer.try_warm().await);
+
+        // Wait for debounce window to pass
+        tokio::time::sleep(Duration::from_millis(60)).await;
+
+        // Should now be allowed
+        assert!(debouncer.should_warm().await);
+        assert!(debouncer.try_warm().await);
+    }
+
+    #[tokio::test]
+    async fn debouncer_mark_warm_blocks_subsequent() {
+        let debouncer = CacheWarmDebouncer::new(Duration::from_millis(100));
+
+        // Mark that a warm was requested
+        debouncer.mark_warm_requested().await;
+
+        // Should be blocked
+        assert!(!debouncer.should_warm().await);
     }
 }

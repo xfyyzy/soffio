@@ -13,7 +13,8 @@ use uuid::Uuid;
 use crate::{
     application::api_keys::ApiPrincipal,
     application::error::ErrorReport,
-    infra::cache::{ResponseCache, should_store_response},
+    infra::cache::{CacheWarmDebouncer, ResponseCache, should_store_response},
+    infra::db::PostgresRepositories,
 };
 
 use super::DATASTAR_REQUEST_HEADER;
@@ -85,6 +86,56 @@ pub async fn invalidate_admin_writes(
 
     if method != Method::GET && response.status().is_success() {
         cache.invalidate_all().await;
+    }
+
+    response
+}
+
+/// State for cache invalidation with async warming support.
+#[derive(Clone)]
+pub struct CacheInvalidationState {
+    pub cache: Arc<ResponseCache>,
+    pub debouncer: CacheWarmDebouncer,
+    pub jobs_repo: Arc<PostgresRepositories>,
+}
+
+/// Middleware that invalidates cache on successful writes and triggers async warming.
+///
+/// This is used by API routes to ensure cache consistency after modifications
+/// via soffio-cli or other API consumers.
+pub async fn invalidate_and_warm_cache(
+    State(state): State<CacheInvalidationState>,
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    use crate::application::jobs::enqueue_cache_warm_job;
+    use crate::application::repos::JobsRepo;
+
+    let method = request.method().clone();
+    let response = next.run(request).await;
+
+    if method != Method::GET && response.status().is_success() {
+        // Synchronous cache invalidation - happens immediately
+        state.cache.invalidate_all().await;
+
+        // Async cache warming - enqueue job if debounce window has passed
+        if state.debouncer.try_warm().await {
+            let jobs_repo = state.jobs_repo.clone();
+            tokio::spawn(async move {
+                if let Err(err) = enqueue_cache_warm_job(
+                    jobs_repo.as_ref() as &dyn JobsRepo,
+                    Some("api_write".to_string()),
+                )
+                .await
+                {
+                    tracing::warn!(
+                        target = "infra::http::middleware",
+                        error = %err,
+                        "failed to enqueue cache warm job"
+                    );
+                }
+            });
+        }
     }
 
     response

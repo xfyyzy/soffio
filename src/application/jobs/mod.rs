@@ -5,7 +5,8 @@ mod publish;
 mod queue;
 
 pub use cache::{
-    CacheInvalidationJobPayload, enqueue_cache_invalidation_job, process_cache_invalidation_job,
+    CacheInvalidationJobPayload, CacheWarmJobPayload, enqueue_cache_invalidation_job,
+    enqueue_cache_warm_job, process_cache_invalidation_job, process_cache_warm_job,
 };
 pub use context::{
     CACHE_INVALIDATION_WAIT_TIMEOUT, JobWorkerContext, PUBLISH_JOB_WAIT_TIMEOUT, job_failed,

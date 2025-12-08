@@ -12,12 +12,22 @@ use axum::{
     routing::{get, post},
 };
 
+use crate::infra::cache::{CacheWarmDebouncer, DEFAULT_CACHE_WARM_DEBOUNCE};
 use crate::infra::http::RouterState;
-use crate::infra::http::middleware::log_responses;
+use crate::infra::http::middleware::{
+    CacheInvalidationState, invalidate_and_warm_cache, log_responses,
+};
 
 pub fn build_api_router(state: RouterState) -> Router<RouterState> {
     let auth_state = state.clone();
     let rate_state = state.clone();
+
+    // Create cache invalidation state with debouncer for async warming
+    let cache_invalidation_state = CacheInvalidationState {
+        cache: state.http.cache.clone(),
+        debouncer: CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE),
+        jobs_repo: state.http.db.clone(),
+    };
 
     Router::new()
         .route("/api/v1/api-keys/me", get(handlers::get_api_key_info))
@@ -133,7 +143,12 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         .route("/api/v1/jobs", get(handlers::list_jobs))
         .route("/api/v1/audit", get(handlers::list_audit_logs))
         .with_state(state)
-        // Order matters: log runs after auth+rate so principal is available.
+        // Order matters: layers run in reverse order (last added = first to run on request).
+        // Cache invalidation + async warming runs first on the response (after all handlers complete).
+        .layer(axum_middleware::from_fn_with_state(
+            cache_invalidation_state,
+            invalidate_and_warm_cache,
+        ))
         .layer(axum_middleware::from_fn(log_responses))
         .layer(axum_middleware::from_fn_with_state(
             rate_state,

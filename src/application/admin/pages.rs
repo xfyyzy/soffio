@@ -7,8 +7,7 @@ use uuid::Uuid;
 
 use crate::application::admin::audit::AdminAuditService;
 use crate::application::jobs::{
-    CACHE_INVALIDATION_WAIT_TIMEOUT, PUBLISH_JOB_WAIT_TIMEOUT, enqueue_cache_invalidation_job,
-    enqueue_publish_page_job, wait_for_job_completion,
+    PUBLISH_JOB_WAIT_TIMEOUT, enqueue_publish_page_job, wait_for_job_completion,
 };
 use crate::application::pagination::{CursorPage, PageCursor};
 use crate::application::render::{
@@ -252,7 +251,6 @@ impl AdminPageService {
             )
             .await?;
         self.enqueue_render_job(&page).await?;
-        self.invalidate_cache("page.create").await?;
         Ok(page)
     }
 
@@ -301,7 +299,6 @@ impl AdminPageService {
             )
             .await?;
         self.enqueue_render_job(&page).await?;
-        self.invalidate_cache("page.update").await?;
         Ok(page)
     }
 
@@ -335,7 +332,6 @@ impl AdminPageService {
             }
 
             self.record_status_audit(actor, &page).await?;
-            self.invalidate_cache("page.publish").await?;
             Ok(page)
         } else {
             let normalized = normalize_status(
@@ -355,7 +351,6 @@ impl AdminPageService {
 
             let page = self.writer.update_page_status(params).await?;
             self.record_status_audit(actor, &page).await?;
-            self.invalidate_cache("page.status").await?;
             Ok(page)
         }
     }
@@ -371,7 +366,6 @@ impl AdminPageService {
                 Option::<&PageSummarySnapshot<'_>>::None,
             )
             .await?;
-        self.invalidate_cache("page.delete").await?;
         Ok(())
     }
 
@@ -384,14 +378,6 @@ impl AdminPageService {
         )
         .await?;
 
-        Ok(())
-    }
-
-    async fn invalidate_cache(&self, reason: &str) -> Result<(), AdminPageError> {
-        let job_id =
-            enqueue_cache_invalidation_job(self.jobs.as_ref(), Some(reason.to_string())).await?;
-        wait_for_job_completion(self.jobs.as_ref(), &job_id, CACHE_INVALIDATION_WAIT_TIMEOUT)
-            .await?;
         Ok(())
     }
 

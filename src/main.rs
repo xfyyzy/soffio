@@ -27,8 +27,8 @@ use soffio::{
         feed::FeedService,
         jobs::{
             ExpireApiKeysContext, JobWorkerContext, expire_api_keys_schedule,
-            process_cache_invalidation_job, process_expire_api_keys_job, process_publish_page_job,
-            process_publish_post_job,
+            process_cache_invalidation_job, process_cache_warm_job, process_expire_api_keys_job,
+            process_publish_page_job, process_publish_post_job,
         },
         page::PageService,
         render::{
@@ -545,6 +545,10 @@ fn spawn_job_monitor(
         repositories.pool().clone(),
         ApalisSqlConfig::new(JobType::InvalidateCache.as_str()),
     );
+    let cache_warm_storage = PostgresStorage::new_with_config(
+        repositories.pool().clone(),
+        ApalisSqlConfig::new(JobType::WarmCache.as_str()),
+    );
 
     let render_post_concurrency = jobs.render_post_concurrency.get() as usize;
     let render_summary_concurrency = jobs.render_summary_concurrency.get() as usize;
@@ -588,11 +592,17 @@ fn spawn_job_monitor(
         .data(context.clone())
         .backend(publish_page_storage)
         .build_fn(process_publish_page_job);
-    let cache_worker = WorkerBuilder::new("cache-invalidation-worker")
+    let cache_invalidation_worker = WorkerBuilder::new("cache-invalidation-worker")
         .concurrency(cache_invalidation_concurrency)
-        .data(context)
+        .data(context.clone())
         .backend(cache_invalidation_storage)
         .build_fn(process_cache_invalidation_job);
+    // Cache warm worker: runs with concurrency 1 to avoid redundant warming
+    let cache_warm_worker = WorkerBuilder::new("cache-warm-worker")
+        .concurrency(1)
+        .data(context)
+        .backend(cache_warm_storage)
+        .build_fn(process_cache_warm_job);
 
     // Cron-based API key expiration worker (runs hourly)
     let expire_api_keys_ctx = ExpireApiKeysContext { api_keys };
@@ -609,7 +619,8 @@ fn spawn_job_monitor(
         .register(render_page_worker)
         .register(publish_post_worker)
         .register(publish_page_worker)
-        .register(cache_worker)
+        .register(cache_invalidation_worker)
+        .register(cache_warm_worker)
         .register(expire_api_keys_worker);
 
     tokio::spawn(async move {
