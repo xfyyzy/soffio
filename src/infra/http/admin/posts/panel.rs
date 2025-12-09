@@ -143,9 +143,19 @@ pub(super) async fn build_post_list_view(
         tag_filter_enabled: true,
         month_filter_enabled: true,
         row_action_prefix: "/posts".to_string(),
-        job_type_filter_enabled: false,
-        filter_job_type: None,
+        custom_hidden_fields: build_hidden_fields(filter),
     })
+}
+
+fn build_hidden_fields(filter: &PostQueryFilter) -> Vec<admin_views::AdminHiddenField> {
+    let mut fields = Vec::new();
+    if let Some(ref tag) = filter.tag {
+        fields.push(admin_views::AdminHiddenField::new("tag", tag.clone()));
+    }
+    if let Some(ref month) = filter.month {
+        fields.push(admin_views::AdminHiddenField::new("month", month.clone()));
+    }
+    fields
 }
 
 fn time_column_label(status: Option<PostStatus>) -> String {

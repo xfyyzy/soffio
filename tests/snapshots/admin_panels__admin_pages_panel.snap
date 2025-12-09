@@ -2,7 +2,6 @@
 source: tests/admin_panels.rs
 expression: rendered
 ---
-
 <section data-role="panel" data-admin-panel="pages">
   <header data-role="panel-header">
     <h2 data-role="panel-title">Pages</h2>
@@ -24,12 +23,6 @@ expression: rendered
       
       
       <input type="hidden" name="search" value="about">
-      
-      
-      
-      
-      <input type="hidden" name="month" value="2025-10">
-      
       
       
       <button type="submit" data-role="status-filter"  data-state="active" >
@@ -142,12 +135,6 @@ expression: rendered
     
     
     
-    
-    <input type="hidden" name="month" value="2025-10">
-    
-    
-    
-    
     <button type="button" data-role="prev" disabled>Previous</button>
     
   </form>
@@ -156,12 +143,6 @@ expression: rendered
     
     
     <input type="hidden" name="search" value="about">
-    
-    
-    
-    
-    <input type="hidden" name="month" value="2025-10">
-    
     
     
     

@@ -117,9 +117,16 @@ pub(crate) async fn build_page_list_view(
         tag_filter_enabled: false,
         month_filter_enabled: true,
         row_action_prefix: "/pages".to_string(),
-        job_type_filter_enabled: false,
-        filter_job_type: None,
+        custom_hidden_fields: build_page_hidden_fields(filter),
     })
+}
+
+fn build_page_hidden_fields(filter: &PageQueryFilter) -> Vec<admin_views::AdminHiddenField> {
+    let mut fields = Vec::new();
+    if let Some(ref month) = filter.month {
+        fields.push(admin_views::AdminHiddenField::new("month", month.clone()));
+    }
+    fields
 }
 
 pub(super) fn render_page_panel_html(

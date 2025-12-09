@@ -2,7 +2,6 @@
 source: tests/admin_panels.rs
 expression: rendered
 ---
-
 <section data-role="panel" data-admin-panel="navigation">
   <header data-role="panel-header">
     <h2 data-role="panel-title">Navigation</h2>
@@ -25,8 +24,6 @@ expression: rendered
       <input type="hidden" name="search" value="about">
       
       
-      
-      
       <button type="submit" data-role="status-filter"  data-state="active" >
         All (2)
       </button>
@@ -43,8 +40,6 @@ expression: rendered
       <input type="hidden" name="search" value="about">
       
       
-      
-      
       <button type="submit" data-role="status-filter" >
         Visible (1)
       </button>
@@ -59,8 +54,6 @@ expression: rendered
       
       
       <input type="hidden" name="search" value="about">
-      
-      
       
       
       <button type="submit" data-role="status-filter" >
@@ -174,8 +167,6 @@ expression: rendered
     
     
     
-    
-    
     <input type="hidden" name="cursor" value="prev">
     
     
@@ -191,8 +182,6 @@ expression: rendered
     
     
     <input type="hidden" name="search" value="about">
-    
-    
     
     
     

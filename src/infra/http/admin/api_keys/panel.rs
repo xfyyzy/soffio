@@ -162,9 +162,16 @@ pub async fn build_panel_view(
         previous_page_state,
         next_page_state,
         available_scopes: scope_options(),
-        job_type_filter_enabled: false,
-        filter_job_type: None,
+        custom_hidden_fields: build_api_key_hidden_fields(filter),
     })
+}
+
+fn build_api_key_hidden_fields(filter: &ApiKeyQueryFilter) -> Vec<admin_views::AdminHiddenField> {
+    let mut fields = Vec::new();
+    if let Some(scope) = filter.scope {
+        fields.push(admin_views::AdminHiddenField::new("scope", scope.as_str()));
+    }
+    fields
 }
 
 pub fn render_panel_html(

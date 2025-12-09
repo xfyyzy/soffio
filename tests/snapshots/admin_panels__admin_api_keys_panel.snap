@@ -2,7 +2,6 @@
 source: tests/admin_panels.rs
 expression: rendered
 ---
-
 <section data-role="panel" data-admin-panel="api-keys">
   <header data-role="panel-header">
     <h2 data-role="panel-title">API keys</h2>
@@ -25,12 +24,6 @@ expression: rendered
       <input type="hidden" name="search" value="test">
       
       
-      
-      <input type="hidden" name="scope" value="content_read">
-      
-      
-      
-      
       <button type="submit" data-role="status-filter"  data-state="active" >
         All (5)
       </button>
@@ -47,12 +40,6 @@ expression: rendered
       <input type="hidden" name="search" value="test">
       
       
-      
-      <input type="hidden" name="scope" value="content_read">
-      
-      
-      
-      
       <button type="submit" data-role="status-filter" >
         Active (4)
       </button>
@@ -67,12 +54,6 @@ expression: rendered
       
       
       <input type="hidden" name="search" value="test">
-      
-      
-      
-      <input type="hidden" name="scope" value="content_read">
-      
-      
       
       
       <button type="submit" data-role="status-filter" >
@@ -214,12 +195,6 @@ expression: rendered
     
     
     
-    <input type="hidden" name="scope" value="content_read">
-    
-    
-    
-    
-    
     
     
     <button type="submit" data-role="prev">Previous</button>
@@ -230,12 +205,6 @@ expression: rendered
     
     
     <input type="hidden" name="search" value="test">
-    
-    
-    
-    <input type="hidden" name="scope" value="content_read">
-    
-    
     
     
     

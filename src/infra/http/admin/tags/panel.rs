@@ -114,9 +114,16 @@ pub(super) async fn build_tag_list_view(
         tag_filter_label: "Tag".to_string(),
         tag_filter_all_label: "All tags".to_string(),
         tag_filter_field: "tag".to_string(),
-        job_type_filter_enabled: false,
-        filter_job_type: None,
+        custom_hidden_fields: build_tag_hidden_fields(filter),
     })
+}
+
+fn build_tag_hidden_fields(filter: &TagQueryFilter) -> Vec<admin_views::AdminHiddenField> {
+    let mut fields = Vec::new();
+    if let Some(ref month) = filter.month {
+        fields.push(admin_views::AdminHiddenField::new("month", month.clone()));
+    }
+    fields
 }
 
 pub(super) fn render_tag_panel_html(

@@ -86,19 +86,19 @@ pub(super) async fn build_audit_list_view(
         previous_page_state: None,
         next_page_state: None,
         panel_action: "/audit/panel".to_string(),
-        // Disabled filters for template compatibility
-        tag_filter_enabled: false,
-        month_filter_enabled: false,
-        job_type_filter_enabled: false,
-        filter_tag: None,
-        filter_month: None,
-        filter_job_type: None,
-        tag_options: Vec::new(),
-        month_options: Vec::new(),
-        tag_filter_label: "Tag".to_string(),
-        tag_filter_all_label: "All tags".to_string(),
-        tag_filter_field: "tag".to_string(),
+        custom_hidden_fields: build_audit_hidden_fields(filter),
     })
+}
+
+fn build_audit_hidden_fields(filter: &AuditQueryFilter) -> Vec<admin_views::AdminHiddenField> {
+    let mut fields = Vec::new();
+    if let Some(ref actor) = filter.actor {
+        fields.push(admin_views::AdminHiddenField::new("actor", actor.clone()));
+    }
+    if let Some(ref action) = filter.action {
+        fields.push(admin_views::AdminHiddenField::new("action", action.clone()));
+    }
+    fields
 }
 
 pub(super) fn apply_pagination_links(

@@ -7,21 +7,9 @@
     {% if let Some(value) = &content.filter_search %}
     <input type="hidden" name="search" value="{{ value }}">
     {% endif %}
-    {% if content.tag_filter_enabled %}
-    {% if let Some(value) = &content.filter_tag %}
-    <input type="hidden" name="{{ content.tag_filter_field }}" value="{{ value }}">
-    {% endif %}
-    {% endif %}
-    {% if content.month_filter_enabled %}
-    {% if let Some(value) = &content.filter_month %}
-    <input type="hidden" name="month" value="{{ value }}">
-    {% endif %}
-    {% endif %}
-    {% if content.job_type_filter_enabled %}
-    {% if let Some(value) = &content.filter_job_type %}
-    <input type="hidden" name="job_type" value="{{ value }}">
-    {% endif %}
-    {% endif %}
+    {% for field in content.custom_hidden_fields %}
+    <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+    {% endfor %}
     {% if let Some(state) = &content.previous_page_state %}
     {% if let Some(cursor) = &state.cursor %}
     <input type="hidden" name="cursor" value="{{ cursor }}">
@@ -42,21 +30,9 @@
     {% if let Some(value) = &content.filter_search %}
     <input type="hidden" name="search" value="{{ value }}">
     {% endif %}
-    {% if content.tag_filter_enabled %}
-    {% if let Some(value) = &content.filter_tag %}
-    <input type="hidden" name="{{ content.tag_filter_field }}" value="{{ value }}">
-    {% endif %}
-    {% endif %}
-    {% if content.month_filter_enabled %}
-    {% if let Some(value) = &content.filter_month %}
-    <input type="hidden" name="month" value="{{ value }}">
-    {% endif %}
-    {% endif %}
-    {% if content.job_type_filter_enabled %}
-    {% if let Some(value) = &content.filter_job_type %}
-    <input type="hidden" name="job_type" value="{{ value }}">
-    {% endif %}
-    {% endif %}
+    {% for field in content.custom_hidden_fields %}
+    <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+    {% endfor %}
     {% if let Some(state) = &content.next_page_state %}
     {% if let Some(cursor) = &state.cursor %}
     <input type="hidden" name="cursor" value="{{ cursor }}">

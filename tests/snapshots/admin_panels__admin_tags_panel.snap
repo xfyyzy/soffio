@@ -2,7 +2,6 @@
 source: tests/admin_panels.rs
 expression: rendered
 ---
-
 <section data-role="panel" data-admin-panel="tags">
   <header data-role="panel-header">
     <h2 data-role="panel-title">Tags</h2>
@@ -25,12 +24,6 @@ expression: rendered
       <input type="hidden" name="search" value="rust">
       
       
-      
-      
-      <input type="hidden" name="month" value="2025-10">
-      
-      
-      
       <button type="submit" data-role="status-filter" >
         All (5)
       </button>
@@ -47,12 +40,6 @@ expression: rendered
       <input type="hidden" name="search" value="rust">
       
       
-      
-      
-      <input type="hidden" name="month" value="2025-10">
-      
-      
-      
       <button type="submit" data-role="status-filter"  data-state="active" >
         Pinned (2)
       </button>
@@ -67,12 +54,6 @@ expression: rendered
       
       
       <input type="hidden" name="search" value="rust">
-      
-      
-      
-      
-      <input type="hidden" name="month" value="2025-10">
-      
       
       
       <button type="submit" data-role="status-filter" >
@@ -187,12 +168,6 @@ expression: rendered
     
     
     
-    <input type="hidden" name="month" value="2025-10">
-    
-    
-    
-    
-    
     <input type="hidden" name="cursor" value="prev">
     
     
@@ -208,12 +183,6 @@ expression: rendered
     
     
     <input type="hidden" name="search" value="rust">
-    
-    
-    
-    
-    <input type="hidden" name="month" value="2025-10">
-    
     
     
     

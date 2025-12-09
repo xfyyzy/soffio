@@ -121,9 +121,22 @@ pub(super) async fn build_upload_list_view(
         tag_filter_enabled: true,
         month_filter_enabled: true,
         copy_toast_action: "/toasts".to_string(),
-        job_type_filter_enabled: false,
-        filter_job_type: None,
+        custom_hidden_fields: build_upload_hidden_fields(filter),
     })
+}
+
+fn build_upload_hidden_fields(filter: &UploadQueryFilter) -> Vec<admin_views::AdminHiddenField> {
+    let mut fields = Vec::new();
+    if let Some(ref ct) = filter.content_type {
+        fields.push(admin_views::AdminHiddenField::new(
+            "content_type",
+            ct.clone(),
+        ));
+    }
+    if let Some(ref month) = filter.month {
+        fields.push(admin_views::AdminHiddenField::new("month", month.clone()));
+    }
+    fields
 }
 
 pub(super) fn render_upload_panel_html(

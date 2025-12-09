@@ -81,6 +81,7 @@ pub(super) async fn build_job_list_view(
         filters,
         jobs,
         filter_job_type: filter.job_type.map(|jt| job_type_key(jt).to_string()),
+        filter_search: filter.search.clone(),
         filter_query: String::new(),
         active_status_key: status.map(|s| state_key(s).to_string()),
         job_type_options: job_type_options(&type_counts),
@@ -92,17 +93,19 @@ pub(super) async fn build_job_list_view(
         next_page_state: None,
         panel_action: "/jobs/panel".to_string(),
         row_action_prefix: "/jobs".to_string(),
-        tag_filter_enabled: false,
-        month_filter_enabled: false,
-        filter_search: filter.search.clone(),
-        filter_tag: None,
-        filter_month: None,
-        tag_options: Vec::new(),
-        month_options: Vec::new(),
-        tag_filter_label: String::new(),
-        tag_filter_all_label: String::new(),
-        tag_filter_field: String::new(),
+        custom_hidden_fields: build_job_hidden_fields(filter),
     })
+}
+
+fn build_job_hidden_fields(filter: &JobQueryFilter) -> Vec<admin_views::AdminHiddenField> {
+    let mut fields = Vec::new();
+    if let Some(jt) = filter.job_type {
+        fields.push(admin_views::AdminHiddenField::new(
+            "job_type",
+            job_type_key(jt),
+        ));
+    }
+    fields
 }
 
 /// Build the job detail view for a single job.

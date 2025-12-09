@@ -57,6 +57,31 @@ fn asset_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
+/// Generic hidden field for form submissions.
+/// Used by templates to render additional hidden inputs without hardcoding.
+#[derive(Clone)]
+pub struct AdminHiddenField {
+    pub name: String,
+    pub value: String,
+}
+
+impl AdminHiddenField {
+    pub fn new(name: impl Into<String>, value: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            value: value.into(),
+        }
+    }
+
+    /// Create from an Option<String>, returning None if value is None or empty.
+    pub fn from_option(name: impl Into<String>, value: &Option<String>) -> Option<Self> {
+        value.as_ref().filter(|v| !v.is_empty()).map(|v| Self {
+            name: name.into(),
+            value: v.clone(),
+        })
+    }
+}
+
 #[derive(Clone)]
 pub struct AdminMetricView {
     pub label: String,
@@ -194,9 +219,8 @@ pub struct AdminPostListView {
     pub tag_filter_enabled: bool,
     pub month_filter_enabled: bool,
     pub row_action_prefix: String,
-    // Job type filter (disabled for posts, needed for template compatibility)
-    pub job_type_filter_enabled: bool,
-    pub filter_job_type: Option<String>,
+    /// Generic hidden fields for filter state retention (replaces hardcoded fields)
+    pub custom_hidden_fields: Vec<AdminHiddenField>,
 }
 
 #[derive(Template)]
@@ -265,9 +289,8 @@ pub struct AdminPageListView {
     pub tag_filter_enabled: bool,
     pub month_filter_enabled: bool,
     pub row_action_prefix: String,
-    // Job type filter (disabled for pages, needed for template compatibility)
-    pub job_type_filter_enabled: bool,
-    pub filter_job_type: Option<String>,
+    /// Generic hidden fields for filter state retention
+    pub custom_hidden_fields: Vec<AdminHiddenField>,
 }
 
 #[derive(Template)]
@@ -324,9 +347,8 @@ pub struct AdminTagListView {
     pub tag_filter_label: String,
     pub tag_filter_all_label: String,
     pub tag_filter_field: String,
-    // Job type filter (disabled for tags, needed for template compatibility)
-    pub job_type_filter_enabled: bool,
-    pub filter_job_type: Option<String>,
+    /// Generic hidden fields for filter state retention
+    pub custom_hidden_fields: Vec<AdminHiddenField>,
 }
 
 #[derive(Template)]
@@ -413,9 +435,8 @@ pub struct AdminNavigationListView {
     pub tag_filter_label: String,
     pub tag_filter_all_label: String,
     pub tag_filter_field: String,
-    // Job type filter (disabled for navigation, needed for template compatibility)
-    pub job_type_filter_enabled: bool,
-    pub filter_job_type: Option<String>,
+    /// Generic hidden fields for filter state retention
+    pub custom_hidden_fields: Vec<AdminHiddenField>,
 }
 
 #[derive(Template)]
@@ -610,9 +631,8 @@ pub struct AdminUploadListView {
     pub tag_filter_enabled: bool,
     pub month_filter_enabled: bool,
     pub copy_toast_action: String,
-    // Job type filter (disabled for uploads, needed for template compatibility)
-    pub job_type_filter_enabled: bool,
-    pub filter_job_type: Option<String>,
+    /// Generic hidden fields for filter state retention
+    pub custom_hidden_fields: Vec<AdminHiddenField>,
 }
 
 #[derive(Clone)]
@@ -865,9 +885,8 @@ pub struct AdminApiKeyListView {
     pub previous_page_state: Option<AdminApiKeyPaginationState>,
     pub next_page_state: Option<AdminApiKeyPaginationState>,
     pub available_scopes: Vec<AdminApiScopeOption>,
-    // Job type filter (disabled for API keys, needed for template compatibility)
-    pub job_type_filter_enabled: bool,
-    pub filter_job_type: Option<String>,
+    /// Generic hidden fields for filter state retention
+    pub custom_hidden_fields: Vec<AdminHiddenField>,
 }
 
 #[derive(Template)]
@@ -1017,6 +1036,7 @@ pub struct AdminJobListView {
 
     // Filter state
     pub filter_job_type: Option<String>,
+    pub filter_search: Option<String>,
     pub filter_query: String,
     pub active_status_key: Option<String>,
 
@@ -1035,17 +1055,8 @@ pub struct AdminJobListView {
     pub panel_action: String,
     pub row_action_prefix: String,
 
-    // Disabled filters (for template compatibility)
-    pub tag_filter_enabled: bool,
-    pub month_filter_enabled: bool,
-    pub filter_search: Option<String>,
-    pub filter_tag: Option<String>,
-    pub filter_month: Option<String>,
-    pub tag_options: Vec<AdminPostTagOption>,
-    pub month_options: Vec<AdminPostMonthOption>,
-    pub tag_filter_label: String,
-    pub tag_filter_all_label: String,
-    pub tag_filter_field: String,
+    /// Generic hidden fields for filter state retention
+    pub custom_hidden_fields: Vec<AdminHiddenField>,
 }
 
 #[derive(Template)]
@@ -1162,18 +1173,8 @@ pub struct AdminAuditListView {
     // Action paths
     pub panel_action: String,
 
-    // Template compatibility (disabled)
-    pub tag_filter_enabled: bool,
-    pub month_filter_enabled: bool,
-    pub job_type_filter_enabled: bool,
-    pub filter_tag: Option<String>,
-    pub filter_month: Option<String>,
-    pub filter_job_type: Option<String>,
-    pub tag_options: Vec<AdminPostTagOption>,
-    pub month_options: Vec<AdminPostMonthOption>,
-    pub tag_filter_label: String,
-    pub tag_filter_all_label: String,
-    pub tag_filter_field: String,
+    /// Generic hidden fields for filter state retention
+    pub custom_hidden_fields: Vec<AdminHiddenField>,
 }
 
 #[derive(Template)]
