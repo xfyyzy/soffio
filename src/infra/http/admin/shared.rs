@@ -33,16 +33,6 @@ pub(super) fn blank_to_none_opt(value: Option<String>) -> Option<String> {
     })
 }
 
-pub(super) fn flash_message(
-    kind: &'static str,
-    text: impl Into<String>,
-) -> admin_views::AdminFlashMessage {
-    admin_views::AdminFlashMessage {
-        kind,
-        text: text.into(),
-    }
-}
-
 #[derive(Clone)]
 pub(super) struct Toast {
     pub id: Uuid,

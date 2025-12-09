@@ -98,12 +98,6 @@ pub struct AdminDashboardTemplate {
 }
 
 #[derive(Clone)]
-pub struct AdminFlashMessage {
-    pub kind: &'static str,
-    pub text: String,
-}
-
-#[derive(Clone)]
 pub struct AdminToastItem {
     pub id: String,
     pub kind: &'static str,
@@ -694,110 +688,6 @@ pub struct AdminUploadNewTemplate {
 pub struct AdminUploadNewPanelTemplate {
     pub content: AdminUploadFormView,
 }
-
-#[derive(Clone)]
-pub struct AdminJobRowView {
-    pub id: String,
-    pub job_type: String,
-    pub status: String,
-    pub scheduled_at: Option<String>,
-    pub created_at: String,
-    pub error_text: Option<String>,
-    pub detail_href: String,
-    pub retry_action: String,
-    pub cancel_action: String,
-    pub can_retry: bool,
-    pub can_cancel: bool,
-}
-
-#[derive(Clone)]
-pub struct AdminJobFilterOption {
-    pub value: String,
-    pub label: String,
-    pub selected: bool,
-}
-
-#[derive(Clone)]
-pub struct AdminJobListView {
-    pub heading: String,
-    pub jobs: Vec<AdminJobRowView>,
-    pub state_options: Vec<AdminJobFilterOption>,
-    pub type_options: Vec<AdminJobFilterOption>,
-    pub filter_search: Option<String>,
-    pub filter_state: Option<String>,
-    pub filter_job_type: Option<String>,
-    pub filter_query: String,
-    pub current_cursor: Option<String>,
-    pub next_cursor: Option<String>,
-    pub flash: Option<AdminFlashMessage>,
-}
-
-#[derive(Template)]
-#[template(path = "admin/jobs.html")]
-pub struct AdminJobsTemplate {
-    pub view: AdminLayout<AdminJobListView>,
-}
-
-#[derive(Clone)]
-pub struct AdminJobDetailView {
-    pub id: String,
-    pub job_type: String,
-    pub status: String,
-    pub attempts: i32,
-    pub max_attempts: i32,
-    pub run_at: String,
-    pub lock_at: Option<String>,
-    pub lock_by: Option<String>,
-    pub done_at: Option<String>,
-    pub last_error: Option<String>,
-    pub priority: i32,
-    pub payload_pretty: String,
-    pub retry_action: String,
-    pub cancel_action: String,
-    pub back_href: String,
-    pub filter_state: Option<String>,
-    pub filter_job_type: Option<String>,
-    pub filter_search: Option<String>,
-    pub filter_cursor: Option<String>,
-    pub can_retry: bool,
-    pub can_cancel: bool,
-    pub flash: Option<AdminFlashMessage>,
-    pub filter_query: String,
-}
-
-#[derive(Template)]
-#[template(path = "admin/job_detail.html")]
-pub struct AdminJobDetailTemplate {
-    pub view: AdminLayout<AdminJobDetailView>,
-}
-
-#[derive(Clone)]
-pub struct AdminAuditRowView {
-    pub id: String,
-    pub actor: String,
-    pub action: String,
-    pub entity: String,
-    pub created_at: String,
-}
-
-#[derive(Clone)]
-pub struct AdminAuditListView {
-    pub heading: String,
-    pub entries: Vec<AdminAuditRowView>,
-    pub filter_actor: Option<String>,
-    pub filter_action: Option<String>,
-    pub filter_entity_type: Option<String>,
-    pub filter_search: Option<String>,
-    pub filter_query: String,
-    pub next_cursor: Option<String>,
-}
-
-#[derive(Template)]
-#[template(path = "admin/audit.html")]
-pub struct AdminAuditTemplate {
-    pub view: AdminLayout<AdminAuditListView>,
-}
-
 #[derive(Clone)]
 pub struct AdminPostEditorView {
     pub title: String,

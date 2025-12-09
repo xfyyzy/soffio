@@ -1,9 +1,7 @@
 mod api_keys;
-mod audit;
 mod cache;
 mod dashboard;
 mod health;
-mod jobs;
 mod navigation;
 mod pages;
 mod pagination;
@@ -136,11 +134,6 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/uploads/{id}", get(uploads::admin_upload_download))
         .route("/uploads/{id}/delete", post(uploads::admin_upload_delete))
         .route("/toasts", post(toasts::admin_toast))
-        .route("/jobs", get(jobs::admin_jobs))
-        .route("/jobs/{id}", get(jobs::admin_job_detail))
-        .route("/jobs/{id}/retry", post(jobs::admin_job_retry))
-        .route("/jobs/{id}/cancel", post(jobs::admin_job_cancel))
-        .route("/audit", get(audit::admin_audit))
         .route("/api-keys", get(api_keys::admin_api_keys))
         .route("/api-keys/create", post(api_keys::admin_api_key_create))
         .route("/api-keys/panel", post(api_keys::admin_api_keys_panel))

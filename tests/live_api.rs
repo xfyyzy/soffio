@@ -1319,8 +1319,10 @@ async fn live_api_post_body_renders_immediately() -> TestResult<()> {
     let suf = current_suffix();
     let unique_marker_v1 = format!("MARKER_V1_{suf}");
     let unique_marker_v2 = format!("MARKER_V2_{suf}");
-    let original_body = format!("# Initial Content\n\nThis post contains {unique_marker_v1} for identification.");
-    let updated_body = format!("# Updated Content\n\nThis post now contains {unique_marker_v2} after patch.");
+    let original_body =
+        format!("# Initial Content\n\nThis post contains {unique_marker_v1} for identification.");
+    let updated_body =
+        format!("# Updated Content\n\nThis post now contains {unique_marker_v2} after patch.");
 
     // Step 1: Create a post with initial content
     let (post_id, post_slug) = post_json(
@@ -1408,4 +1410,3 @@ async fn live_api_post_body_renders_immediately() -> TestResult<()> {
 
     Ok(())
 }
-

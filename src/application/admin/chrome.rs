@@ -16,9 +16,6 @@ const NAV_ITEMS: &[(&str, &str)] = &[
     ("/uploads", "Uploads"),
     ("/api-keys", "API keys"),
     ("/settings", "Site settings"),
-    // TODO: Temporarily hidden from menu - pages and routes still functional
-    // ("/jobs", "Jobs"),
-    // ("/audit", "Audit log"),
 ];
 
 #[derive(Clone)]
