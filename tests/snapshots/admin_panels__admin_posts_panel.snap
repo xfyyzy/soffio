@@ -15,31 +15,33 @@ expression: rendered
 
 
 
-    <status-filters role="list">
+<status-filters role="list">
+  
+  <status-filter role="listitem">
+    <form data-role="status-filter-form" method="post" action="/posts/panel"
+      data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
       
-      <status-filter role="listitem">
-        <form data-role="status-filter-form" method="post" action="/posts/panel" data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
-          
-          
-          <input type="hidden" name="search" value="hello">
-          
-          
-          
-          <input type="hidden" name="tag" value="rust">
-          
-          
-          
-          
-          <input type="hidden" name="month" value="2025-10">
-          
-          
-          <button type="submit" data-role="status-filter" data-state="active">
-            All (2)
-          </button>
-        </form>
-      </status-filter>
       
-    </status-filters>
+      <input type="hidden" name="search" value="hello">
+      
+      
+      
+      <input type="hidden" name="tag" value="rust">
+      
+      
+      
+      
+      <input type="hidden" name="month" value="2025-10">
+      
+      
+      
+      <button type="submit" data-role="status-filter"  data-state="active" >
+        All (2)
+      </button>
+    </form>
+  </status-filter>
+  
+</status-filters>
     <form data-role="filter-form" method="post" action="/posts/panel" data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
       
       <input type="hidden" name="status" value="draft">
@@ -194,58 +196,62 @@ expression: rendered
           
         </tbody>
       </table>
-    <nav data-role="pagination">
-      <form data-role="pagination-form" method="post" action="/posts/panel" data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
-        
-        <input type="hidden" name="status" value="draft">
-        
-        
-        <input type="hidden" name="search" value="hello">
-        
-        
-        
-        <input type="hidden" name="tag" value="rust">
-        
-        
-        
-        
-        <input type="hidden" name="month" value="2025-10">
-        
-        
-        
-          
-          
-          <button type="submit" data-role="prev">Previous</button>
-        
-      </form>
-      <form data-role="pagination-form" method="post" action="/posts/panel" data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
-        
-        <input type="hidden" name="status" value="draft">
-        
-        
-        <input type="hidden" name="search" value="hello">
-        
-        
-        
-        <input type="hidden" name="tag" value="rust">
-        
-        
-        
-        
-        <input type="hidden" name="month" value="2025-10">
-        
-        
-        
-          
-          <input type="hidden" name="cursor" value="next">
-          
-          
-          <input type="hidden" name="trail" value="~.current">
-          
-          <button type="submit" data-role="next">Next</button>
-        
-      </form>
-    </nav>
+<nav data-role="pagination">
+  <form data-role="pagination-form" method="post" action="/posts/panel"
+    data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
+    
+    <input type="hidden" name="status" value="draft">
+    
+    
+    <input type="hidden" name="search" value="hello">
+    
+    
+    
+    <input type="hidden" name="tag" value="rust">
+    
+    
+    
+    
+    <input type="hidden" name="month" value="2025-10">
+    
+    
+    
+    
+    
+    
+    <button type="submit" data-role="prev">Previous</button>
+    
+  </form>
+  <form data-role="pagination-form" method="post" action="/posts/panel"
+    data-on-submit__prevent="(@post(`/posts/panel`, { contentType: 'form' }))">
+    
+    <input type="hidden" name="status" value="draft">
+    
+    
+    <input type="hidden" name="search" value="hello">
+    
+    
+    
+    <input type="hidden" name="tag" value="rust">
+    
+    
+    
+    
+    <input type="hidden" name="month" value="2025-10">
+    
+    
+    
+    
+    
+    <input type="hidden" name="cursor" value="next">
+    
+    
+    <input type="hidden" name="trail" value="~.current">
+    
+    <button type="submit" data-role="next">Next</button>
+    
+  </form>
+</nav>
 
   </div>
 </section>

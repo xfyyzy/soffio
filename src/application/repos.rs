@@ -464,6 +464,8 @@ pub trait JobsRepo: Send + Sync {
         filter: &JobQueryFilter,
         page: PageRequest<JobCursor>,
     ) -> Result<CursorPage<JobRecord>, RepoError>;
+
+    async fn count_jobs(&self, filter: &JobQueryFilter) -> Result<u64, RepoError>;
 }
 
 #[derive(Debug, Clone, Serialize)]

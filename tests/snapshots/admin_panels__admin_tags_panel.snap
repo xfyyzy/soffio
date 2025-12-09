@@ -15,67 +15,73 @@ expression: rendered
 
 
 
-    <status-filters role="list">
+<status-filters role="list">
+  
+  <status-filter role="listitem">
+    <form data-role="status-filter-form" method="post" action="/tags/panel"
+      data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
       
-      <status-filter role="listitem">
-        <form data-role="status-filter-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
-          
-          
-          <input type="hidden" name="search" value="rust">
-          
-          
-          
-          
-          <input type="hidden" name="month" value="2025-10">
-          
-          
-          <button type="submit" data-role="status-filter">
-            All (5)
-          </button>
-        </form>
-      </status-filter>
       
-      <status-filter role="listitem">
-        <form data-role="status-filter-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
-          
-          <input type="hidden" name="status" value="pinned">
-          
-          
-          <input type="hidden" name="search" value="rust">
-          
-          
-          
-          
-          <input type="hidden" name="month" value="2025-10">
-          
-          
-          <button type="submit" data-role="status-filter" data-state="active">
-            Pinned (2)
-          </button>
-        </form>
-      </status-filter>
+      <input type="hidden" name="search" value="rust">
       
-      <status-filter role="listitem">
-        <form data-role="status-filter-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
-          
-          <input type="hidden" name="status" value="unpinned">
-          
-          
-          <input type="hidden" name="search" value="rust">
-          
-          
-          
-          
-          <input type="hidden" name="month" value="2025-10">
-          
-          
-          <button type="submit" data-role="status-filter">
-            Unpinned (3)
-          </button>
-        </form>
-      </status-filter>
       
-    </status-filters>
+      
+      
+      <input type="hidden" name="month" value="2025-10">
+      
+      
+      
+      <button type="submit" data-role="status-filter" >
+        All (5)
+      </button>
+    </form>
+  </status-filter>
+  
+  <status-filter role="listitem">
+    <form data-role="status-filter-form" method="post" action="/tags/panel"
+      data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+      
+      <input type="hidden" name="status" value="pinned">
+      
+      
+      <input type="hidden" name="search" value="rust">
+      
+      
+      
+      
+      <input type="hidden" name="month" value="2025-10">
+      
+      
+      
+      <button type="submit" data-role="status-filter"  data-state="active" >
+        Pinned (2)
+      </button>
+    </form>
+  </status-filter>
+  
+  <status-filter role="listitem">
+    <form data-role="status-filter-form" method="post" action="/tags/panel"
+      data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+      
+      <input type="hidden" name="status" value="unpinned">
+      
+      
+      <input type="hidden" name="search" value="rust">
+      
+      
+      
+      
+      <input type="hidden" name="month" value="2025-10">
+      
+      
+      
+      <button type="submit" data-role="status-filter" >
+        Unpinned (3)
+      </button>
+    </form>
+  </status-filter>
+  
+</status-filters>
     <form data-role="filter-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
       
       <input type="hidden" name="status" value="pinned">
@@ -169,54 +175,58 @@ expression: rendered
         
       </tbody>
     </table>
-    <nav data-role="pagination">
-      <form data-role="pagination-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
-        
-        <input type="hidden" name="status" value="pinned">
-        
-        
-        <input type="hidden" name="search" value="rust">
-        
-        
-        
-        
-        <input type="hidden" name="month" value="2025-10">
-        
-        
-        
-          
-          <input type="hidden" name="cursor" value="prev">
-          
-          
-          <input type="hidden" name="trail" value="">
-          
-          <button type="submit" data-role="prev">Previous</button>
-        
-      </form>
-      <form data-role="pagination-form" method="post" action="/tags/panel" data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
-        
-        <input type="hidden" name="status" value="pinned">
-        
-        
-        <input type="hidden" name="search" value="rust">
-        
-        
-        
-        
-        <input type="hidden" name="month" value="2025-10">
-        
-        
-        
-          
-          <input type="hidden" name="cursor" value="next">
-          
-          
-          <input type="hidden" name="trail" value="~.cursor">
-          
-          <button type="submit" data-role="next">Next</button>
-        
-      </form>
-    </nav>
+<nav data-role="pagination">
+  <form data-role="pagination-form" method="post" action="/tags/panel"
+    data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+    
+    <input type="hidden" name="status" value="pinned">
+    
+    
+    <input type="hidden" name="search" value="rust">
+    
+    
+    
+    
+    <input type="hidden" name="month" value="2025-10">
+    
+    
+    
+    
+    
+    <input type="hidden" name="cursor" value="prev">
+    
+    
+    <input type="hidden" name="trail" value="">
+    
+    <button type="submit" data-role="prev">Previous</button>
+    
+  </form>
+  <form data-role="pagination-form" method="post" action="/tags/panel"
+    data-on-submit__prevent="(@post(`/tags/panel`, { contentType: 'form' }))">
+    
+    <input type="hidden" name="status" value="pinned">
+    
+    
+    <input type="hidden" name="search" value="rust">
+    
+    
+    
+    
+    <input type="hidden" name="month" value="2025-10">
+    
+    
+    
+    
+    
+    <input type="hidden" name="cursor" value="next">
+    
+    
+    <input type="hidden" name="trail" value="~.cursor">
+    
+    <button type="submit" data-role="next">Next</button>
+    
+  </form>
+</nav>
 
   </div>
 </section>

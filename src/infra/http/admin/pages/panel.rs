@@ -117,6 +117,8 @@ pub(crate) async fn build_page_list_view(
         tag_filter_enabled: false,
         month_filter_enabled: true,
         row_action_prefix: "/pages".to_string(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     })
 }
 

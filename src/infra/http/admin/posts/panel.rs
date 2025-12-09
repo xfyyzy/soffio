@@ -143,6 +143,8 @@ pub(super) async fn build_post_list_view(
         tag_filter_enabled: true,
         month_filter_enabled: true,
         row_action_prefix: "/posts".to_string(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     })
 }
 

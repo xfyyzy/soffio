@@ -166,6 +166,18 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
   min-width: 11rem;
 }
 
+/* Job ID column: UUID is exactly 36 characters, add padding for readability */
+[data-column="job-id"] {
+  width: 26ch;
+  min-width: 26ch;
+  max-width: 26ch;
+}
+
+[data-column="job-id"] a {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
 /* API key table column sizing */
 table[data-table="api-keys"] [data-column="prefix"] {
   width: 12ch;

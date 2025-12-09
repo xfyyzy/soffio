@@ -78,6 +78,8 @@ fn snapshot_admin_posts_panel() {
         tag_filter_enabled: true,
         month_filter_enabled: true,
         row_action_prefix: "/posts".into(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     };
 
     let template = AdminPostsPanelTemplate { content };
@@ -137,6 +139,8 @@ fn snapshot_admin_pages_panel() {
         tag_filter_enabled: false,
         month_filter_enabled: true,
         row_action_prefix: "/pages".into(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     };
 
     let template = AdminPagesPanelTemplate { content };
@@ -213,6 +217,8 @@ fn snapshot_admin_tags_panel() {
         tag_filter_label: "Tag".into(),
         tag_filter_all_label: "All tags".into(),
         tag_filter_field: "tag".into(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     };
 
     let template = AdminTagsPanelTemplate { content };
@@ -280,6 +286,8 @@ fn snapshot_admin_navigation_panel() {
         tag_filter_label: "Tag".into(),
         tag_filter_all_label: "All tags".into(),
         tag_filter_field: "tag".into(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     };
 
     let template = AdminNavigationPanelTemplate { content };
@@ -457,6 +465,8 @@ fn render_admin_uploads_template() {
         tag_filter_enabled: true,
         month_filter_enabled: true,
         copy_toast_action: "/toasts".into(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     };
 
     let template = AdminUploadsTemplate {
@@ -564,6 +574,8 @@ fn snapshot_admin_api_keys_panel() {
                 is_selected: false,
             },
         ],
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     };
 
     let template = AdminApiKeysPanelTemplate { content };

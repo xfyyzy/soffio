@@ -99,6 +99,41 @@ impl JobsRepo for ImmediateJobsRepo {
             next_cursor: None,
         })
     }
+
+    async fn count_jobs(&self, filter: &JobQueryFilter) -> Result<u64, RepoError> {
+        let jobs = self.jobs.lock().await;
+        let count = jobs
+            .values()
+            .filter(|job| {
+                if let Some(state) = filter.state
+                    && job.state != state
+                {
+                    return false;
+                }
+                if let Some(job_type) = filter.job_type
+                    && job.job_type != job_type
+                {
+                    return false;
+                }
+                if let Some(search) = &filter.search {
+                    let search_lower = search.to_lowercase();
+                    let payload_str = job.payload.to_string().to_lowercase();
+                    let last_error_str = job
+                        .last_error
+                        .as_ref()
+                        .map(|e| e.to_lowercase())
+                        .unwrap_or_default();
+                    if !payload_str.contains(&search_lower)
+                        && !last_error_str.contains(&search_lower)
+                    {
+                        return false;
+                    }
+                }
+                true
+            })
+            .count();
+        Ok(count as u64)
+    }
 }
 
 async fn build_state(pool: PgPool) -> (ApiState, String) {

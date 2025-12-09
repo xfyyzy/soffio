@@ -162,6 +162,8 @@ pub async fn build_panel_view(
         previous_page_state,
         next_page_state,
         available_scopes: scope_options(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     })
 }
 

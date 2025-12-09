@@ -2,6 +2,7 @@ mod api_keys;
 mod cache;
 mod dashboard;
 mod health;
+mod jobs;
 mod navigation;
 mod pages;
 mod pagination;
@@ -73,6 +74,11 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/pages/{id}/publish", post(pages::admin_page_publish))
         .route("/pages/{id}/draft", post(pages::admin_page_move_to_draft))
         .route("/pages/{id}/archive", post(pages::admin_page_archive))
+        .route("/jobs", get(jobs::admin_jobs))
+        .route("/jobs/panel", post(jobs::admin_jobs_panel))
+        .route("/jobs/{id}", get(jobs::admin_job_detail))
+        .route("/jobs/{id}/retry", post(jobs::admin_job_retry))
+        .route("/jobs/{id}/cancel", post(jobs::admin_job_cancel))
         .route("/tags", get(tags::admin_tags))
         .route("/tags/panel", post(tags::admin_tags_panel))
         .route("/tags/new", get(tags::admin_tag_new))

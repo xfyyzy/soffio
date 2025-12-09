@@ -121,6 +121,8 @@ pub(super) async fn build_upload_list_view(
         tag_filter_enabled: true,
         month_filter_enabled: true,
         copy_toast_action: "/toasts".to_string(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     })
 }
 

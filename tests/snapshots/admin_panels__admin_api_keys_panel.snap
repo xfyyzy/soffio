@@ -15,67 +15,73 @@ expression: rendered
 
 
 
-    <status-filters role="list">
+<status-filters role="list">
+  
+  <status-filter role="listitem">
+    <form data-role="status-filter-form" method="post" action="/api-keys/panel"
+      data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
       
-      <status-filter role="listitem">
-        <form data-role="status-filter-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
-          
-          
-          <input type="hidden" name="search" value="test">
-          
-          
-          
-          <input type="hidden" name="scope" value="content_read">
-          
-          
-          
-          <button type="submit" data-role="status-filter" data-state="active">
-            All (5)
-          </button>
-        </form>
-      </status-filter>
       
-      <status-filter role="listitem">
-        <form data-role="status-filter-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
-          
-          <input type="hidden" name="status" value="active">
-          
-          
-          <input type="hidden" name="search" value="test">
-          
-          
-          
-          <input type="hidden" name="scope" value="content_read">
-          
-          
-          
-          <button type="submit" data-role="status-filter">
-            Active (4)
-          </button>
-        </form>
-      </status-filter>
+      <input type="hidden" name="search" value="test">
       
-      <status-filter role="listitem">
-        <form data-role="status-filter-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
-          
-          <input type="hidden" name="status" value="revoked">
-          
-          
-          <input type="hidden" name="search" value="test">
-          
-          
-          
-          <input type="hidden" name="scope" value="content_read">
-          
-          
-          
-          <button type="submit" data-role="status-filter">
-            Revoked (1)
-          </button>
-        </form>
-      </status-filter>
       
-    </status-filters>
+      
+      <input type="hidden" name="scope" value="content_read">
+      
+      
+      
+      
+      <button type="submit" data-role="status-filter"  data-state="active" >
+        All (5)
+      </button>
+    </form>
+  </status-filter>
+  
+  <status-filter role="listitem">
+    <form data-role="status-filter-form" method="post" action="/api-keys/panel"
+      data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+      
+      <input type="hidden" name="status" value="active">
+      
+      
+      <input type="hidden" name="search" value="test">
+      
+      
+      
+      <input type="hidden" name="scope" value="content_read">
+      
+      
+      
+      
+      <button type="submit" data-role="status-filter" >
+        Active (4)
+      </button>
+    </form>
+  </status-filter>
+  
+  <status-filter role="listitem">
+    <form data-role="status-filter-form" method="post" action="/api-keys/panel"
+      data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+      
+      <input type="hidden" name="status" value="revoked">
+      
+      
+      <input type="hidden" name="search" value="test">
+      
+      
+      
+      <input type="hidden" name="scope" value="content_read">
+      
+      
+      
+      
+      <button type="submit" data-role="status-filter" >
+        Revoked (1)
+      </button>
+    </form>
+  </status-filter>
+  
+</status-filters>
     <form data-role="filter-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
       
       
@@ -199,46 +205,50 @@ expression: rendered
       
     </tbody>
   </table>
-    <nav data-role="pagination">
-      <form data-role="pagination-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
-        
-        
-        <input type="hidden" name="search" value="test">
-        
-        
-        
-        <input type="hidden" name="scope" value="content_read">
-        
-        
-        
-        
-          
-          
-          <button type="submit" data-role="prev">Previous</button>
-        
-      </form>
-      <form data-role="pagination-form" method="post" action="/api-keys/panel" data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
-        
-        
-        <input type="hidden" name="search" value="test">
-        
-        
-        
-        <input type="hidden" name="scope" value="content_read">
-        
-        
-        
-        
-          
-          <input type="hidden" name="cursor" value="next-cursor">
-          
-          
-          <input type="hidden" name="trail" value="~.cursor-token">
-          
-          <button type="submit" data-role="next">Next</button>
-        
-      </form>
-    </nav>
+<nav data-role="pagination">
+  <form data-role="pagination-form" method="post" action="/api-keys/panel"
+    data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+    
+    
+    <input type="hidden" name="search" value="test">
+    
+    
+    
+    <input type="hidden" name="scope" value="content_read">
+    
+    
+    
+    
+    
+    
+    
+    <button type="submit" data-role="prev">Previous</button>
+    
+  </form>
+  <form data-role="pagination-form" method="post" action="/api-keys/panel"
+    data-on-submit__prevent="(@post(`/api-keys/panel`, { contentType: 'form' }))">
+    
+    
+    <input type="hidden" name="search" value="test">
+    
+    
+    
+    <input type="hidden" name="scope" value="content_read">
+    
+    
+    
+    
+    
+    
+    <input type="hidden" name="cursor" value="next-cursor">
+    
+    
+    <input type="hidden" name="trail" value="~.cursor-token">
+    
+    <button type="submit" data-role="next">Next</button>
+    
+  </form>
+</nav>
 
   </div>
 </section>

@@ -194,6 +194,8 @@ impl JobsRepo for PostgresRepositories {
             qb.push(" OR status ILIKE ");
             qb.push_bind(pattern.clone());
             qb.push(" OR last_error ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR job::text ILIKE ");
             qb.push_bind(pattern);
             qb.push(")");
         }
@@ -234,5 +236,43 @@ impl JobsRepo for PostgresRepositories {
         };
 
         Ok(CursorPage::new(records, next_cursor))
+    }
+
+    async fn count_jobs(&self, filter: &JobQueryFilter) -> Result<u64, RepoError> {
+        let mut qb = QueryBuilder::new("SELECT COUNT(*) FROM apalis.jobs WHERE 1=1 ");
+
+        if let Some(state) = filter.state {
+            qb.push("AND status = ");
+            qb.push_bind(state.as_str());
+        }
+
+        if let Some(job_type) = filter.job_type {
+            qb.push(" AND job_type = ");
+            qb.push_bind(job_type.as_str());
+        }
+
+        if let Some(search) = filter.search.as_ref() {
+            let pattern = format!("%{}%", search);
+            qb.push(" AND (");
+            qb.push("id ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR job_type ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR status ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR last_error ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR job::text ILIKE ");
+            qb.push_bind(pattern);
+            qb.push(")");
+        }
+
+        let count: i64 = qb
+            .build_query_scalar()
+            .fetch_one(self.pool())
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(count as u64)
     }
 }

@@ -1,0 +1,43 @@
+<div data-role="row-actions">
+    {% for action in item.actions %}
+    {% match action.value %}
+    {% when "retry" %}
+    <form data-role="inline-form" method="post" action="{{ row_action_prefix }}/{{ item.id }}/retry"
+        data-on-submit__prevent="(@post(`{{ row_action_prefix }}/{{ item.id }}/retry`, { contentType: 'form' }))">
+        <input type="hidden" name="id" value="{{ item.id }}">
+        <input type="hidden" name="status_filter"
+            value="{% if let Some(key) = &content.active_status_key %}{{ key }}{% endif %}">
+        <input type="hidden" name="filter_job_type"
+            value="{% if let Some(value) = &content.filter_job_type %}{{ value }}{% endif %}">
+        <input type="hidden" name="filter_search"
+            value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+        {% if let Some(value) = &content.cursor_param %}
+        <input type="hidden" name="cursor" value="{{ value }}">
+        {% endif %}
+        {% if let Some(value) = &content.trail %}
+        <input type="hidden" name="trail" value="{{ value }}">
+        {% endif %}
+        <button type="submit">{{ action.label }}</button>
+    </form>
+    {% when "cancel" %}
+    <form data-role="inline-form" method="post" action="{{ row_action_prefix }}/{{ item.id }}/cancel"
+        data-on-submit__prevent="(@post(`{{ row_action_prefix }}/{{ item.id }}/cancel`, { contentType: 'form' }))">
+        <input type="hidden" name="id" value="{{ item.id }}">
+        <input type="hidden" name="status_filter"
+            value="{% if let Some(key) = &content.active_status_key %}{{ key }}{% endif %}">
+        <input type="hidden" name="filter_job_type"
+            value="{% if let Some(value) = &content.filter_job_type %}{{ value }}{% endif %}">
+        <input type="hidden" name="filter_search"
+            value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+        {% if let Some(value) = &content.cursor_param %}
+        <input type="hidden" name="cursor" value="{{ value }}">
+        {% endif %}
+        {% if let Some(value) = &content.trail %}
+        <input type="hidden" name="trail" value="{{ value }}">
+        {% endif %}
+        <button type="submit" data-variant="danger">{{ action.label }}</button>
+    </form>
+    {% else %}
+    {% endmatch %}
+    {% endfor %}
+</div>

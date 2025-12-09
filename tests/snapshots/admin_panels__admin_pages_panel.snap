@@ -16,27 +16,29 @@ expression: rendered
 
 
 
-    <status-filters role="list">
+<status-filters role="list">
+  
+  <status-filter role="listitem">
+    <form data-role="status-filter-form" method="post" action="/pages/panel"
+      data-on-submit__prevent="(@post(`/pages/panel`, { contentType: 'form' }))">
       
-      <status-filter role="listitem">
-        <form data-role="status-filter-form" method="post" action="/pages/panel" data-on-submit__prevent="(@post(`/pages/panel`, { contentType: 'form' }))">
-          
-          
-          <input type="hidden" name="search" value="about">
-          
-          
-          
-          
-          <input type="hidden" name="month" value="2025-10">
-          
-          
-          <button type="submit" data-role="status-filter" data-state="active">
-            All (1)
-          </button>
-        </form>
-      </status-filter>
       
-    </status-filters>
+      <input type="hidden" name="search" value="about">
+      
+      
+      
+      
+      <input type="hidden" name="month" value="2025-10">
+      
+      
+      
+      <button type="submit" data-role="status-filter"  data-state="active" >
+        All (1)
+      </button>
+    </form>
+  </status-filter>
+  
+</status-filters>
     <form data-role="filter-form" method="post" action="/pages/panel" data-on-submit__prevent="(@post(`/pages/panel`, { contentType: 'form' }))">
       
       
@@ -131,38 +133,42 @@ expression: rendered
         
       </tbody>
     </table>
-    <nav data-role="pagination">
-      <form data-role="pagination-form" method="post" action="/pages/panel" data-on-submit__prevent="(@post(`/pages/panel`, { contentType: 'form' }))">
-        
-        
-        <input type="hidden" name="search" value="about">
-        
-        
-        
-        
-        <input type="hidden" name="month" value="2025-10">
-        
-        
-        
-          <button type="button" data-role="prev" disabled>Previous</button>
-        
-      </form>
-      <form data-role="pagination-form" method="post" action="/pages/panel" data-on-submit__prevent="(@post(`/pages/panel`, { contentType: 'form' }))">
-        
-        
-        <input type="hidden" name="search" value="about">
-        
-        
-        
-        
-        <input type="hidden" name="month" value="2025-10">
-        
-        
-        
-          <button type="button" data-role="next" disabled>Next</button>
-        
-      </form>
-    </nav>
+<nav data-role="pagination">
+  <form data-role="pagination-form" method="post" action="/pages/panel"
+    data-on-submit__prevent="(@post(`/pages/panel`, { contentType: 'form' }))">
+    
+    
+    <input type="hidden" name="search" value="about">
+    
+    
+    
+    
+    <input type="hidden" name="month" value="2025-10">
+    
+    
+    
+    
+    <button type="button" data-role="prev" disabled>Previous</button>
+    
+  </form>
+  <form data-role="pagination-form" method="post" action="/pages/panel"
+    data-on-submit__prevent="(@post(`/pages/panel`, { contentType: 'form' }))">
+    
+    
+    <input type="hidden" name="search" value="about">
+    
+    
+    
+    
+    <input type="hidden" name="month" value="2025-10">
+    
+    
+    
+    
+    <button type="button" data-role="next" disabled>Next</button>
+    
+  </form>
+</nav>
 
   </div>
 </section>

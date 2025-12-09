@@ -114,6 +114,8 @@ pub(super) async fn build_tag_list_view(
         tag_filter_label: "Tag".to_string(),
         tag_filter_all_label: "All tags".to_string(),
         tag_filter_field: "tag".to_string(),
+        job_type_filter_enabled: false,
+        filter_job_type: None,
     })
 }
 

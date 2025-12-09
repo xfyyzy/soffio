@@ -1,60 +1,72 @@
-    <nav data-role="pagination">
-      <form data-role="pagination-form" method="post" action="{{ panel_action }}" data-on-submit__prevent="(@post(`{{ panel_action }}`, { contentType: 'form' }))">
-        {% if let Some(status) = &content.active_status_key %}
-        <input type="hidden" name="status" value="{{ status }}">
-        {% endif %}
-        {% if let Some(value) = &content.filter_search %}
-        <input type="hidden" name="search" value="{{ value }}">
-        {% endif %}
-        {% if content.tag_filter_enabled %}
-        {% if let Some(value) = &content.filter_tag %}
-        <input type="hidden" name="{{ content.tag_filter_field }}" value="{{ value }}">
-        {% endif %}
-        {% endif %}
-        {% if content.month_filter_enabled %}
-        {% if let Some(value) = &content.filter_month %}
-        <input type="hidden" name="month" value="{{ value }}">
-        {% endif %}
-        {% endif %}
-        {% if let Some(state) = &content.previous_page_state %}
-          {% if let Some(cursor) = &state.cursor %}
-          <input type="hidden" name="cursor" value="{{ cursor }}">
-          {% endif %}
-          {% if let Some(trail) = &state.trail %}
-          <input type="hidden" name="trail" value="{{ trail }}">
-          {% endif %}
-          <button type="submit" data-role="prev">Previous</button>
-        {% else %}
-          <button type="button" data-role="prev" disabled>Previous</button>
-        {% endif %}
-      </form>
-      <form data-role="pagination-form" method="post" action="{{ panel_action }}" data-on-submit__prevent="(@post(`{{ panel_action }}`, { contentType: 'form' }))">
-        {% if let Some(status) = &content.active_status_key %}
-        <input type="hidden" name="status" value="{{ status }}">
-        {% endif %}
-        {% if let Some(value) = &content.filter_search %}
-        <input type="hidden" name="search" value="{{ value }}">
-        {% endif %}
-        {% if content.tag_filter_enabled %}
-        {% if let Some(value) = &content.filter_tag %}
-        <input type="hidden" name="{{ content.tag_filter_field }}" value="{{ value }}">
-        {% endif %}
-        {% endif %}
-        {% if content.month_filter_enabled %}
-        {% if let Some(value) = &content.filter_month %}
-        <input type="hidden" name="month" value="{{ value }}">
-        {% endif %}
-        {% endif %}
-        {% if let Some(state) = &content.next_page_state %}
-          {% if let Some(cursor) = &state.cursor %}
-          <input type="hidden" name="cursor" value="{{ cursor }}">
-          {% endif %}
-          {% if let Some(trail) = &state.trail %}
-          <input type="hidden" name="trail" value="{{ trail }}">
-          {% endif %}
-          <button type="submit" data-role="next">Next</button>
-        {% else %}
-          <button type="button" data-role="next" disabled>Next</button>
-        {% endif %}
-      </form>
-    </nav>
+<nav data-role="pagination">
+  <form data-role="pagination-form" method="post" action="{{ panel_action }}"
+    data-on-submit__prevent="(@post(`{{ panel_action }}`, { contentType: 'form' }))">
+    {% if let Some(status) = &content.active_status_key %}
+    <input type="hidden" name="status" value="{{ status }}">
+    {% endif %}
+    {% if let Some(value) = &content.filter_search %}
+    <input type="hidden" name="search" value="{{ value }}">
+    {% endif %}
+    {% if content.tag_filter_enabled %}
+    {% if let Some(value) = &content.filter_tag %}
+    <input type="hidden" name="{{ content.tag_filter_field }}" value="{{ value }}">
+    {% endif %}
+    {% endif %}
+    {% if content.month_filter_enabled %}
+    {% if let Some(value) = &content.filter_month %}
+    <input type="hidden" name="month" value="{{ value }}">
+    {% endif %}
+    {% endif %}
+    {% if content.job_type_filter_enabled %}
+    {% if let Some(value) = &content.filter_job_type %}
+    <input type="hidden" name="job_type" value="{{ value }}">
+    {% endif %}
+    {% endif %}
+    {% if let Some(state) = &content.previous_page_state %}
+    {% if let Some(cursor) = &state.cursor %}
+    <input type="hidden" name="cursor" value="{{ cursor }}">
+    {% endif %}
+    {% if let Some(trail) = &state.trail %}
+    <input type="hidden" name="trail" value="{{ trail }}">
+    {% endif %}
+    <button type="submit" data-role="prev">Previous</button>
+    {% else %}
+    <button type="button" data-role="prev" disabled>Previous</button>
+    {% endif %}
+  </form>
+  <form data-role="pagination-form" method="post" action="{{ panel_action }}"
+    data-on-submit__prevent="(@post(`{{ panel_action }}`, { contentType: 'form' }))">
+    {% if let Some(status) = &content.active_status_key %}
+    <input type="hidden" name="status" value="{{ status }}">
+    {% endif %}
+    {% if let Some(value) = &content.filter_search %}
+    <input type="hidden" name="search" value="{{ value }}">
+    {% endif %}
+    {% if content.tag_filter_enabled %}
+    {% if let Some(value) = &content.filter_tag %}
+    <input type="hidden" name="{{ content.tag_filter_field }}" value="{{ value }}">
+    {% endif %}
+    {% endif %}
+    {% if content.month_filter_enabled %}
+    {% if let Some(value) = &content.filter_month %}
+    <input type="hidden" name="month" value="{{ value }}">
+    {% endif %}
+    {% endif %}
+    {% if content.job_type_filter_enabled %}
+    {% if let Some(value) = &content.filter_job_type %}
+    <input type="hidden" name="job_type" value="{{ value }}">
+    {% endif %}
+    {% endif %}
+    {% if let Some(state) = &content.next_page_state %}
+    {% if let Some(cursor) = &state.cursor %}
+    <input type="hidden" name="cursor" value="{{ cursor }}">
+    {% endif %}
+    {% if let Some(trail) = &state.trail %}
+    <input type="hidden" name="trail" value="{{ trail }}">
+    {% endif %}
+    <button type="submit" data-role="next">Next</button>
+    {% else %}
+    <button type="button" data-role="next" disabled>Next</button>
+    {% endif %}
+  </form>
+</nav>

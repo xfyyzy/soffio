@@ -159,6 +159,164 @@ impl AdminJobService {
             .await?;
         Ok(())
     }
+
+    /// Count jobs grouped by state.
+    pub async fn status_counts(
+        &self,
+        base_filter: &JobQueryFilter,
+    ) -> Result<AdminJobStatusCounts, AdminJobError> {
+        // Pre-build filters to avoid temporary value borrow issues with try_join!
+        let filter_total = JobQueryFilter {
+            state: None,
+            ..(base_filter.clone())
+        };
+        let filter_pending = JobQueryFilter {
+            state: Some(JobState::Pending),
+            ..(base_filter.clone())
+        };
+        let filter_scheduled = JobQueryFilter {
+            state: Some(JobState::Scheduled),
+            ..(base_filter.clone())
+        };
+        let filter_running = JobQueryFilter {
+            state: Some(JobState::Running),
+            ..(base_filter.clone())
+        };
+        let filter_done = JobQueryFilter {
+            state: Some(JobState::Done),
+            ..(base_filter.clone())
+        };
+        let filter_failed = JobQueryFilter {
+            state: Some(JobState::Failed),
+            ..(base_filter.clone())
+        };
+        let filter_killed = JobQueryFilter {
+            state: Some(JobState::Killed),
+            ..(base_filter.clone())
+        };
+
+        let (total, pending, scheduled, running, done, failed, killed) = tokio::try_join!(
+            self.repo.count_jobs(&filter_total),
+            self.repo.count_jobs(&filter_pending),
+            self.repo.count_jobs(&filter_scheduled),
+            self.repo.count_jobs(&filter_running),
+            self.repo.count_jobs(&filter_done),
+            self.repo.count_jobs(&filter_failed),
+            self.repo.count_jobs(&filter_killed),
+        )?;
+
+        Ok(AdminJobStatusCounts {
+            total,
+            pending: pending + scheduled, // Combine Pending and Scheduled
+            running,
+            done,
+            failed,
+            killed,
+        })
+    }
+
+    /// Count jobs grouped by job type.
+    pub async fn type_counts(
+        &self,
+        base_filter: &JobQueryFilter,
+    ) -> Result<AdminJobTypeCounts, AdminJobError> {
+        // Pre-build filters to avoid temporary value borrow issues with try_join!
+        let filter_render_post = JobQueryFilter {
+            job_type: Some(JobType::RenderPost),
+            ..(base_filter.clone())
+        };
+        let filter_render_post_sections = JobQueryFilter {
+            job_type: Some(JobType::RenderPostSections),
+            ..(base_filter.clone())
+        };
+        let filter_render_post_section = JobQueryFilter {
+            job_type: Some(JobType::RenderPostSection),
+            ..(base_filter.clone())
+        };
+        let filter_render_page = JobQueryFilter {
+            job_type: Some(JobType::RenderPage),
+            ..(base_filter.clone())
+        };
+        let filter_render_summary = JobQueryFilter {
+            job_type: Some(JobType::RenderSummary),
+            ..(base_filter.clone())
+        };
+        let filter_publish_post = JobQueryFilter {
+            job_type: Some(JobType::PublishPost),
+            ..(base_filter.clone())
+        };
+        let filter_publish_page = JobQueryFilter {
+            job_type: Some(JobType::PublishPage),
+            ..(base_filter.clone())
+        };
+        let filter_invalidate_cache = JobQueryFilter {
+            job_type: Some(JobType::InvalidateCache),
+            ..(base_filter.clone())
+        };
+        let filter_warm_cache = JobQueryFilter {
+            job_type: Some(JobType::WarmCache),
+            ..(base_filter.clone())
+        };
+
+        let (
+            render_post,
+            render_post_sections,
+            render_post_section,
+            render_page,
+            render_summary,
+            publish_post,
+            publish_page,
+            invalidate_cache,
+            warm_cache,
+        ) = tokio::try_join!(
+            self.repo.count_jobs(&filter_render_post),
+            self.repo.count_jobs(&filter_render_post_sections),
+            self.repo.count_jobs(&filter_render_post_section),
+            self.repo.count_jobs(&filter_render_page),
+            self.repo.count_jobs(&filter_render_summary),
+            self.repo.count_jobs(&filter_publish_post),
+            self.repo.count_jobs(&filter_publish_page),
+            self.repo.count_jobs(&filter_invalidate_cache),
+            self.repo.count_jobs(&filter_warm_cache),
+        )?;
+
+        Ok(AdminJobTypeCounts {
+            render_post,
+            render_post_sections,
+            render_post_section,
+            render_page,
+            render_summary,
+            publish_post,
+            publish_page,
+            invalidate_cache,
+            warm_cache,
+        })
+    }
+}
+
+/// Status counts for job state filters.
+#[derive(Debug, Clone)]
+pub struct AdminJobStatusCounts {
+    pub total: u64,
+    pub pending: u64,
+    pub running: u64,
+    pub done: u64,
+    pub failed: u64,
+    pub killed: u64,
+}
+
+/// Type counts for job type filter dropdown.
+#[derive(Debug, Clone)]
+pub struct AdminJobTypeCounts {
+    pub render_post: u64,
+    pub render_post_sections: u64,
+    pub render_post_section: u64,
+    pub render_page: u64,
+    pub render_summary: u64,
+    pub publish_post: u64,
+    pub publish_page: u64,
+    pub invalidate_cache: u64,
+    pub warm_cache: u64,
 }
 
 #[derive(Debug, Serialize)]

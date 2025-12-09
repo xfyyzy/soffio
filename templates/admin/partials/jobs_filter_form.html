@@ -1,0 +1,29 @@
+<form data-role="filter-form" method="post" action="{{ panel_action }}"
+    data-on-submit__prevent="(@post(`{{ panel_action }}`, { contentType: 'form' }))">
+    {% if let Some(status) = &content.active_status_key %}
+    <input type="hidden" name="status" value="{{ status }}">
+    {% endif %}
+    {% if content.job_type_filter_enabled %}
+    <label>
+        <span>Job Type</span>
+        <select name="job_type">
+            <option value="" {% if content.filter_job_type.is_none() %}selected{% endif %}>All types</option>
+            {% for opt in content.job_type_options %}
+            <option value="{{ opt.value }}" {% if let Some(sel)=&content.filter_job_type %}{% if sel==&opt.value
+                %}selected{% endif %}{% endif %}>{{ opt.label }} ({{ opt.count }})</option>
+            {% endfor %}
+        </select>
+    </label>
+    {% endif %}
+    <label>
+        <span>Search</span>
+        <input type="text" name="search"
+            value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+    </label>
+    <div data-role="filter-actions">
+        <button type="submit">Apply Filters</button>
+        {% if content.filter_job_type.is_some() || content.filter_search.is_some() %}
+        <button type="submit" name="clear" value="1" data-role="secondary">Clear</button>
+        {% endif %}
+    </div>
+</form>

@@ -9,8 +9,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - **Render job race condition**: `RenderPostJobPayload` now carries `body_markdown` and `summary_markdown` inline instead of re-reading from the database. This prevents a race condition where the job worker (using a separate connection pool) could read stale data before the HTTP request's write was fully visible.
+- **Jobs admin page alignment**: Fixed filter state loss during pagination and status tab switching. Added Search field for querying Payload and Last Error. Added missing `id` hidden field to row actions. Unified templates by removing Jobs-specific `status_tabs.html` in favor of generic template with `job_type_filter_enabled` support.
 
 ### Added
+- **Jobs admin page**: New admin panel page at `/jobs` for viewing background task execution status. Features include status filter tabs (All/Pending/Running/Done/Failed/Killed), Job Type dropdown filter, bidirectional cursor pagination, and row actions (Retry/Cancel). Uses status badges for all enumerable types consistent with other admin pages.
 - Unit tests for `RenderPostJobPayload` serialization to ensure payload integrity.
 - Integration test `live_api_post_body_renders_immediately` validating that body patches trigger immediate rendering with correct content.
 - Documented async job payload architecture principle in AGENTS.md §5: job payloads should carry complete execution context to avoid cross-pool read inconsistencies.

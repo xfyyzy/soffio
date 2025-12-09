@@ -1,0 +1,26 @@
+<section data-role="panel" data-admin-panel="job-detail">
+    <header data-role="panel-header">
+        <h2 data-role="panel-title">{{ content.heading }}</h2>
+    </header>
+    <div data-role="panel-body">
+        <table data-role="detail-table">
+            <tbody>
+                {% for field in &content.fields %}
+                <tr>
+                    <th scope="row">{{ field.label }}</th>
+                    <td>
+                        {% if field.is_badge %}
+                        <status-badge data-status="{{ field.badge_status.as_ref().unwrap_or(&field.value) }}">{{
+                            field.value }}</status-badge>
+                        {% elif field.is_multiline %}
+                        <span data-role="detail-value-multiline">{{ field.value }}</span>
+                        {% else %}
+                        <span>{{ field.value }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>

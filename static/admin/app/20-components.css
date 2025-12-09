@@ -51,6 +51,7 @@
     opacity: 0;
     transform: translateX(120%);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -66,6 +67,7 @@
     padding-top: 0.9rem;
     padding-bottom: 0.9rem;
   }
+
   100% {
     opacity: 0;
     transform: translateX(35%);
@@ -340,3 +342,82 @@ status-badge[data-status="expired"] {
   color: var(--text-primary);
 }
 
+/* ------------------------------------------------------------------
+   Job status badges
+   ------------------------------------------------------------------ */
+
+/* Job state badges */
+status-badge[data-status="scheduled"] {
+  background-color: rgba(96, 125, 139, 0.16);
+  color: #607d8b;
+}
+
+status-badge[data-status="running"] {
+  background-color: rgba(33, 150, 243, 0.16);
+  color: #0d47a1;
+}
+
+status-badge[data-status="done"] {
+  background-color: rgba(76, 175, 80, 0.18);
+  color: #1b5e20;
+}
+
+status-badge[data-status="failed"] {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+status-badge[data-status="killed"] {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+/* Job type badges */
+status-badge[data-status="render_post"],
+status-badge[data-status="render_post_sections"],
+status-badge[data-status="render_post_section"] {
+  background-color: rgba(139, 92, 246, 0.16);
+  color: #6d28d9;
+}
+
+status-badge[data-status="render_page"],
+status-badge[data-status="render_summary"] {
+  background-color: rgba(20, 184, 166, 0.16);
+  color: #0d9488;
+}
+
+status-badge[data-status="publish_post"],
+status-badge[data-status="publish_page"] {
+  background-color: rgba(59, 130, 246, 0.16);
+  color: #1d4ed8;
+}
+
+status-badge[data-status="invalidate_cache"],
+status-badge[data-status="warm_cache"] {
+  background-color: rgba(249, 115, 22, 0.16);
+  color: #c2410c;
+}
+
+/* Job detail page styles */
+[data-role="detail-table"] {
+  width: 100%;
+}
+
+[data-role="detail-table"] th {
+  width: 12rem;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 500;
+  padding: 0.75rem 1rem 0.75rem 0;
+  color: var(--text-secondary);
+}
+
+[data-role="detail-table"] td {
+  padding: 0.75rem 0;
+}
+
+[data-role="detail-value-multiline"] {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}

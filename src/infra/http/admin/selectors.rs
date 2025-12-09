@@ -10,6 +10,7 @@ pub const PAGES_PANEL: &str = "[data-admin-panel=\"pages\"]";
 pub const NAVIGATION_PANEL: &str = "[data-admin-panel=\"navigation\"]";
 pub const TAGS_PANEL: &str = "[data-admin-panel=\"tags\"]";
 pub const UPLOADS_PANEL: &str = "[data-admin-panel=\"uploads\"]";
+pub const JOBS_PANEL: &str = "[data-admin-panel=\"jobs\"]";
 pub const API_KEY_EDITOR_PANEL: &str = "[data-admin-panel=\"api-key-editor\"]";
 
 pub const TAG_PICKER: &str = "[data-role=\"picker\"][data-picker-type=\"tag\"]";
