@@ -451,6 +451,28 @@ status-badge[data-status*=".archive"] {
   color: #4b5563;
 }
 
+/* Status/state change actions */
+status-badge[data-status*=".status"],
+status-badge[data-status*=".pin"],
+status-badge[data-status*=".unpin"] {
+  background-color: rgba(59, 130, 246, 0.16);
+  color: #1e40af;
+}
+
+/* Registration/initialization actions */
+status-badge[data-status*=".register"],
+status-badge[data-status*=".init"] {
+  background-color: rgba(34, 197, 94, 0.16);
+  color: #166534;
+}
+
+/* Relationship/association actions */
+status-badge[data-status*=".tags"],
+status-badge[data-status*=".scopes"] {
+  background-color: rgba(168, 85, 247, 0.16);
+  color: #7c3aed;
+}
+
 /* Audit entity type badges */
 status-badge[data-status="post"] {
   background-color: rgba(99, 102, 241, 0.16);

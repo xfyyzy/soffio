@@ -8,4 +8,4 @@ mod handlers;
 mod panel;
 mod status;
 
-pub(super) use handlers::{admin_audit, admin_audit_panel};
+pub(super) use handlers::{admin_audit, admin_audit_detail, admin_audit_panel};

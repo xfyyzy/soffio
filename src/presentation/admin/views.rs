@@ -1188,3 +1188,27 @@ pub struct AdminAuditTemplate {
 pub struct AdminAuditPanelTemplate {
     pub content: AdminAuditListView,
 }
+
+/// Audit detail field for display.
+#[derive(Clone)]
+pub struct AdminAuditDetailField {
+    pub label: String,
+    pub value: String,
+    pub is_badge: bool,
+    pub badge_status: Option<String>,
+    pub is_multiline: bool,
+}
+
+/// Audit detail view for single audit log entry.
+#[derive(Clone)]
+pub struct AdminAuditDetailView {
+    pub heading: String,
+    pub fields: Vec<AdminAuditDetailField>,
+    pub back_href: String,
+}
+
+#[derive(Template)]
+#[template(path = "admin/audit_detail.html")]
+pub struct AdminAuditDetailTemplate {
+    pub view: AdminLayout<AdminAuditDetailView>,
+}

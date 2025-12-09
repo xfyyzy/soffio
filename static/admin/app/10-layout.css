@@ -166,14 +166,26 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
   min-width: 11rem;
 }
 
-/* UUID column: UUID is exactly 36 characters, add padding for readability */
+/* UUID column: Full UUID is 36 characters, needs wider width */
 [data-column="uuid"] {
+  width: 38ch;
+  min-width: 38ch;
+  max-width: 38ch;
+}
+
+[data-column="uuid"] a {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* Job ID column: Shorter format, narrower width */
+[data-column="job-id"] {
   width: 26ch;
   min-width: 26ch;
   max-width: 26ch;
 }
 
-[data-column="uuid"] a {
+[data-column="job-id"] a {
   font-family: var(--font-mono);
   white-space: nowrap;
 }

@@ -98,3 +98,102 @@ pub(crate) async fn admin_audit_panel(
         Err(err) => err.into_response(),
     }
 }
+
+/// GET /audit/{id} - Render audit log detail page.
+pub(crate) async fn admin_audit_detail(
+    State(state): State<AdminState>,
+    axum::extract::Path(id): axum::extract::Path<uuid::Uuid>,
+) -> Response {
+    let record = match state.audit.find_by_id(id).await {
+        Ok(Some(record)) => record,
+        Ok(None) => {
+            return (axum::http::StatusCode::NOT_FOUND, "Audit log not found").into_response();
+        }
+        Err(err) => {
+            return admin_audit_error("infra::http::admin::audit::admin_audit_detail", err)
+                .into_response();
+        }
+    };
+
+    let settings = match state.settings.load().await {
+        Ok(s) => s,
+        Err(err) => {
+            tracing::error!(error = %err, "Failed to load settings for audit detail");
+            return axum::http::StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+
+    let content = admin_views::AdminAuditDetailView {
+        heading: "Audit Log Detail".to_string(),
+        fields: vec![
+            admin_views::AdminAuditDetailField {
+                label: "ID".to_string(),
+                value: record.id.to_string(),
+                is_badge: false,
+                badge_status: None,
+                is_multiline: false,
+            },
+            admin_views::AdminAuditDetailField {
+                label: "Actor".to_string(),
+                value: record.actor.clone(),
+                is_badge: false,
+                badge_status: None,
+                is_multiline: false,
+            },
+            admin_views::AdminAuditDetailField {
+                label: "Action".to_string(),
+                value: record.action.clone(),
+                is_badge: true,
+                badge_status: Some(record.action.clone()),
+                is_multiline: false,
+            },
+            admin_views::AdminAuditDetailField {
+                label: "Entity Type".to_string(),
+                value: record.entity_type.clone(),
+                is_badge: true,
+                badge_status: Some(record.entity_type.clone()),
+                is_multiline: false,
+            },
+            admin_views::AdminAuditDetailField {
+                label: "Entity ID".to_string(),
+                value: record.entity_id.clone().unwrap_or_else(|| "—".to_string()),
+                is_badge: false,
+                badge_status: None,
+                is_multiline: false,
+            },
+            admin_views::AdminAuditDetailField {
+                label: "Payload".to_string(),
+                value: record
+                    .payload_text
+                    .clone()
+                    .unwrap_or_else(|| "—".to_string()),
+                is_badge: false,
+                badge_status: None,
+                is_multiline: true,
+            },
+            admin_views::AdminAuditDetailField {
+                label: "Created At".to_string(),
+                value: admin_views::format_timestamp(record.created_at, settings.timezone),
+                is_badge: false,
+                badge_status: None,
+                is_multiline: false,
+            },
+        ],
+        back_href: "/audit".to_string(),
+    };
+
+    let chrome = match state.chrome.load("/audit").await {
+        Ok(chrome) => chrome,
+        Err(err) => return err.into_response(),
+    };
+    let view = admin_views::AdminLayout::new(chrome, content);
+    let template = admin_views::AdminAuditDetailTemplate { view };
+
+    match template.render() {
+        Ok(html) => axum::response::Html(html).into_response(),
+        Err(err) => {
+            tracing::error!(error = %err, "Failed to render audit detail template");
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}

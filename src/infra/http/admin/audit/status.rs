@@ -4,14 +4,34 @@ use crate::application::repos::{AuditActionCount, AuditActorCount, AuditEntityTy
 use crate::presentation::admin::views::{
     AdminAuditActionOption, AdminAuditActorOption, AdminAuditStatusFilterView,
 };
+use std::collections::HashMap;
+
+/// All known entity types in the system.
+const ALL_ENTITY_TYPES: &[&str] = &[
+    "post",
+    "page",
+    "tag",
+    "navigation",
+    "upload",
+    "api_key",
+    "settings",
+    "job",
+];
 
 /// Build entity type status filters (tabs).
+/// Shows all entity types even if count is 0.
 pub(super) fn entity_type_filters(
     entity_type_counts: &[AuditEntityTypeCount],
     total_count: u64,
     active_entity_type: Option<&str>,
 ) -> Vec<AdminAuditStatusFilterView> {
-    let mut filters = Vec::with_capacity(entity_type_counts.len() + 1);
+    // Build count map from database results
+    let count_map: HashMap<&str, u64> = entity_type_counts
+        .iter()
+        .map(|et| (et.entity_type.as_str(), et.count))
+        .collect();
+
+    let mut filters = Vec::with_capacity(ALL_ENTITY_TYPES.len() + 1);
 
     // "All" tab
     filters.push(AdminAuditStatusFilterView {
@@ -21,13 +41,14 @@ pub(super) fn entity_type_filters(
         is_active: active_entity_type.is_none(),
     });
 
-    // Entity type tabs
-    for et in entity_type_counts {
+    // Entity type tabs - show all types, use 0 if not in database
+    for &entity_type in ALL_ENTITY_TYPES {
+        let count = count_map.get(entity_type).copied().unwrap_or(0);
         filters.push(AdminAuditStatusFilterView {
-            status_key: Some(et.entity_type.clone()),
-            label: capitalize_label(&et.entity_type),
-            count: et.count as usize,
-            is_active: active_entity_type == Some(&et.entity_type),
+            status_key: Some(entity_type.to_string()),
+            label: capitalize_label(entity_type),
+            count: count as usize,
+            is_active: active_entity_type == Some(entity_type),
         });
     }
 
@@ -65,9 +86,15 @@ pub(super) fn action_options(
 }
 
 fn capitalize_label(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        Some(c) => c.to_uppercase().chain(chars).collect(),
-        None => String::new(),
-    }
+    // Handle snake_case like "api_key" -> "Api Key"
+    s.split('_')
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(c) => c.to_uppercase().chain(chars).collect::<String>(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
