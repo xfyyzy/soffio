@@ -18,6 +18,7 @@
 <table data-role="publishable-table">
     <thead>
         <tr>
+            <th scope="col" data-column="uuid">ID</th>
             <th scope="col" data-column="audit-actor">Actor</th>
             <th scope="col" data-column="audit-action">Action</th>
             <th scope="col" data-column="audit-entity-type">Entity Type</th>
@@ -28,6 +29,9 @@
     <tbody>
         {% for item in content.entries %}
         <tr data-role="audit-row">
+            <td data-column="uuid">
+                <a href="{{ item.detail_href }}" title="{{ item.id }}">{{ item.id }}</a>
+            </td>
             <td data-column="audit-actor">{{ item.actor }}</td>
             <td data-column="audit-action"><status-badge data-status="{{ item.action }}">{{ item.action
                     }}</status-badge></td>

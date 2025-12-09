@@ -487,5 +487,34 @@ mod tests {
         ) -> Result<CursorPage<AuditLogRecord>, RepoError> {
             Ok(CursorPage::empty())
         }
+
+        async fn count_filtered(&self, _filter: &AuditQueryFilter) -> Result<u64, RepoError> {
+            Ok(0)
+        }
+
+        async fn list_entity_type_counts(
+            &self,
+            _filter: &AuditQueryFilter,
+        ) -> Result<Vec<crate::application::repos::AuditEntityTypeCount>, RepoError> {
+            Ok(Vec::new())
+        }
+
+        async fn list_distinct_actors(
+            &self,
+            _filter: &AuditQueryFilter,
+        ) -> Result<Vec<crate::application::repos::AuditActorCount>, RepoError> {
+            Ok(Vec::new())
+        }
+
+        async fn list_distinct_actions(
+            &self,
+            _filter: &AuditQueryFilter,
+        ) -> Result<Vec<crate::application::repos::AuditActionCount>, RepoError> {
+            Ok(Vec::new())
+        }
+
+        async fn find_by_id(&self, _id: Uuid) -> Result<Option<AuditLogRecord>, RepoError> {
+            Ok(None)
+        }
     }
 }

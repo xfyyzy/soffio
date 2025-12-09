@@ -135,4 +135,202 @@ impl AuditRepo for PostgresRepositories {
 
         Ok(CursorPage::new(records, next_cursor))
     }
+
+    async fn count_filtered(&self, filter: &AuditQueryFilter) -> Result<u64, RepoError> {
+        let mut qb = QueryBuilder::new("SELECT COUNT(*) FROM audit_logs WHERE 1=1 ");
+
+        if let Some(actor) = filter.actor.as_ref() {
+            qb.push(" AND actor = ");
+            qb.push_bind(actor);
+        }
+
+        if let Some(action) = filter.action.as_ref() {
+            qb.push(" AND action = ");
+            qb.push_bind(action);
+        }
+
+        if let Some(entity_type) = filter.entity_type.as_ref() {
+            qb.push(" AND entity_type = ");
+            qb.push_bind(entity_type);
+        }
+
+        if let Some(search) = filter.search.as_ref() {
+            let pattern = format!("%{}%", search);
+            qb.push(" AND (COALESCE(entity_id, '') ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR COALESCE(payload_text, '') ILIKE ");
+            qb.push_bind(pattern);
+            qb.push(")");
+        }
+
+        let count: i64 = qb
+            .build_query_scalar()
+            .fetch_one(self.pool())
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(count as u64)
+    }
+
+    async fn list_entity_type_counts(
+        &self,
+        filter: &AuditQueryFilter,
+    ) -> Result<Vec<crate::application::repos::AuditEntityTypeCount>, RepoError> {
+        #[derive(sqlx::FromRow)]
+        struct CountRow {
+            entity_type: String,
+            count: i64,
+        }
+
+        let mut qb =
+            QueryBuilder::new("SELECT entity_type, COUNT(*) as count FROM audit_logs WHERE 1=1 ");
+
+        if let Some(actor) = filter.actor.as_ref() {
+            qb.push(" AND actor = ");
+            qb.push_bind(actor);
+        }
+
+        if let Some(action) = filter.action.as_ref() {
+            qb.push(" AND action = ");
+            qb.push_bind(action);
+        }
+
+        if let Some(search) = filter.search.as_ref() {
+            let pattern = format!("%{}%", search);
+            qb.push(" AND (COALESCE(entity_id, '') ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR COALESCE(payload_text, '') ILIKE ");
+            qb.push_bind(pattern);
+            qb.push(")");
+        }
+
+        qb.push(" GROUP BY entity_type ORDER BY count DESC");
+
+        let rows: Vec<CountRow> = qb
+            .build_query_as::<CountRow>()
+            .fetch_all(self.pool())
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| crate::application::repos::AuditEntityTypeCount {
+                entity_type: r.entity_type,
+                count: r.count as u64,
+            })
+            .collect())
+    }
+
+    async fn list_distinct_actors(
+        &self,
+        filter: &AuditQueryFilter,
+    ) -> Result<Vec<crate::application::repos::AuditActorCount>, RepoError> {
+        #[derive(sqlx::FromRow)]
+        struct CountRow {
+            actor: String,
+            count: i64,
+        }
+
+        let mut qb =
+            QueryBuilder::new("SELECT actor, COUNT(*) as count FROM audit_logs WHERE 1=1 ");
+
+        // Don't filter by actor since we want all actors
+        if let Some(action) = filter.action.as_ref() {
+            qb.push(" AND action = ");
+            qb.push_bind(action);
+        }
+
+        if let Some(entity_type) = filter.entity_type.as_ref() {
+            qb.push(" AND entity_type = ");
+            qb.push_bind(entity_type);
+        }
+
+        if let Some(search) = filter.search.as_ref() {
+            let pattern = format!("%{}%", search);
+            qb.push(" AND (COALESCE(entity_id, '') ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR COALESCE(payload_text, '') ILIKE ");
+            qb.push_bind(pattern);
+            qb.push(")");
+        }
+
+        qb.push(" GROUP BY actor ORDER BY count DESC");
+
+        let rows: Vec<CountRow> = qb
+            .build_query_as::<CountRow>()
+            .fetch_all(self.pool())
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| crate::application::repos::AuditActorCount {
+                actor: r.actor,
+                count: r.count as u64,
+            })
+            .collect())
+    }
+
+    async fn list_distinct_actions(
+        &self,
+        filter: &AuditQueryFilter,
+    ) -> Result<Vec<crate::application::repos::AuditActionCount>, RepoError> {
+        #[derive(sqlx::FromRow)]
+        struct CountRow {
+            action: String,
+            count: i64,
+        }
+
+        let mut qb =
+            QueryBuilder::new("SELECT action, COUNT(*) as count FROM audit_logs WHERE 1=1 ");
+
+        if let Some(actor) = filter.actor.as_ref() {
+            qb.push(" AND actor = ");
+            qb.push_bind(actor);
+        }
+
+        // Don't filter by action since we want all actions
+        if let Some(entity_type) = filter.entity_type.as_ref() {
+            qb.push(" AND entity_type = ");
+            qb.push_bind(entity_type);
+        }
+
+        if let Some(search) = filter.search.as_ref() {
+            let pattern = format!("%{}%", search);
+            qb.push(" AND (COALESCE(entity_id, '') ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR COALESCE(payload_text, '') ILIKE ");
+            qb.push_bind(pattern);
+            qb.push(")");
+        }
+
+        qb.push(" GROUP BY action ORDER BY count DESC");
+
+        let rows: Vec<CountRow> = qb
+            .build_query_as::<CountRow>()
+            .fetch_all(self.pool())
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| crate::application::repos::AuditActionCount {
+                action: r.action,
+                count: r.count as u64,
+            })
+            .collect())
+    }
+
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<AuditLogRecord>, RepoError> {
+        let row: Option<AuditRow> = sqlx::query_as(
+            "SELECT id, actor, action, entity_type, entity_id, payload_text, created_at \
+             FROM audit_logs WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(self.pool())
+        .await
+        .map_err(map_sqlx_error)?;
+
+        Ok(row.map(AuditLogRecord::from))
+    }
 }

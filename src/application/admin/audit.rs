@@ -65,4 +65,33 @@ impl AdminAuditService {
     ) -> Result<CursorPage<AuditLogRecord>, RepoError> {
         self.repo.list_filtered(page, filter).await
     }
+
+    pub async fn count_filtered(&self, filter: &AuditQueryFilter) -> Result<u64, RepoError> {
+        self.repo.count_filtered(filter).await
+    }
+
+    pub async fn entity_type_counts(
+        &self,
+        filter: &AuditQueryFilter,
+    ) -> Result<Vec<crate::application::repos::AuditEntityTypeCount>, RepoError> {
+        self.repo.list_entity_type_counts(filter).await
+    }
+
+    pub async fn actor_counts(
+        &self,
+        filter: &AuditQueryFilter,
+    ) -> Result<Vec<crate::application::repos::AuditActorCount>, RepoError> {
+        self.repo.list_distinct_actors(filter).await
+    }
+
+    pub async fn action_counts(
+        &self,
+        filter: &AuditQueryFilter,
+    ) -> Result<Vec<crate::application::repos::AuditActionCount>, RepoError> {
+        self.repo.list_distinct_actions(filter).await
+    }
+
+    pub async fn find_by_id(&self, id: Uuid) -> Result<Option<AuditLogRecord>, RepoError> {
+        self.repo.find_by_id(id).await
+    }
 }

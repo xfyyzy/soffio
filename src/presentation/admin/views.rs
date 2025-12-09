@@ -1103,15 +1103,32 @@ pub struct AdminAuditRowView {
     pub entity_id: Option<String>,
     pub payload_text: Option<String>,
     pub created_at: String,
+    pub detail_href: String,
 }
 
-/// Status filter for audit list (just "All" since audit has no status).
+/// Status filter for audit list (entity type tabs).
 #[derive(Clone)]
 pub struct AdminAuditStatusFilterView {
     pub status_key: Option<String>,
     pub label: String,
     pub count: usize,
     pub is_active: bool,
+}
+
+/// Actor option for dropdown filter.
+#[derive(Clone)]
+pub struct AdminAuditActorOption {
+    pub value: String,
+    pub label: String,
+    pub count: usize,
+}
+
+/// Action option for dropdown filter.
+#[derive(Clone)]
+pub struct AdminAuditActionOption {
+    pub value: String,
+    pub label: String,
+    pub count: usize,
 }
 
 /// Audit list view aligned with AdminPostListView structure.
@@ -1121,7 +1138,11 @@ pub struct AdminAuditListView {
     pub filters: Vec<AdminAuditStatusFilterView>,
     pub entries: Vec<AdminAuditRowView>,
 
-    // Audit-specific filters
+    // Audit-specific filter options
+    pub actor_options: Vec<AdminAuditActorOption>,
+    pub action_options: Vec<AdminAuditActionOption>,
+
+    // Current filter values
     pub filter_actor: Option<String>,
     pub filter_action: Option<String>,
     pub filter_entity_type: Option<String>,

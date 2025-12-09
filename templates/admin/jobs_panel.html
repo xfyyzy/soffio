@@ -19,7 +19,7 @@
 <table data-role="publishable-table">
     <thead>
         <tr>
-            <th scope="col" data-column="job-id">ID</th>
+            <th scope="col" data-column="uuid">ID</th>
             <th scope="col" data-column="job-type">Type</th>
             <th scope="col" data-column="job-state">State</th>
             <th scope="col">Attempts</th>
@@ -31,7 +31,7 @@
     <tbody>
         {% for item in content.jobs %}
         <tr data-role="job-row" data-job-id="{{ item.id }}">
-            <td data-column="job-id">
+            <td data-column="uuid">
                 <a href="{{ item.detail_href }}" title="{{ item.id }}">{{ item.id }}</a>
             </td>
             <td data-column="job-type"><status-badge data-status="{{ item.job_type_key }}">{{ item.job_type_label

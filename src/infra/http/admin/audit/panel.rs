@@ -16,7 +16,7 @@ use crate::{
     presentation::admin::views as admin_views,
 };
 
-use super::status::status_filters;
+use super::status::{action_options, actor_options, entity_type_filters};
 
 /// Build the complete audit list view for rendering.
 pub(super) async fn build_audit_list_view(
@@ -27,17 +27,30 @@ pub(super) async fn build_audit_list_view(
     let settings = state.db.load_site_settings().await?;
     let admin_page_size = settings.admin_page_size.clamp(1, 100).max(1) as u32;
 
+    // Build filters for counts (without entity_type to get all entity types)
+    let count_filter = AuditQueryFilter {
+        actor: filter.actor.clone(),
+        action: filter.action.clone(),
+        entity_type: None, // Don't filter for entity type counts
+        search: filter.search.clone(),
+    };
+
+    // Parallel queries
     let page_request = PageRequest::new(admin_page_size, cursor);
-    let page = state.audit.list_filtered(page_request, filter).await?;
+    let (page, total_count, entity_type_counts, actor_counts, action_counts) = tokio::try_join!(
+        state.audit.list_filtered(page_request, filter),
+        state.audit.count_filtered(&count_filter),
+        state.audit.entity_type_counts(&count_filter),
+        state.audit.actor_counts(filter),
+        state.audit.action_counts(filter),
+    )?;
 
-    // Count total for the "All" filter
-    let total_count = page.items.len() as u64;
-
-    let entries = page
+    let entries: Vec<admin_views::AdminAuditRowView> = page
         .items
         .into_iter()
         .map(|entry| admin_views::AdminAuditRowView {
             id: entry.id.to_string(),
+            detail_href: format!("/audit/{}", entry.id),
             actor: entry.actor,
             action: entry.action,
             entity_type: entry.entity_type,
@@ -47,18 +60,26 @@ pub(super) async fn build_audit_list_view(
         })
         .collect();
 
-    let filters = status_filters(total_count);
+    let filters = entity_type_filters(
+        &entity_type_counts,
+        total_count,
+        filter.entity_type.as_deref(),
+    );
+    let actor_opts = actor_options(&actor_counts, filter.actor.as_deref());
+    let action_opts = action_options(&action_counts, filter.action.as_deref());
 
     Ok(admin_views::AdminAuditListView {
         heading: "Audit Log".to_string(),
         filters,
         entries,
+        actor_options: actor_opts,
+        action_options: action_opts,
         filter_actor: filter.actor.clone(),
         filter_action: filter.action.clone(),
         filter_entity_type: filter.entity_type.clone(),
         filter_search: filter.search.clone(),
         filter_query: String::new(),
-        active_status_key: None,
+        active_status_key: filter.entity_type.clone(),
         next_cursor: page.next_cursor,
         cursor_param: None,
         trail: None,

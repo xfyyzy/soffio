@@ -62,7 +62,7 @@ pub(crate) async fn admin_audit_panel(
         (
             form.actor.filter(|s| !s.is_empty()),
             form.action.filter(|s| !s.is_empty()),
-            form.entity_type.filter(|s| !s.is_empty()),
+            form.status.filter(|s| !s.is_empty()), // from status tabs
             form.search.filter(|s| !s.is_empty()),
         )
     };
