@@ -1,0 +1,18 @@
+<form data-role="filter-form" method="post" action="{{ panel_action }}"
+    data-on-submit__prevent="(@post(`{{ panel_action }}`, { contentType: 'form' }))">
+    {% if let Some(status) = &content.active_status_key %}
+    <input type="hidden" name="status" value="{{ status }}">
+    {% endif %}
+    <label>
+        <span>Search</span>
+        <input type="text" name="search"
+            value="{% if let Some(value) = &content.filter_search %}{{ value }}{% endif %}">
+    </label>
+    <div data-role="filter-actions">
+        <button type="submit">Apply Filters</button>
+        {% if content.filter_search.is_some() || content.filter_actor.is_some() || content.filter_action.is_some() ||
+        content.filter_entity_type.is_some() %}
+        <button type="submit" name="clear" value="1" data-role="secondary">Clear</button>
+        {% endif %}
+    </div>
+</form>

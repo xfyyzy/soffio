@@ -1,4 +1,5 @@
 mod api_keys;
+mod audit;
 mod cache;
 mod dashboard;
 mod health;
@@ -79,6 +80,8 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/jobs/{id}", get(jobs::admin_job_detail))
         .route("/jobs/{id}/retry", post(jobs::admin_job_retry))
         .route("/jobs/{id}/cancel", post(jobs::admin_job_cancel))
+        .route("/audit", get(audit::admin_audit))
+        .route("/audit/panel", post(audit::admin_audit_panel))
         .route("/tags", get(tags::admin_tags))
         .route("/tags/panel", post(tags::admin_tags_panel))
         .route("/tags/new", get(tags::admin_tag_new))

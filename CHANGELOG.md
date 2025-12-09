@@ -13,6 +13,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - **Jobs admin page**: New admin panel page at `/jobs` for viewing background task execution status. Features include status filter tabs (All/Pending/Running/Done/Failed/Killed), Job Type dropdown filter, bidirectional cursor pagination, and row actions (Retry/Cancel). Uses status badges for all enumerable types consistent with other admin pages.
+- **Audit log admin page**: New admin panel page at `/audit` for viewing system audit logs. Features include search functionality, bidirectional cursor pagination, and read-only display of actor, action, entity type, and entity ID. Aligned with Posts page pattern using shared templates for status tabs and pagination.
 - Unit tests for `RenderPostJobPayload` serialization to ensure payload integrity.
 - Integration test `live_api_post_body_renders_immediately` validating that body patches trigger immediate rendering with correct content.
 - Documented async job payload architecture principle in AGENTS.md §5: job payloads should carry complete execution context to avoid cross-pool read inconsistencies.

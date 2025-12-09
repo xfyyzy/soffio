@@ -15,6 +15,7 @@ const NAV_ITEMS: &[(&str, &str)] = &[
     ("/navigation", "Navigation"),
     ("/uploads", "Uploads"),
     ("/jobs", "Jobs"),
+    ("/audit", "Audit"),
     ("/api-keys", "API keys"),
     ("/settings", "Site settings"),
 ];

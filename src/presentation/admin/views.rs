@@ -1088,3 +1088,81 @@ pub struct AdminJobDetailTemplate {
 pub struct AdminJobDetailPanelTemplate {
     pub content: AdminJobDetailView,
 }
+
+// ============================================================================
+// Audit Admin Views
+// ============================================================================
+
+/// Single audit log entry row view.
+#[derive(Clone)]
+pub struct AdminAuditRowView {
+    pub id: String,
+    pub actor: String,
+    pub action: String,
+    pub entity_type: String,
+    pub entity_id: Option<String>,
+    pub payload_text: Option<String>,
+    pub created_at: String,
+}
+
+/// Status filter for audit list (just "All" since audit has no status).
+#[derive(Clone)]
+pub struct AdminAuditStatusFilterView {
+    pub status_key: Option<String>,
+    pub label: String,
+    pub count: usize,
+    pub is_active: bool,
+}
+
+/// Audit list view aligned with AdminPostListView structure.
+#[derive(Clone)]
+pub struct AdminAuditListView {
+    pub heading: String,
+    pub filters: Vec<AdminAuditStatusFilterView>,
+    pub entries: Vec<AdminAuditRowView>,
+
+    // Audit-specific filters
+    pub filter_actor: Option<String>,
+    pub filter_action: Option<String>,
+    pub filter_entity_type: Option<String>,
+    pub filter_search: Option<String>,
+    pub filter_query: String,
+
+    // Status tabs
+    pub active_status_key: Option<String>,
+
+    // Pagination
+    pub next_cursor: Option<String>,
+    pub cursor_param: Option<String>,
+    pub trail: Option<String>,
+    pub previous_page_state: Option<AdminPostPaginationState>,
+    pub next_page_state: Option<AdminPostPaginationState>,
+
+    // Action paths
+    pub panel_action: String,
+
+    // Template compatibility (disabled)
+    pub tag_filter_enabled: bool,
+    pub month_filter_enabled: bool,
+    pub job_type_filter_enabled: bool,
+    pub filter_tag: Option<String>,
+    pub filter_month: Option<String>,
+    pub filter_job_type: Option<String>,
+    pub tag_options: Vec<AdminPostTagOption>,
+    pub month_options: Vec<AdminPostMonthOption>,
+    pub tag_filter_label: String,
+    pub tag_filter_all_label: String,
+    pub tag_filter_field: String,
+}
+
+#[derive(Template)]
+#[template(path = "admin/audit.html")]
+pub struct AdminAuditTemplate {
+    pub view: AdminLayout<AdminAuditListView>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/audit_panel.html")]
+pub struct AdminAuditPanelTemplate {
+    pub content: AdminAuditListView,
+}

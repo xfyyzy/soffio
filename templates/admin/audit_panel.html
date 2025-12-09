@@ -1,0 +1,45 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}audit{% endblock %}
+
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}
+{% endblock panel_toolbar %}
+
+{% block panel_controls %}
+{% let panel_action = content.panel_action %}
+{% include "admin/partials/status_tabs.html" %}
+{% include "admin/partials/audit_filter_form.html" %}
+{% endblock panel_controls %}
+
+{% block panel_content %}
+{% let panel_action = content.panel_action %}
+<table data-role="publishable-table">
+    <thead>
+        <tr>
+            <th scope="col" data-column="audit-actor">Actor</th>
+            <th scope="col" data-column="audit-action">Action</th>
+            <th scope="col" data-column="audit-entity-type">Entity Type</th>
+            <th scope="col" data-column="audit-entity-id">Entity ID</th>
+            <th scope="col">Created At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in content.entries %}
+        <tr data-role="audit-row">
+            <td data-column="audit-actor">{{ item.actor }}</td>
+            <td data-column="audit-action"><status-badge data-status="{{ item.action }}">{{ item.action
+                    }}</status-badge></td>
+            <td data-column="audit-entity-type"><status-badge data-status="{{ item.entity_type }}">{{ item.entity_type
+                    }}</status-badge></td>
+            <td data-column="audit-entity-id">
+                {% if let Some(id) = &item.entity_id %}{{ id }}{% else %}<span data-role="muted">—</span>{% endif %}
+            </td>
+            <td>{{ item.created_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% include "admin/partials/pagination.html" %}
+{% endblock panel_content %}
