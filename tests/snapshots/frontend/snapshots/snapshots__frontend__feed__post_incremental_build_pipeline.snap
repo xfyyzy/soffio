@@ -15,15 +15,15 @@ expression: html
     <meta property="og:locale" content="en_US">
     <link rel="canonical" href="http://localhost:3000/">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="stylesheet" href="/static/common/tokens.css?v=0.1.11">
-    <link rel="stylesheet" href="/static/public/app.css?v=0.1.11">
+    <link rel="stylesheet" href="/static/common/tokens.css?v=0.1.12">
+    <link rel="stylesheet" href="/static/public/app.css?v=0.1.12">
     
-  <link rel="stylesheet" href="/static/public/styles/post.css?v=0.1.11">
+  <link rel="stylesheet" href="/static/public/styles/post.css?v=0.1.12">
   
   
 
-    <script type="module" src="/static/common/components.js?v=0.1.11" defer></script>
-    <script type="module" src="/static/common/datastar-init.js?v=0.1.11" defer></script>
+    <script type="module" src="/static/common/components.js?v=0.1.12" defer></script>
+    <script type="module" src="/static/common/datastar-init.js?v=0.1.12" defer></script>
   </head>
   <body data-page="shell">
     
