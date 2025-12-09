@@ -41,7 +41,7 @@ pub(crate) const DEFAULT_MERMAID_CACHE_DIR: &str = "/tmp/soffio-mermaid";
 
 /// Command-line arguments for the Soffio binary.
 #[derive(Debug, Parser)]
-#[command(name = "soffio", about = "Soffio Blog server")]
+#[command(name = "soffio", version, about = "Soffio Blog server")]
 pub struct CliArgs {
     /// Optional path to a configuration file.
     #[arg(long = "config-file", env = "SOFFIO_CONFIG_FILE", value_name = "PATH")]
