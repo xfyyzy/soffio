@@ -5,7 +5,8 @@ mod publish;
 mod queue;
 
 pub use cache::{
-    CacheWarmJobPayload, enqueue_cache_warm_job, invalidate_and_enqueue_warm, process_cache_warm_job,
+    CacheWarmJobPayload, enqueue_cache_warm_job, invalidate_and_enqueue_warm,
+    process_cache_warm_job,
 };
 pub use context::{JobWorkerContext, PUBLISH_JOB_WAIT_TIMEOUT, job_failed};
 pub use expire_api_keys::{

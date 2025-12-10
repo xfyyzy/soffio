@@ -17,6 +17,7 @@ use super::{context::JobWorkerContext, queue::enqueue_job};
 pub struct CacheWarmJobPayload {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    pub epoch: u64,
 }
 
 /// Enqueue an async cache warm job.
@@ -24,8 +25,9 @@ pub struct CacheWarmJobPayload {
 pub async fn enqueue_cache_warm_job<J: JobsRepo + ?Sized>(
     repo: &J,
     reason: Option<String>,
+    epoch: u64,
 ) -> Result<String, RepoError> {
-    let payload = CacheWarmJobPayload { reason };
+    let payload = CacheWarmJobPayload { reason, epoch };
     enqueue_job(
         repo,
         crate::domain::types::JobType::WarmCache,
@@ -46,9 +48,10 @@ pub async fn invalidate_and_enqueue_warm(
     reason: Option<String>,
 ) -> Result<Option<String>, RepoError> {
     cache.invalidate_all().await;
+    let epoch = cache.epoch();
 
     if debouncer.try_warm().await {
-        let job_id = enqueue_cache_warm_job(jobs_repo, reason).await?;
+        let job_id = enqueue_cache_warm_job(jobs_repo, reason, epoch).await?;
         debouncer.mark_warm_requested().await;
         Ok(Some(job_id))
     } else {
@@ -63,6 +66,19 @@ pub async fn process_cache_warm_job(
     context: Data<JobWorkerContext>,
 ) -> Result<(), ApalisError> {
     let ctx = &*context;
+
+    // Abort if cache has been invalidated since this job was enqueued.
+    let current_epoch = ctx.cache.epoch();
+    if current_epoch > payload.epoch {
+        info!(
+            target = "application::jobs::process_cache_warm_job",
+            reason = payload.reason.as_deref().unwrap_or("unspecified"),
+            job_epoch = payload.epoch,
+            cache_epoch = current_epoch,
+            "skipping warm cache job; cache epoch moved forward"
+        );
+        return Ok(());
+    }
 
     info!(
         target = "application::jobs::process_cache_warm_job",

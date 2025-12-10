@@ -1,6 +1,9 @@
 use std::{
     collections::HashMap,
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
     time::{Duration, Instant},
 };
 
@@ -72,6 +75,7 @@ impl CacheWarmDebouncer {
 pub struct ResponseCache {
     entries: Arc<RwLock<HashMap<String, CachedResponse>>>,
     seo_entries: Arc<RwLock<HashMap<SeoKey, String>>>,
+    epoch: Arc<AtomicU64>,
 }
 
 impl ResponseCache {
@@ -79,6 +83,7 @@ impl ResponseCache {
         Self {
             entries: Arc::new(RwLock::new(HashMap::new())),
             seo_entries: Arc::new(RwLock::new(HashMap::new())),
+            epoch: Arc::new(AtomicU64::new(0)),
         }
     }
 
@@ -112,6 +117,13 @@ impl ResponseCache {
 
         let mut seo_guard = self.seo_entries.write().await;
         seo_guard.clear();
+
+        self.epoch.fetch_add(1, Ordering::SeqCst);
+    }
+
+    /// Returns the current cache epoch. Each invalidate_all() increments it.
+    pub fn epoch(&self) -> u64 {
+        self.epoch.load(Ordering::SeqCst)
     }
 
     pub async fn get_seo(&self, key: SeoKey) -> Option<String> {
@@ -264,5 +276,15 @@ mod tests {
 
         // Should be blocked
         assert!(!debouncer.should_warm().await);
+    }
+
+    #[tokio::test]
+    async fn invalidate_all_increments_epoch() {
+        let cache = ResponseCache::new();
+        assert_eq!(cache.epoch(), 0);
+        cache.invalidate_all().await;
+        assert_eq!(cache.epoch(), 1);
+        cache.invalidate_all().await;
+        assert_eq!(cache.epoch(), 2);
     }
 }

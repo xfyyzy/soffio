@@ -47,7 +47,7 @@ use soffio::{
     domain::entities::{PageRecord, PostRecord},
     domain::types::JobType,
     infra::{
-        cache::ResponseCache,
+        cache::{CacheWarmDebouncer, DEFAULT_CACHE_WARM_DEBOUNCE, ResponseCache},
         cache_warmer::CacheWarmer,
         db::PostgresRepositories,
         error::InfraError,
@@ -337,6 +337,7 @@ fn build_application_context(
     );
 
     let response_cache = Arc::new(ResponseCache::new());
+    let cache_warm_debouncer = CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE);
 
     let http_state = HttpState {
         feed: feed_service_http.clone(),
@@ -399,6 +400,7 @@ fn build_application_context(
         repositories: job_repositories,
         renderer: render_service(),
         cache: response_cache,
+        cache_warm_debouncer: cache_warm_debouncer.clone(),
         feed: feed_service_jobs,
         pages: page_service_jobs,
         chrome: chrome_service_jobs,

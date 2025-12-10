@@ -25,6 +25,9 @@ You MUST:
    persists, implement the **conservative** option and document assumptions.
 
 7. **Cache discipline.** Response cache invalidation is always synchronous (no jobs, no queue). Cache warming is expensive and MUST run via the `WarmCache` job path with debouncing/observability; do not couple warming into invalidation.
+8. **Test env vars.** When running the full gate (fmt/check/clippy/tests/udeps/outdated), set both:
+   - `SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres`
+   - `DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`
 
 **Immediate stop conditions (ask before proceeding):**
 

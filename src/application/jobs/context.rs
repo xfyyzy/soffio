@@ -7,7 +7,11 @@ use crate::{
     application::{
         chrome::ChromeService, feed::FeedService, page::PageService, render::ComrakRenderService,
     },
-    infra::{cache::ResponseCache, db::PostgresRepositories, uploads::UploadStorage},
+    infra::{
+        cache::{CacheWarmDebouncer, ResponseCache},
+        db::PostgresRepositories,
+        uploads::UploadStorage,
+    },
 };
 
 pub const PUBLISH_JOB_WAIT_TIMEOUT: Duration = Duration::from_secs(30);
@@ -18,6 +22,7 @@ pub struct JobWorkerContext {
     pub repositories: Arc<PostgresRepositories>,
     pub renderer: Arc<ComrakRenderService>,
     pub cache: Arc<ResponseCache>,
+    pub cache_warm_debouncer: CacheWarmDebouncer,
     pub feed: Arc<FeedService>,
     pub pages: Arc<PageService>,
     pub chrome: Arc<ChromeService>,
