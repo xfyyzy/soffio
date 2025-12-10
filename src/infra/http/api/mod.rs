@@ -12,7 +12,6 @@ use axum::{
     routing::{get, post},
 };
 
-use crate::infra::cache::{CacheWarmDebouncer, DEFAULT_CACHE_WARM_DEBOUNCE};
 use crate::infra::http::RouterState;
 use crate::infra::http::middleware::{
     CacheInvalidationState, invalidate_and_warm_cache, log_responses,
@@ -25,7 +24,7 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
     // Create cache invalidation state with debouncer for async warming
     let cache_invalidation_state = CacheInvalidationState {
         cache: state.http.cache.clone(),
-        debouncer: CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE),
+        debouncer: state.http.cache_warm_debouncer.clone(),
         jobs_repo: state.http.db.clone(),
     };
 

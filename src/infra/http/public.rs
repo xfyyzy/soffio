@@ -46,6 +46,7 @@ use crate::application::repos::{
     PageQueryFilter, PagesRepo, PostListScope, PostQueryFilter, PostsRepo, SettingsRepo,
 };
 use crate::domain::types::{PageStatus, PostStatus};
+use crate::infra::cache::CacheWarmDebouncer;
 
 #[derive(Clone)]
 pub struct HttpState {
@@ -53,6 +54,7 @@ pub struct HttpState {
     pub pages: Arc<PageService>,
     pub chrome: Arc<ChromeService>,
     pub cache: Arc<ResponseCache>,
+    pub cache_warm_debouncer: Arc<CacheWarmDebouncer>,
     pub db: Arc<PostgresRepositories>,
     pub upload_storage: Arc<UploadStorage>,
 }

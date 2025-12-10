@@ -95,7 +95,7 @@ pub async fn invalidate_admin_writes(
 #[derive(Clone)]
 pub struct CacheInvalidationState {
     pub cache: Arc<ResponseCache>,
-    pub debouncer: CacheWarmDebouncer,
+    pub debouncer: Arc<CacheWarmDebouncer>,
     pub jobs_repo: Arc<PostgresRepositories>,
 }
 

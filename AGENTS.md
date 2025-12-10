@@ -19,12 +19,11 @@ You MUST:
    and metrics.
 4. **Keep work deterministic and reproducible.** Same inputs ⇒ same outputs. Do not change toolchain or dependency
    constraints casually.
-5. **Constrain change to the boundary.** Keep domain/core stable; place side effects in adapters/edges unless explicitly
-   requested otherwise.
+5. **Constrain change to the boundary.** Keep domain/core stable; side effects per §3.
 6. **Fail closed.** If correctness is uncertain, stop and request clarification . If silence
    persists, implement the **conservative** option and document assumptions.
 
-7. **Cache discipline.** Response cache invalidation is always synchronous (no jobs, no queue). Cache warming is expensive and MUST run via the `WarmCache` job path with debouncing/observability; do not couple warming into invalidation.
+7. **Cache discipline.** Response cache invalidation is always synchronous (no jobs). Cache warming is expensive and MUST run via the `WarmCache` job path with debouncing/observability and epoch guard; do not couple warming into invalidation. Any background write job that needs prewarm must call `invalidate_and_enqueue_warm`; if it only needs invalidation, call `cache.invalidate_all()`.
 8. **Test env vars.** When running the full gate (fmt/check/clippy/tests/udeps/outdated), set both:
    - `SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres`
    - `DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`
@@ -142,7 +141,7 @@ Use a single atomic commit when possible. Use the template in §9.
 - Default behavior: log every codebase-related change under **Unreleased** (in the same commit as the code change or in a dedicated changelog commit).
 - Release flow (run **only when the user explicitly asks to publish**):
   1) Bump version in `Cargo.toml` to the user-specified value.
-  2) Run the full gate (fmt, clippy, tests, etc.) with `SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`; accept snapshot diffs caused by the version bump.
+ 2) Run the full gate (fmt, clippy, tests, etc.) with the env vars in §0.8; accept snapshot diffs caused by the version bump.
   3) Update `CHANGELOG.md`: add the new version section, move Unreleased contents there, and fill in any missing release notes.
   4) After user reconfirms, create the release via `gh`: tag `vX.Y.Z`, title `vX.Y.Z - <brief title>`, release notes based on that version’s changelog entry.
 

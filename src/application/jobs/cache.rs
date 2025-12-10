@@ -91,6 +91,7 @@ pub async fn process_cache_warm_job(
         pages: ctx.pages.clone(),
         chrome: ctx.chrome.clone(),
         cache: ctx.cache.clone(),
+        cache_warm_debouncer: ctx.cache_warm_debouncer.clone(),
         db: ctx.repositories.clone(),
         upload_storage: ctx.upload_storage.clone(),
     };

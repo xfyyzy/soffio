@@ -22,7 +22,7 @@ pub struct JobWorkerContext {
     pub repositories: Arc<PostgresRepositories>,
     pub renderer: Arc<ComrakRenderService>,
     pub cache: Arc<ResponseCache>,
-    pub cache_warm_debouncer: CacheWarmDebouncer,
+    pub cache_warm_debouncer: Arc<CacheWarmDebouncer>,
     pub feed: Arc<FeedService>,
     pub pages: Arc<PageService>,
     pub chrome: Arc<ChromeService>,

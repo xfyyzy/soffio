@@ -10,6 +10,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - Admin jobs UI no longer shows Render Sections / Render Section / Render Summary job types, matching the actual enqueued jobs; idle workers for those job types were removed to avoid empty queues.
 - Cache invalidation is now synchronous only (InvalidateCache job removed); cache warming remains a debounced WarmCache job. Removed related config/worker/badge definitions and purged legacy queue entries.
+- Cache warming now carries cache epoch and uses shared debouncer across HTTP + job workers; stale warm jobs early-exit after newer invalidations. Publish jobs reuse the invalidate+warm helper.
+- Added `update_migration_version` utility binary to rewrite seed migration entries from the live database when archives lag behind non-breaking schema tweaks.
 
 ## [0.1.12] - 2025-12-10
 

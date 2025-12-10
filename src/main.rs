@@ -337,13 +337,14 @@ fn build_application_context(
     );
 
     let response_cache = Arc::new(ResponseCache::new());
-    let cache_warm_debouncer = CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE);
+    let cache_warm_debouncer = Arc::new(CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE));
 
     let http_state = HttpState {
         feed: feed_service_http.clone(),
         pages: page_service_http.clone(),
         chrome: chrome_service_http.clone(),
         cache: response_cache.clone(),
+        cache_warm_debouncer: cache_warm_debouncer.clone(),
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
     };
