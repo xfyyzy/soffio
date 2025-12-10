@@ -1,0 +1,1 @@
+-- No down migration: removed jobs cannot be restored.
