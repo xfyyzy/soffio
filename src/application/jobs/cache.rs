@@ -4,7 +4,11 @@ use tracing::{info, warn};
 
 use crate::{
     application::repos::{JobsRepo, RepoError},
-    infra::{cache_warmer::CacheWarmer, http::HttpState},
+    infra::{
+        cache::{CacheWarmDebouncer, ResponseCache},
+        cache_warmer::CacheWarmer,
+        http::HttpState,
+    },
 };
 
 use super::{context::JobWorkerContext, queue::enqueue_job};
@@ -31,6 +35,25 @@ pub async fn enqueue_cache_warm_job<J: JobsRepo + ?Sized>(
         3, // fewer retries since it's best-effort
     )
     .await
+}
+
+/// Single entry point for write paths: synchronously invalidate cache, then
+/// (debounced) enqueue a warm-cache job. Returns Some(job_id) if enqueued.
+pub async fn invalidate_and_enqueue_warm(
+    cache: &ResponseCache,
+    debouncer: &CacheWarmDebouncer,
+    jobs_repo: &dyn JobsRepo,
+    reason: Option<String>,
+) -> Result<Option<String>, RepoError> {
+    cache.invalidate_all().await;
+
+    if debouncer.try_warm().await {
+        let job_id = enqueue_cache_warm_job(jobs_repo, reason).await?;
+        debouncer.mark_warm_requested().await;
+        Ok(Some(job_id))
+    } else {
+        Ok(None)
+    }
 }
 
 /// Process a cache warm job.

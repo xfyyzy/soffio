@@ -108,34 +108,33 @@ pub async fn invalidate_and_warm_cache(
     request: Request<Body>,
     next: Next,
 ) -> Response {
-    use crate::application::jobs::enqueue_cache_warm_job;
+    use crate::application::jobs::invalidate_and_enqueue_warm;
     use crate::application::repos::JobsRepo;
 
     let method = request.method().clone();
     let response = next.run(request).await;
 
     if method != Method::GET && response.status().is_success() {
-        // Synchronous cache invalidation - happens immediately
-        state.cache.invalidate_all().await;
+        let cache = state.cache.clone();
+        let debouncer = state.debouncer.clone();
+        let jobs_repo = state.jobs_repo.clone();
 
-        // Async cache warming - enqueue job if debounce window has passed
-        if state.debouncer.try_warm().await {
-            let jobs_repo = state.jobs_repo.clone();
-            tokio::spawn(async move {
-                if let Err(err) = enqueue_cache_warm_job(
-                    jobs_repo.as_ref() as &dyn JobsRepo,
-                    Some("api_write".to_string()),
-                )
-                .await
-                {
-                    tracing::warn!(
-                        target = "infra::http::middleware",
-                        error = %err,
-                        "failed to enqueue cache warm job"
-                    );
-                }
-            });
-        }
+        tokio::spawn(async move {
+            if let Err(err) = invalidate_and_enqueue_warm(
+                cache.as_ref(),
+                &debouncer,
+                jobs_repo.as_ref() as &dyn JobsRepo,
+                Some("api_write".to_string()),
+            )
+            .await
+            {
+                tracing::warn!(
+                    target = "infra::http::middleware",
+                    error = %err,
+                    "failed to invalidate and enqueue cache warm job"
+                );
+            }
+        });
     }
 
     response
