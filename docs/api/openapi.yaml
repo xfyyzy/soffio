@@ -233,7 +233,7 @@ components:
     JobType:
       type: string
       enum: [render_post, render_post_sections, render_post_section, render_page, render_summary,
-             publish_post, publish_page, invalidate_cache]
+             publish_post, publish_page, warm_cache]
     PostCreateRequest:
       type: object
       required: [title, excerpt, body_markdown]

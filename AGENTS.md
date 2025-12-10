@@ -7,7 +7,7 @@
 
 ---
 
-## 0) Agent Contract (non‑negotiables)
+## 0) Agent Contract (non-negotiables)
 
 You MUST:
 
@@ -23,6 +23,8 @@ You MUST:
    requested otherwise.
 6. **Fail closed.** If correctness is uncertain, stop and request clarification . If silence
    persists, implement the **conservative** option and document assumptions.
+
+7. **Cache discipline.** Response cache invalidation is always synchronous (no jobs, no queue). Cache warming is expensive and MUST run via the `WarmCache` job path with debouncing/observability; do not couple warming into invalidation.
 
 **Immediate stop conditions (ask before proceeding):**
 

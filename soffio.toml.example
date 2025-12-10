@@ -133,11 +133,6 @@ publish_post_concurrency = 1
 # CLI: --jobs-publish-page-concurrency
 publish_page_concurrency = 1
 
-# Concurrent cache-invalidation workers.
-# Env: SOFFIO__JOBS__CACHE_INVALIDATION_CONCURRENCY
-# CLI: --jobs-cache-invalidation-concurrency
-cache_invalidation_concurrency = 1
-
 [render]
 # Mermaid CLI executable invoked for server-side diagram rendering.
 # Env: SOFFIO__RENDER__MERMAID_CLI_PATH

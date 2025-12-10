@@ -35,7 +35,6 @@ const DEFAULT_JOB_RENDER_SUMMARY_CONCURRENCY: u32 = 2;
 const DEFAULT_JOB_RENDER_PAGE_CONCURRENCY: u32 = 1;
 const DEFAULT_JOB_PUBLISH_POST_CONCURRENCY: u32 = 1;
 const DEFAULT_JOB_PUBLISH_PAGE_CONCURRENCY: u32 = 1;
-const DEFAULT_JOB_CACHE_INVALIDATION_CONCURRENCY: u32 = 1;
 pub(crate) const DEFAULT_MERMAID_CLI_PATH: &str = "mmdc";
 pub(crate) const DEFAULT_MERMAID_CACHE_DIR: &str = "/tmp/soffio-mermaid";
 
@@ -177,10 +176,6 @@ pub struct ServeOverrides {
     #[arg(long = "jobs-publish-page-concurrency", value_name = "COUNT")]
     pub jobs_publish_page_concurrency: Option<u32>,
 
-    /// Override the cache-invalidation worker concurrency.
-    #[arg(long = "jobs-cache-invalidation-concurrency", value_name = "COUNT")]
-    pub jobs_cache_invalidation_concurrency: Option<u32>,
-
     /// Override the uploads directory.
     #[arg(long = "uploads-directory", value_name = "PATH")]
     pub uploads_directory: Option<PathBuf>,
@@ -321,7 +316,6 @@ pub struct JobsSettings {
     pub render_page_concurrency: NonZeroU32,
     pub publish_post_concurrency: NonZeroU32,
     pub publish_page_concurrency: NonZeroU32,
-    pub cache_invalidation_concurrency: NonZeroU32,
 }
 
 #[derive(Debug, Clone)]
@@ -471,9 +465,6 @@ impl RawSettings {
         }
         if let Some(value) = overrides.jobs_publish_page_concurrency {
             self.jobs.publish_page_concurrency = Some(value);
-        }
-        if let Some(value) = overrides.jobs_cache_invalidation_concurrency {
-            self.jobs.cache_invalidation_concurrency = Some(value);
         }
 
         self.apply_render_overrides(&overrides.render);
@@ -673,9 +664,6 @@ fn build_jobs_settings(jobs: RawJobsSettings) -> Result<JobsSettings, LoadError>
     let publish_page = jobs
         .publish_page_concurrency
         .unwrap_or(DEFAULT_JOB_PUBLISH_PAGE_CONCURRENCY);
-    let cache_invalidation = jobs
-        .cache_invalidation_concurrency
-        .unwrap_or(DEFAULT_JOB_CACHE_INVALIDATION_CONCURRENCY);
 
     Ok(JobsSettings {
         render_post_concurrency: non_zero_u32(render_post.into(), "jobs.render_post_concurrency")?,
@@ -691,10 +679,6 @@ fn build_jobs_settings(jobs: RawJobsSettings) -> Result<JobsSettings, LoadError>
         publish_page_concurrency: non_zero_u32(
             publish_page.into(),
             "jobs.publish_page_concurrency",
-        )?,
-        cache_invalidation_concurrency: non_zero_u32(
-            cache_invalidation.into(),
-            "jobs.cache_invalidation_concurrency",
         )?,
     })
 }
@@ -829,7 +813,6 @@ struct RawJobsSettings {
     render_page_concurrency: Option<u32>,
     publish_post_concurrency: Option<u32>,
     publish_page_concurrency: Option<u32>,
-    cache_invalidation_concurrency: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]

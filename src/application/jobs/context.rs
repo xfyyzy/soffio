@@ -11,7 +11,6 @@ use crate::{
 };
 
 pub const PUBLISH_JOB_WAIT_TIMEOUT: Duration = Duration::from_secs(30);
-pub const CACHE_INVALIDATION_WAIT_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Shared context passed to job workers so they can access infrastructure capabilities.
 #[derive(Clone)]
