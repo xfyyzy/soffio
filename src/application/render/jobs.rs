@@ -156,6 +156,8 @@ pub async fn process_render_post_job(
 
     let mut child_handles: Vec<JoinHandle<Result<(), ApalisError>>> = Vec::new();
 
+    // Child render steps run as in-memory tasks; they are intentionally not enqueued
+    // as standalone jobs to keep the pipeline fast and avoid polluting the job queue.
     let sections_tracking = Uuid::new_v4().to_string();
     let sections_receiver = ctx.render_mailbox.register(sections_tracking.clone());
     let sections_payload = RenderPostSectionsJobPayload {

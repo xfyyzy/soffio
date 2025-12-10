@@ -225,20 +225,8 @@ impl AdminJobService {
             job_type: Some(JobType::RenderPost),
             ..(base_filter.clone())
         };
-        let filter_render_post_sections = JobQueryFilter {
-            job_type: Some(JobType::RenderPostSections),
-            ..(base_filter.clone())
-        };
-        let filter_render_post_section = JobQueryFilter {
-            job_type: Some(JobType::RenderPostSection),
-            ..(base_filter.clone())
-        };
         let filter_render_page = JobQueryFilter {
             job_type: Some(JobType::RenderPage),
-            ..(base_filter.clone())
-        };
-        let filter_render_summary = JobQueryFilter {
-            job_type: Some(JobType::RenderSummary),
             ..(base_filter.clone())
         };
         let filter_publish_post = JobQueryFilter {
@@ -258,34 +246,19 @@ impl AdminJobService {
             ..(base_filter.clone())
         };
 
-        let (
-            render_post,
-            render_post_sections,
-            render_post_section,
-            render_page,
-            render_summary,
-            publish_post,
-            publish_page,
-            invalidate_cache,
-            warm_cache,
-        ) = tokio::try_join!(
-            self.repo.count_jobs(&filter_render_post),
-            self.repo.count_jobs(&filter_render_post_sections),
-            self.repo.count_jobs(&filter_render_post_section),
-            self.repo.count_jobs(&filter_render_page),
-            self.repo.count_jobs(&filter_render_summary),
-            self.repo.count_jobs(&filter_publish_post),
-            self.repo.count_jobs(&filter_publish_page),
-            self.repo.count_jobs(&filter_invalidate_cache),
-            self.repo.count_jobs(&filter_warm_cache),
-        )?;
+        let (render_post, render_page, publish_post, publish_page, invalidate_cache, warm_cache) =
+            tokio::try_join!(
+                self.repo.count_jobs(&filter_render_post),
+                self.repo.count_jobs(&filter_render_page),
+                self.repo.count_jobs(&filter_publish_post),
+                self.repo.count_jobs(&filter_publish_page),
+                self.repo.count_jobs(&filter_invalidate_cache),
+                self.repo.count_jobs(&filter_warm_cache),
+            )?;
 
         Ok(AdminJobTypeCounts {
             render_post,
-            render_post_sections,
-            render_post_section,
             render_page,
-            render_summary,
             publish_post,
             publish_page,
             invalidate_cache,
@@ -309,10 +282,7 @@ pub struct AdminJobStatusCounts {
 #[derive(Debug, Clone)]
 pub struct AdminJobTypeCounts {
     pub render_post: u64,
-    pub render_post_sections: u64,
-    pub render_post_section: u64,
     pub render_page: u64,
-    pub render_summary: u64,
     pub publish_post: u64,
     pub publish_page: u64,
     pub invalidate_cache: u64,

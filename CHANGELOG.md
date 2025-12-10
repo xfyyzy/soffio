@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Admin jobs UI no longer shows Render Sections / Render Section / Render Summary job types, matching the actual enqueued jobs; idle workers for those job types were removed to avoid empty queues.
+
 ## [0.1.12] - 2025-12-10
 
 ### Fixed

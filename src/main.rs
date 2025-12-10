@@ -34,8 +34,7 @@ use soffio::{
         render::{
             InFlightRenders, RenderMailbox, RenderPageJobPayload, RenderPipelineConfig,
             RenderPostJobPayload, configure_render_service, process_render_page_job,
-            process_render_post_job, process_render_post_section_job,
-            process_render_post_sections_job, process_render_summary_job, render_service,
+            process_render_post_job, render_service,
         },
         repos::{
             ApiKeysRepo, AuditRepo, JobsRepo, NavigationRepo, NavigationWriteRepo, PagesRepo,
@@ -519,18 +518,6 @@ fn spawn_job_monitor(
         repositories.pool().clone(),
         ApalisSqlConfig::new(JobType::RenderPost.as_str()),
     );
-    let render_sections_storage = PostgresStorage::new_with_config(
-        repositories.pool().clone(),
-        ApalisSqlConfig::new(JobType::RenderPostSections.as_str()),
-    );
-    let render_section_storage = PostgresStorage::new_with_config(
-        repositories.pool().clone(),
-        ApalisSqlConfig::new(JobType::RenderPostSection.as_str()),
-    );
-    let render_summary_storage = PostgresStorage::new_with_config(
-        repositories.pool().clone(),
-        ApalisSqlConfig::new(JobType::RenderSummary.as_str()),
-    );
     let render_page_storage = PostgresStorage::new_with_config(
         repositories.pool().clone(),
         ApalisSqlConfig::new(JobType::RenderPage.as_str()),
@@ -553,7 +540,6 @@ fn spawn_job_monitor(
     );
 
     let render_post_concurrency = jobs.render_post_concurrency.get() as usize;
-    let render_summary_concurrency = jobs.render_summary_concurrency.get() as usize;
     let render_page_concurrency = jobs.render_page_concurrency.get() as usize;
     let publish_post_concurrency = jobs.publish_post_concurrency.get() as usize;
     let publish_page_concurrency = jobs.publish_page_concurrency.get() as usize;
@@ -564,21 +550,6 @@ fn spawn_job_monitor(
         .data(context.clone())
         .backend(render_storage)
         .build_fn(process_render_post_job);
-    let render_sections_worker = WorkerBuilder::new("render-sections-worker")
-        .concurrency(render_post_concurrency)
-        .data(context.clone())
-        .backend(render_sections_storage)
-        .build_fn(process_render_post_sections_job);
-    let render_section_worker = WorkerBuilder::new("render-section-worker")
-        .concurrency(render_post_concurrency)
-        .data(context.clone())
-        .backend(render_section_storage)
-        .build_fn(process_render_post_section_job);
-    let render_summary_worker = WorkerBuilder::new("render-summary-worker")
-        .concurrency(render_summary_concurrency)
-        .data(context.clone())
-        .backend(render_summary_storage)
-        .build_fn(process_render_summary_job);
     let render_page_worker = WorkerBuilder::new("render-page-worker")
         .concurrency(render_page_concurrency)
         .data(context.clone())
@@ -615,9 +586,6 @@ fn spawn_job_monitor(
 
     let monitor = Monitor::new()
         .register(render_post_worker)
-        .register(render_sections_worker)
-        .register(render_section_worker)
-        .register(render_summary_worker)
         .register(render_page_worker)
         .register(publish_post_worker)
         .register(publish_page_worker)

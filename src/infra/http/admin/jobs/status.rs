@@ -141,10 +141,7 @@ pub(super) fn job_type_options(
 ) -> Vec<admin_views::AdminJobTypeOption> {
     [
         (JobType::RenderPost, counts.render_post),
-        (JobType::RenderPostSections, counts.render_post_sections),
-        (JobType::RenderPostSection, counts.render_post_section),
         (JobType::RenderPage, counts.render_page),
-        (JobType::RenderSummary, counts.render_summary),
         (JobType::PublishPost, counts.publish_post),
         (JobType::PublishPage, counts.publish_page),
         (JobType::InvalidateCache, counts.invalidate_cache),
@@ -157,4 +154,39 @@ pub(super) fn job_type_options(
         count,
     })
     .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn job_type_options_expose_only_enqueued_jobs() {
+        let counts = AdminJobTypeCounts {
+            render_post: 1,
+            render_page: 2,
+            publish_post: 3,
+            publish_page: 4,
+            invalidate_cache: 5,
+            warm_cache: 6,
+        };
+
+        let options = job_type_options(&counts);
+
+        let keys: Vec<&str> = options.iter().map(|opt| opt.value.as_str()).collect();
+        assert_eq!(
+            keys,
+            vec![
+                JobType::RenderPost.as_str(),
+                JobType::RenderPage.as_str(),
+                JobType::PublishPost.as_str(),
+                JobType::PublishPage.as_str(),
+                JobType::InvalidateCache.as_str(),
+                JobType::WarmCache.as_str(),
+            ]
+        );
+
+        let counts: Vec<u64> = options.iter().map(|opt| opt.count).collect();
+        assert_eq!(counts, vec![1, 2, 3, 4, 5, 6]);
+    }
 }
