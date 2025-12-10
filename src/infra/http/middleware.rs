@@ -77,15 +77,37 @@ pub async fn cache_public_responses(
 }
 
 pub async fn invalidate_admin_writes(
-    State(cache): State<Arc<ResponseCache>>,
+    State(state): State<CacheInvalidationState>,
     request: Request<Body>,
     next: Next,
 ) -> Response {
+    use crate::application::jobs::invalidate_and_enqueue_warm;
+    use crate::application::repos::JobsRepo;
+
     let method = request.method().clone();
     let response = next.run(request).await;
 
     if method != Method::GET && response.status().is_success() {
-        cache.invalidate_all().await;
+        let cache = state.cache.clone();
+        let debouncer = state.debouncer.clone();
+        let jobs_repo = state.jobs_repo.clone();
+
+        tokio::spawn(async move {
+            if let Err(err) = invalidate_and_enqueue_warm(
+                cache.as_ref(),
+                &debouncer,
+                jobs_repo.as_ref() as &dyn JobsRepo,
+                Some("admin_write".to_string()),
+            )
+            .await
+            {
+                tracing::warn!(
+                    target = "infra::http::middleware",
+                    error = %err,
+                    "failed to invalidate and enqueue cache warm job (admin)"
+                );
+            }
+        });
     }
 
     response

@@ -33,11 +33,17 @@ use axum::{
 
 use crate::{application::repos::SettingsRepo, infra::assets};
 
-use super::middleware::{invalidate_admin_writes, log_responses, set_request_context};
+use super::middleware::{
+    CacheInvalidationState, invalidate_admin_writes, log_responses, set_request_context,
+};
 use tracing::error;
 
 pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router {
-    let response_cache = state.cache.clone();
+    let cache_invalidation_state = CacheInvalidationState {
+        cache: state.cache.clone(),
+        debouncer: state.cache_warm_debouncer.clone(),
+        jobs_repo: state.db.clone(),
+    };
     Router::new()
         .route("/", get(dashboard::admin_dashboard))
         .route("/posts", get(posts::admin_posts))
@@ -175,7 +181,7 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/favicon.ico", get(favicon))
         .with_state(state)
         .layer(middleware::from_fn_with_state(
-            response_cache,
+            cache_invalidation_state,
             invalidate_admin_writes,
         ))
         .layer(middleware::from_fn(log_responses))

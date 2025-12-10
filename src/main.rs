@@ -352,6 +352,7 @@ fn build_application_context(
     let admin_state = AdminState {
         db: http_repositories.clone(),
         cache: response_cache.clone(),
+        cache_warm_debouncer: cache_warm_debouncer.clone(),
         chrome: Arc::new(AdminChromeService::new(settings_repo.clone())),
         dashboard: Arc::new(AdminDashboardService::new(
             posts_repo.clone(),

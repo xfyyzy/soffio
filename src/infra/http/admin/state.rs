@@ -7,12 +7,17 @@ use crate::application::admin::{
     uploads::AdminUploadService,
 };
 use crate::application::api_keys::ApiKeyService;
-use crate::infra::{cache::ResponseCache, db::PostgresRepositories, uploads::UploadStorage};
+use crate::infra::{
+    cache::{CacheWarmDebouncer, ResponseCache},
+    db::PostgresRepositories,
+    uploads::UploadStorage,
+};
 
 #[derive(Clone)]
 pub struct AdminState {
     pub db: Arc<PostgresRepositories>,
     pub cache: Arc<ResponseCache>,
+    pub cache_warm_debouncer: Arc<CacheWarmDebouncer>,
     pub chrome: Arc<AdminChromeService>,
     pub dashboard: Arc<AdminDashboardService>,
     pub posts: Arc<AdminPostService>,
