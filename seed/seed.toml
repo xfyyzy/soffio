@@ -14,6 +14,10 @@ checksum = "48c645b9d2af6472ccbec3d68cc51b05414a510c58184f45d440f4651f85af28b2a5
 version = 20251201100000
 checksum = "25799910d54a74b58014de1cb90423156c5d0000a53bac42e0859423fc74ad8b8d83ceb3477e9d0e36fac3dab986e9ee"
 
+[[migrations.entries]]
+version = 20251210120000
+checksum = "303867c78ffa1684bf48f49df7f070de7b2bdaf2f4933fe2056dd5408c77c5f4e2ec5d60e4a2c338ea4f99b75e90d0e8"
+
 [site_settings]
 homepage_size = 6
 admin_page_size = 6
