@@ -28,14 +28,14 @@ month_filter_limit = 16
 global_toc_enabled = true
 brand_title = "Soffio"
 brand_href = "/"
-footer_copy = "Stillness guides the wind; the wind reshapes stillness."
-public_site_url = "http://localhost:3000/"
-favicon_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"></svg>'
+footer_copy = "Exploring distributed systems, compilers, databases, and the art of software engineering."
+public_site_url = "https://soffio.xfyyzy.xyz"
+favicon_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0f172a"/><defs><linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><path d="M48 14H24L14 24V31H38L44 25V20H48V14ZM16 50H40L50 40V33H26L20 39V44H16V50Z" fill="url(#g)"/></svg>'
 timezone = "Asia/Shanghai"
 meta_title = "Soffio"
-meta_description = "Whispers on motion, balance, and form."
+meta_description = "深入探索分布式系统、编译器原理、数据库内核与软件工程的技术博客。"
 og_title = "Soffio"
-og_description = "Traces of motion, balance, and form in continual drift."
+og_description = "A technical blog on distributed systems, compilers, databases, type theory, and modern software architecture."
 
 [[posts]]
 slug = "bian-yuan-ji-suan-de-jue-qi-yun-de-xia-yi-ge-qian-yan"
@@ -19958,38 +19958,6 @@ tag_slug = "performance"
 [[post_tags]]
 post_slug = "xian-liu-suan-fa-de-shu-xue-yi-shu-gou-jian-gao-ke-yong-xi-tong-de-li-xing-quan-heng"
 tag_slug = "scalability"
-
-[[navigation_items]]
-label = "关于"
-destination_type = "internal"
-destination_page_slug = "guan-yu"
-sort_order = 1
-open_in_new_tab = false
-visible = true
-
-[[navigation_items]]
-label = "研究领域"
-destination_type = "internal"
-destination_page_slug = "yan-jiu-ling-yu"
-sort_order = 2
-open_in_new_tab = false
-visible = true
-
-[[navigation_items]]
-label = "如何阅读"
-destination_type = "internal"
-destination_page_slug = "ru-he-yue-du"
-sort_order = 3
-open_in_new_tab = false
-visible = true
-
-[[navigation_items]]
-label = "About"
-destination_type = "internal"
-destination_page_slug = "about"
-sort_order = 4
-open_in_new_tab = false
-visible = true
 
 [[navigation_items]]
 label = "Github"
