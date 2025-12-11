@@ -1307,6 +1307,24 @@ async fn get_public_page(client: &Client, base: &str, path: &str) -> TestResult<
     Ok(resp.text().await.unwrap_or_default())
 }
 
+/// Counts warm_cache jobs (any state) via the public API.
+async fn warm_cache_job_count(client: &Client, base: &str, key: &str) -> TestResult<usize> {
+    let json = get_json(
+        client,
+        base,
+        key,
+        "/api/v1/jobs?job_type=warm_cache&limit=200",
+        &[StatusCode::OK],
+    )
+    .await?;
+
+    Ok(json
+        .get("items")
+        .and_then(Value::as_array)
+        .map(|a| a.len())
+        .unwrap_or(0))
+}
+
 /// Cache consistency test: verifies that API modifications invalidate the public cache.
 ///
 /// This test would have caught the original bug where soffio-cli operations
@@ -1621,6 +1639,133 @@ async fn live_api_post_body_renders_immediately() -> TestResult<()> {
     );
 
     // Cleanup
+    delete(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::NO_CONTENT],
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Verifies that editing a published post triggers cache invalidation/warm **after**
+/// the render job finishes, so the public page does not stay cached with empty
+/// summary or stale body content.
+#[tokio::test]
+#[ignore]
+async fn live_api_post_edit_warms_cache_after_render() -> TestResult<()> {
+    let config = load_config()?;
+    let client = Client::builder().build()?;
+    let base = config.base_url.trim_end_matches('/').to_string();
+
+    let suf = current_suffix();
+    let summary_v1 = format!("SUMMARY_V1_{suf}");
+    let summary_v2 = format!("SUMMARY_V2_{suf}");
+    let body_v1 = format!(
+        "# Heading V1 {suf}\n\n## Section One\n\nBody V1 marker {suf}-A\n\n### Sub\n\nMore V1 content."
+    );
+    let body_v2 = format!(
+        "# Heading V2 {suf}\n\n## Section One Updated\n\nBody V2 marker {suf}-B\n\n### Sub Updated\n\nFresh content."
+    );
+    let title_v1 = format!("Cache Warm Post {suf}");
+    let title_v2 = format!("Cache Warm Post Updated {suf}");
+
+    // Create with summary.
+    let (post_id, post_slug) = post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        "/api/v1/posts",
+        &[StatusCode::CREATED],
+        json!({
+            "title": title_v1,
+            "excerpt": "live cache warm test",
+            "body_markdown": body_v1,
+            "summary_markdown": summary_v1,
+        }),
+    )
+    .await?;
+
+    // Publish.
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}/status"),
+        &[StatusCode::OK],
+        json!({"status": "published"}),
+    )
+    .await?;
+
+    // Allow initial render/publish to finish.
+    tokio::time::sleep(Duration::from_millis(800)).await;
+
+    // Warm cache once.
+    let public_path = format!("/posts/{post_slug}");
+    let first_fetch = get_public_page(&client, &base, &public_path).await?;
+    assert!(
+        first_fetch.contains(&summary_v1) && first_fetch.contains(&post_slug),
+        "initial render should include v1 summary and slug"
+    );
+
+    let warm_jobs_before = warm_cache_job_count(&client, &base, &config.keys.all).await?;
+
+    // Wait past debounce window to ensure a new warm job can be enqueued.
+    tokio::time::sleep(Duration::from_secs(6)).await;
+
+    // Update body + summary; keep slug stable.
+    patch_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::OK],
+        json!({
+            "slug": post_slug,
+            "title": title_v2,
+            "excerpt": "live cache warm test updated",
+            "body_markdown": body_v2,
+            "summary_markdown": summary_v2,
+        }),
+    )
+    .await?;
+
+    // Poll public page until new summary/body appear (render + post-render invalidation).
+    let mut updated_html = String::new();
+    for _ in 0..20 {
+        let html = get_public_page(&client, &base, &public_path).await?;
+        if html.contains(&summary_v2) && html.contains(&format!("{suf}-B")) {
+            updated_html = html;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+
+    assert!(
+        !updated_html.is_empty(),
+        "public page did not reflect updated summary/body within timeout"
+    );
+    assert!(
+        !updated_html.contains(&summary_v1) && !updated_html.contains(&format!("{suf}-A")),
+        "old summary/body markers should be absent after render completes"
+    );
+
+    // Warm cache job should have been enqueued after render completion.
+    let mut saw_new_warm_job = false;
+    for _ in 0..20 {
+        let current = warm_cache_job_count(&client, &base, &config.keys.all).await?;
+        if current > warm_jobs_before {
+            saw_new_warm_job = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    assert!(saw_new_warm_job, "expected a new warm_cache job after edit");
+
+    // Cleanup.
     delete(
         &client,
         &base,

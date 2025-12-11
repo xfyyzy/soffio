@@ -8,12 +8,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Live regression `live_api_post_edit_warms_cache_after_render`: creates→publishes→edits a post with summary/body markers, then verifies the public page shows fresh content and a `WarmCache` job was enqueued after render completion. Guards against caching half-rendered posts.
 - Snapshot system for posts and pages: new `snapshots` table with schema-versioned payloads, admin list/rollback UI, and API/CLI support (`/api/v1/snapshots` list/get/create/rollback) guarded by dedicated snapshot scopes.
 - Snapshot scopes (`snapshot_read`, `snapshot_write`) added to seeds and OpenAPI/CLI docs; DB migration includes type expansion and cleanup triggers for entity deletes.
 - Live API coverage for snapshot endpoints (`live_api_snapshots_cover_flow`): create, list, get, and rollback for posts, including scope gate checks and rollback correctness on a running server.
 - Documented that the seeded "all" API key used by live tests must include `snapshot_read` and `snapshot_write` scopes.
 
 ### Changed
+- Post render worker now invalidates + (debounced) warms the response cache after persisting rendered content, but only for published posts, eliminating the stale/empty-summary window observed when editing published posts.
 - Unified cache invalidation behavior between Admin and API routes: Admin routes now also trigger async cache warming after write operations (previously Admin only invalidated without warming). Both use `invalidate_and_enqueue_warm` middleware.
 
 ### Breaking
