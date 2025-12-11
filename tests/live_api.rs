@@ -4,13 +4,12 @@
 //! - Sends real HTTP requests to the public endpoint (`base_url` in the config).
 //! - Marked `#[ignore]` so it only runs manually after seeding data and starting the server.
 
-use assert_cmd::cargo::cargo_bin;
 use chrono::Utc;
 use reqwest::{Client, Method, StatusCode, multipart};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{collections::HashSet, fs, path::Path, time::Duration};
-use tokio::process::Command;
+use std::{collections::HashSet, fs, path::Path, process::Command, time::Duration};
+use tokio::task::spawn_blocking;
 
 type TestResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -1328,14 +1327,20 @@ async fn warm_cache_job_count(client: &Client, base: &str, key: &str) -> TestRes
 }
 
 async fn cli_output(args: &[&str], base: &str, key: &str) -> TestResult<(i32, String, String)> {
-    let bin = cargo_bin!("soffio-cli");
-    let output = Command::new(bin)
-        .env("SOFFIO_SITE_URL", base)
-        .env("SOFFIO_API_KEY", key)
-        .args(args)
-        .output()
-        .await
-        .map_err(|e| format!("failed to run soffio-cli: {e}"))?;
+    let bin = assert_cmd::cargo::cargo_bin!("soffio-cli");
+    let args = args.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    let base = base.to_string();
+    let key = key.to_string();
+    let output = spawn_blocking(move || {
+        Command::new(bin)
+            .env("SOFFIO_SITE_URL", base)
+            .env("SOFFIO_API_KEY", key)
+            .args(args)
+            .output()
+    })
+    .await
+    .map_err(|e| format!("failed to join soffio-cli task: {e}"))?
+    .map_err(|e| format!("failed to run soffio-cli: {e}"))?;
 
     let code = output.status.code().unwrap_or(-1);
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -1978,8 +1983,7 @@ async fn live_cli_snapshots_cover_all_flows() -> TestResult<()> {
     );
 
     // Get snapshot detail.
-    let snap_detail =
-        cli_json(&["snapshots", "get", "--id", &post_snap_id], &base, all_key).await?;
+    let snap_detail = cli_json(&["snapshots", "get", &post_snap_id], &base, all_key).await?;
     assert_eq!(
         snap_detail.get("entity_id").and_then(Value::as_str),
         Some(post_id.as_str())
@@ -2006,8 +2010,6 @@ async fn live_cli_snapshots_cover_all_flows() -> TestResult<()> {
             &post_body_v2,
             "--summary",
             &post_summary_v2,
-            "--pinned",
-            "false",
         ],
         &base,
         all_key,
@@ -2033,12 +2035,7 @@ async fn live_cli_snapshots_cover_all_flows() -> TestResult<()> {
     .await?;
 
     // Rollback post snapshot and verify content restored.
-    let rollback_msg = cli_plain(
-        &["snapshots", "rollback", "--id", &post_snap_id],
-        &base,
-        all_key,
-    )
-    .await?;
+    let rollback_msg = cli_plain(&["snapshots", "rollback", &post_snap_id], &base, all_key).await?;
     assert!(
         rollback_msg.contains("Rolled back snapshot"),
         "unexpected rollback message: {rollback_msg}"
@@ -2060,12 +2057,7 @@ async fn live_cli_snapshots_cover_all_flows() -> TestResult<()> {
     assert_eq!(summary_after, post_summary_v1);
 
     // Rollback page snapshot and verify.
-    cli_plain(
-        &["snapshots", "rollback", "--id", &page_snap_id],
-        &base,
-        all_key,
-    )
-    .await?;
+    cli_plain(&["snapshots", "rollback", &page_snap_id], &base, all_key).await?;
     let page_after = cli_json(&["pages", "get", "--id", &page_id], &base, all_key).await?;
     let page_body_after = page_after
         .get("body_markdown")
@@ -2092,8 +2084,8 @@ async fn live_cli_snapshots_cover_all_flows() -> TestResult<()> {
     .await?;
 
     // Cleanup test content.
-    let _ = cli_plain(&["posts", "delete", "--id", &post_id], &base, all_key).await?;
-    let _ = cli_plain(&["pages", "delete", "--id", &page_id], &base, all_key).await?;
+    let _ = cli_plain(&["posts", "delete", &post_id], &base, all_key).await?;
+    let _ = cli_plain(&["pages", "delete", &page_id], &base, all_key).await?;
 
     Ok(())
 }
