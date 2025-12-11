@@ -16,6 +16,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - Unified cache invalidation behavior between Admin and API routes: Admin routes now also trigger async cache warming after write operations (previously Admin only invalidated without warming). Both use `invalidate_and_enqueue_warm` middleware.
 
+### Breaking
+- `update-migration-version` CLI aligned with other commands: database URL now optional (uses `DATABASE_URL`), file path is a required positional argument (previous `--file-path` flag removed). Update scripts/invocations accordingly.
+
 ## [0.1.13] - 2025-12-10
 
 ### Changed

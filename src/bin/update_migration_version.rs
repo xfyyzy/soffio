@@ -5,6 +5,7 @@ use std::{
 };
 
 use clap::Parser;
+use clap::ValueHint;
 use sqlx::postgres::PgPoolOptions;
 use tokio::runtime::Runtime;
 
@@ -14,13 +15,13 @@ use tokio::runtime::Runtime;
     about = "Sync TOML migrations.entries with database migrations"
 )]
 struct Cli {
-    /// Path to TOML file containing [[migrations.entries]]
-    #[arg(long, value_name = "FILE")]
-    file_path: PathBuf,
+    /// TOML file containing [[migrations.entries]]
+    #[arg(value_name = "FILE", value_hint = ValueHint::FilePath)]
+    file: PathBuf,
 
-    /// Postgres URL; falls back to DATABASE_URL env var
-    #[arg(long, env = "DATABASE_URL")]
-    database_url: String,
+    /// Postgres URL; optional if DATABASE_URL is set
+    #[arg(long = "database-url", env = "DATABASE_URL", value_name = "URL")]
+    database_url: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -32,13 +33,18 @@ struct MigrationEntry {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    let rt = Runtime::new()?;
-    let migrations = rt.block_on(fetch_migrations(&cli.database_url))?;
+    let database_url = cli
+        .database_url
+        .as_deref()
+        .ok_or("database url is required (use --database-url or set DATABASE_URL)")?;
 
-    rewrite_seed(&cli.file_path, &migrations)?;
+    let rt = Runtime::new()?;
+    let migrations = rt.block_on(fetch_migrations(database_url))?;
+
+    rewrite_seed(&cli.file, &migrations)?;
     println!(
         "Updated {} migration entries to match database ({} versions)",
-        cli.file_path.display(),
+        cli.file.display(),
         migrations.len()
     );
     Ok(())
