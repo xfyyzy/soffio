@@ -3,7 +3,7 @@ base_url = "http://localhost:3000"
 
 # Demo API keys seeded via admin UI; safe to commit (non-secret demo data).
 [keys]
-# all scopes (post/page/tag/navigation/upload read+write; settings read+write; job_read; audit_read)
+# all scopes (post/page/tag/navigation/upload read+write; settings read+write; job_read; audit_read; snapshot_read; snapshot_write)
 all = "sk_0bc4c710aba0_8902d052565a47639f426ecfce8391fbb2cfd3f484e844adb473f7e4e5201238"
 # post/page read+write only
 write = "sk_21eb29c5428f_4e4db6920d364d46a5311678872fcea3c621493b47c8465db56f286134145b9a"

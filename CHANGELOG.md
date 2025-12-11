@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Live API coverage for snapshot endpoints (`live_api_snapshots_cover_flow`): create, list, get, and rollback for posts, including scope gate checks and rollback correctness on a running server.
+- Documented that the seeded "all" API key used by live tests must include `snapshot_read` and `snapshot_write` scopes.
+
 ### Changed
 - Unified cache invalidation behavior between Admin and API routes: Admin routes now also trigger async cache warming after write operations (previously Admin only invalidated without warming). Both use `invalidate_and_enqueue_warm` middleware.
 
