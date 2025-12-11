@@ -60,6 +60,8 @@ use tokio::try_join;
 use tracing::{Dispatch, Level, dispatcher, error, info};
 use tracing_subscriber::fmt as tracing_fmt;
 
+mod migrations_tool;
+
 #[tokio::main]
 async fn main() {
     if let Err(error) = run().await {
@@ -98,6 +100,7 @@ async fn run() -> Result<(), AppError> {
         config::Command::RenderAll(args) => run_renderall(settings, args).await,
         config::Command::ExportSite(args) => run_export_site(settings, args).await,
         config::Command::ImportSite(args) => run_import_site(settings, args).await,
+        config::Command::Migrations(args) => run_migrations(settings, args).await,
     }
 }
 
@@ -201,6 +204,18 @@ async fn run_import_site(
         target = "soffio::import",
         "Import completed. Re-run renderall to regenerate derived content."
     );
+    Ok(())
+}
+
+async fn run_migrations(
+    settings: config::Settings,
+    args: config::MigrationsArgs,
+) -> Result<(), AppError> {
+    match args.command {
+        config::MigrationsCommand::Reconcile(cmd) => {
+            migrations_tool::reconcile_archive(&settings.database, &cmd).await?
+        }
+    }
     Ok(())
 }
 

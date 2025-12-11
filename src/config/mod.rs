@@ -63,6 +63,9 @@ pub enum Command {
     /// Import site content and configuration from a TOML archive.
     #[command(name = "import")]
     ImportSite(ImportArgs),
+    /// Migration utilities.
+    #[command(name = "migrations")]
+    Migrations(MigrationsArgs),
 }
 
 #[derive(Debug, Args, Clone)]
@@ -250,6 +253,29 @@ pub struct ImportArgs {
     pub file: PathBuf,
 }
 
+#[derive(Debug, Args, Clone)]
+pub struct MigrationsArgs {
+    #[command(subcommand)]
+    pub command: MigrationsCommand,
+}
+
+#[derive(Debug, Subcommand, Clone)]
+pub enum MigrationsCommand {
+    /// Reconcile archive migration entries with the live database.
+    #[command(name = "reconcile")]
+    Reconcile(MigrationsReconcileArgs),
+}
+
+#[derive(Debug, Args, Clone)]
+pub struct MigrationsReconcileArgs {
+    #[command(flatten)]
+    pub database: DatabaseOverride,
+
+    /// Archive TOML file whose [[migrations.entries]] will be updated.
+    #[arg(value_name = "ARCHIVE", value_hint = ValueHint::FilePath)]
+    pub file: PathBuf,
+}
+
 /// Fully-resolved deployment settings after precedence resolution and validation.
 #[derive(Debug, Clone)]
 pub struct Settings {
@@ -371,6 +397,11 @@ pub fn load(cli: &CliArgs) -> Result<Settings, LoadError> {
         Some(Command::RenderAll(args)) => raw.apply_renderall_overrides(&args.overrides),
         Some(Command::ExportSite(args)) => raw.apply_database_override(&args.database),
         Some(Command::ImportSite(args)) => raw.apply_database_override(&args.database),
+        Some(Command::Migrations(args)) => match &args.command {
+            MigrationsCommand::Reconcile(reconcile) => {
+                raw.apply_database_override(&reconcile.database)
+            }
+        },
         None => raw.apply_serve_overrides(&ServeOverrides::default()),
     }
 
@@ -1001,6 +1032,31 @@ mod tests {
                 );
                 assert_eq!(import.file, std::path::Path::new("/tmp/site.toml"));
             }
+            _ => panic!("wrong command parsed"),
+        }
+    }
+
+    #[test]
+    fn parse_migrations_reconcile_arguments() {
+        let args = CliArgs::parse_from([
+            "soffio",
+            "migrations",
+            "reconcile",
+            "--database-url",
+            "postgres://example",
+            "/tmp/archive.toml",
+        ]);
+
+        match args.command.expect("migrations command") {
+            Command::Migrations(mig) => match mig.command {
+                MigrationsCommand::Reconcile(rec) => {
+                    assert_eq!(
+                        rec.database.database_url.as_deref(),
+                        Some("postgres://example")
+                    );
+                    assert_eq!(rec.file, std::path::Path::new("/tmp/archive.toml"));
+                }
+            },
             _ => panic!("wrong command parsed"),
         }
     }
