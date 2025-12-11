@@ -395,7 +395,6 @@ fn build_application_context(
         jobs: admin_job_service,
         audit: admin_audit_service,
         api_keys: api_key_service.clone(),
-        snapshots: admin_snapshot_service.clone(),
     };
 
     let rate_limiter = Arc::new(http::ApiRateLimiter::new(
@@ -413,7 +412,7 @@ fn build_application_context(
         settings: admin_state.settings.clone(),
         jobs: admin_state.jobs.clone(),
         audit: admin_state.audit.clone(),
-        snapshots: admin_state.snapshots.clone(),
+        snapshots: admin_snapshot_service.clone(),
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
         rate_limiter,

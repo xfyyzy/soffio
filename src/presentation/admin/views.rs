@@ -452,49 +452,6 @@ pub struct AdminNavigationPanelTemplate {
 }
 
 #[derive(Clone)]
-pub struct AdminSnapshotRowView {
-    pub id: String,
-    pub entity_type: String,
-    pub entity_id: String,
-    pub version: i32,
-    pub description: Option<String>,
-    pub schema_version: i64,
-    pub created_at: String,
-    pub rollback_action: String,
-}
-
-#[derive(Clone)]
-pub struct AdminSnapshotListView {
-    pub heading: String,
-    pub rows: Vec<AdminSnapshotRowView>,
-    pub filter_entity_type: Option<String>,
-    pub filter_search: Option<String>,
-    pub filter_entity_id: Option<String>,
-    pub next_cursor: Option<String>,
-    pub cursor_param: Option<String>,
-    pub trail: Option<String>,
-    pub panel_action: String,
-    pub rollback_label: &'static str,
-    pub active_status_key: Option<String>,
-    pub custom_hidden_fields: Vec<AdminHiddenField>,
-    pub previous_page_state: Option<AdminPostPaginationState>,
-    pub next_page_state: Option<AdminPostPaginationState>,
-}
-
-#[derive(Template)]
-#[template(path = "admin/snapshots.html")]
-pub struct AdminSnapshotsTemplate {
-    pub view: AdminLayout<AdminSnapshotListView>,
-}
-
-#[derive(Template)]
-#[template(path = "admin/snapshots_panel.html")]
-pub struct AdminSnapshotsPanelTemplate {
-    pub content: AdminSnapshotListView,
-    pub panel_action: String,
-}
-
-#[derive(Clone)]
 pub struct AdminNavigationDestinationTypeOption {
     pub value: &'static str,
     pub label: &'static str,
