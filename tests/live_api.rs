@@ -4,11 +4,13 @@
 //! - Sends real HTTP requests to the public endpoint (`base_url` in the config).
 //! - Marked `#[ignore]` so it only runs manually after seeding data and starting the server.
 
+use assert_cmd::cargo::cargo_bin;
 use chrono::Utc;
 use reqwest::{Client, Method, StatusCode, multipart};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{collections::HashSet, fs, path::Path, time::Duration};
+use tokio::process::Command;
 
 type TestResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -1325,6 +1327,55 @@ async fn warm_cache_job_count(client: &Client, base: &str, key: &str) -> TestRes
         .unwrap_or(0))
 }
 
+async fn cli_output(args: &[&str], base: &str, key: &str) -> TestResult<(i32, String, String)> {
+    let bin = cargo_bin!("soffio-cli");
+    let output = Command::new(bin)
+        .env("SOFFIO_SITE_URL", base)
+        .env("SOFFIO_API_KEY", key)
+        .args(args)
+        .output()
+        .await
+        .map_err(|e| format!("failed to run soffio-cli: {e}"))?;
+
+    let code = output.status.code().unwrap_or(-1);
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    Ok((code, stdout, stderr))
+}
+
+async fn cli_json(args: &[&str], base: &str, key: &str) -> TestResult<Value> {
+    let (code, stdout, stderr) = cli_output(args, base, key).await?;
+    if code != 0 {
+        return Err(format!(
+            "soffio-cli {:?} failed (code {code}): stderr={stderr}, stdout={stdout}",
+            args
+        )
+        .into());
+    }
+    serde_json::from_str(&stdout)
+        .map_err(|e| format!("failed to parse stdout as JSON: {e}; stdout={stdout}").into())
+}
+
+async fn cli_plain(args: &[&str], base: &str, key: &str) -> TestResult<String> {
+    let (code, stdout, stderr) = cli_output(args, base, key).await?;
+    if code != 0 {
+        return Err(format!(
+            "soffio-cli {:?} failed (code {code}): stderr={stderr}, stdout={stdout}",
+            args
+        )
+        .into());
+    }
+    Ok(stdout)
+}
+
+async fn cli_expect_fail(args: &[&str], base: &str, key: &str) -> TestResult<()> {
+    let (code, _stdout, _stderr) = cli_output(args, base, key).await?;
+    if code == 0 {
+        return Err(format!("expected soffio-cli {:?} to fail", args).into());
+    }
+    Ok(())
+}
+
 /// Cache consistency test: verifies that API modifications invalidate the public cache.
 ///
 /// This test would have caught the original bug where soffio-cli operations
@@ -1774,6 +1825,275 @@ async fn live_api_post_edit_warms_cache_after_render() -> TestResult<()> {
         &[StatusCode::NO_CONTENT],
     )
     .await?;
+
+    Ok(())
+}
+
+/// End-to-end coverage of `soffio-cli snapshots` commands against a running server.
+#[tokio::test]
+#[ignore]
+async fn live_cli_snapshots_cover_all_flows() -> TestResult<()> {
+    let cfg = load_config()?;
+    let base = cfg.base_url.trim_end_matches('/').to_string();
+    let all_key = &cfg.keys.all;
+    let read_key = &cfg.keys.read;
+    let suf = current_suffix();
+
+    // Create a published post with summary.
+    let post_title_v1 = format!("CLI Snap Post {suf}");
+    let post_title_v2 = format!("CLI Snap Post Updated {suf}");
+    let post_body_v1 = format!("# Post V1 {suf}\n\nBody marker V1-{suf}");
+    let post_body_v2 = format!("# Post V2 {suf}\n\nBody marker V2-{suf}");
+    let post_summary_v1 = format!("Summary V1 {suf}");
+    let post_summary_v2 = format!("Summary V2 {suf}");
+
+    let post_json = cli_json(
+        &[
+            "posts",
+            "create",
+            "--title",
+            &post_title_v1,
+            "--excerpt",
+            "cli snap test",
+            "--body",
+            &post_body_v1,
+            "--summary",
+            &post_summary_v1,
+            "--status",
+            "published",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let post_id = post_json
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("missing post id")?
+        .to_string();
+    let post_slug = post_json
+        .get("slug")
+        .and_then(Value::as_str)
+        .ok_or("missing post slug")?
+        .to_string();
+
+    // Create a published page.
+    let page_title_v1 = format!("CLI Snap Page {suf}");
+    let page_title_v2 = format!("CLI Snap Page Updated {suf}");
+    let page_body_v1 = format!("# Page V1 {suf}\n\nPage body V1");
+    let page_body_v2 = format!("# Page V2 {suf}\n\nPage body V2");
+
+    let page_json = cli_json(
+        &[
+            "pages",
+            "create",
+            "--title",
+            &page_title_v1,
+            "--body",
+            &page_body_v1,
+            "--status",
+            "published",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let page_id = page_json
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("missing page id")?
+        .to_string();
+    let page_slug = page_json
+        .get("slug")
+        .and_then(Value::as_str)
+        .ok_or("missing page slug")?
+        .to_string();
+
+    // Create snapshots for post and page.
+    let post_snap = cli_json(
+        &[
+            "snapshots",
+            "create",
+            "--entity-type",
+            "post",
+            "--entity-id",
+            &post_id,
+            "--description",
+            "cli snap post v1",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let post_snap_id = post_snap
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("missing post snapshot id")?
+        .to_string();
+
+    let page_snap = cli_json(
+        &[
+            "snapshots",
+            "create",
+            "--entity-type",
+            "page",
+            "--entity-id",
+            &page_id,
+            "--description",
+            "cli snap page v1",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let page_snap_id = page_snap
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("missing page snapshot id")?
+        .to_string();
+
+    // List snapshots filtered by entity_id.
+    let list_post = cli_json(
+        &[
+            "snapshots",
+            "list",
+            "--entity-type",
+            "post",
+            "--entity-id",
+            &post_id,
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let items = list_post
+        .get("items")
+        .and_then(Value::as_array)
+        .ok_or("missing items in list")?;
+    assert!(
+        items
+            .iter()
+            .any(|v| v.get("id").and_then(Value::as_str) == Some(post_snap_id.as_str())),
+        "post snapshot not present in list"
+    );
+
+    // Get snapshot detail.
+    let snap_detail =
+        cli_json(&["snapshots", "get", "--id", &post_snap_id], &base, all_key).await?;
+    assert_eq!(
+        snap_detail.get("entity_id").and_then(Value::as_str),
+        Some(post_id.as_str())
+    );
+    assert_eq!(
+        snap_detail.get("entity_type").and_then(Value::as_str),
+        Some("post")
+    );
+
+    // Mutate post & page.
+    cli_json(
+        &[
+            "posts",
+            "update",
+            "--id",
+            &post_id,
+            "--slug",
+            &post_slug,
+            "--title",
+            &post_title_v2,
+            "--excerpt",
+            "cli snap test updated",
+            "--body",
+            &post_body_v2,
+            "--summary",
+            &post_summary_v2,
+            "--pinned",
+            "false",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+
+    cli_json(
+        &[
+            "pages",
+            "update",
+            "--id",
+            &page_id,
+            "--slug",
+            &page_slug,
+            "--title",
+            &page_title_v2,
+            "--body",
+            &page_body_v2,
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+
+    // Rollback post snapshot and verify content restored.
+    let rollback_msg = cli_plain(
+        &["snapshots", "rollback", "--id", &post_snap_id],
+        &base,
+        all_key,
+    )
+    .await?;
+    assert!(
+        rollback_msg.contains("Rolled back snapshot"),
+        "unexpected rollback message: {rollback_msg}"
+    );
+
+    let post_after = cli_json(&["posts", "get", "--id", &post_id], &base, all_key).await?;
+    let body_after = post_after
+        .get("body_markdown")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let summary_after = post_after
+        .get("summary_markdown")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    assert!(
+        body_after.contains(&post_body_v1),
+        "post body not rolled back"
+    );
+    assert_eq!(summary_after, post_summary_v1);
+
+    // Rollback page snapshot and verify.
+    cli_plain(
+        &["snapshots", "rollback", "--id", &page_snap_id],
+        &base,
+        all_key,
+    )
+    .await?;
+    let page_after = cli_json(&["pages", "get", "--id", &page_id], &base, all_key).await?;
+    let page_body_after = page_after
+        .get("body_markdown")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    assert!(
+        page_body_after.contains(&page_body_v1),
+        "page body not rolled back"
+    );
+
+    // Permission check: create snapshot with read-only key should fail.
+    cli_expect_fail(
+        &[
+            "snapshots",
+            "create",
+            "--entity-type",
+            "post",
+            "--entity-id",
+            &post_id,
+        ],
+        &base,
+        read_key,
+    )
+    .await?;
+
+    // Cleanup test content.
+    let _ = cli_plain(&["posts", "delete", "--id", &post_id], &base, all_key).await?;
+    let _ = cli_plain(&["pages", "delete", "--id", &page_id], &base, all_key).await?;
 
     Ok(())
 }
