@@ -32,7 +32,9 @@
                       "settings_read",
                       "settings_write",
                       "job_read",
-                      "audit_read"
+                      "audit_read",
+                      "snapshot_read",
+                      "snapshot_write"
                     ]
                   }
                 }

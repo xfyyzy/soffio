@@ -3,14 +3,14 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::application::repos::{
-    CreatePostParams, PostsWriteRepo, RepoError, UpdatePostParams, UpdatePostPinnedParams,
-    UpdatePostStatusParams,
+    CreatePostParams, PostsWriteRepo, RepoError, RestorePostSnapshotParams, UpdatePostParams,
+    UpdatePostPinnedParams, UpdatePostStatusParams,
 };
 use crate::domain::entities::PostRecord;
 use crate::domain::types::PostStatus;
 
 use super::PostgresRepositories;
-use super::types::PostRow;
+use super::types::{PersistedPostSectionOwned, PostRow};
 
 fn map_sqlx_error(err: sqlx::Error) -> RepoError {
     match err {
@@ -311,5 +311,123 @@ impl PostsWriteRepo for PostgresRepositories {
         tx.commit().await.map_err(map_sqlx_error)?;
 
         Ok(())
+    }
+
+    async fn restore_post_snapshot(
+        &self,
+        params: RestorePostSnapshotParams,
+    ) -> Result<PostRecord, RepoError> {
+        let mut tx = self.pool().begin().await.map_err(map_sqlx_error)?;
+
+        let now = OffsetDateTime::now_utc();
+        let RestorePostSnapshotParams {
+            id,
+            slug,
+            title,
+            excerpt,
+            body_markdown,
+            summary_markdown,
+            summary_html,
+            status,
+            pinned,
+            scheduled_at,
+            published_at,
+            archived_at,
+            tag_ids,
+            sections,
+        } = params;
+
+        let row = sqlx::query_as!(
+            PostRow,
+            r#"
+            UPDATE posts
+            SET slug = $2,
+                title = $3,
+                excerpt = $4,
+                body_markdown = $5,
+                summary_markdown = $6,
+                summary_html = $7,
+                status = $8,
+                pinned = $9,
+                scheduled_at = $10,
+                published_at = $11,
+                archived_at = $12,
+                updated_at = $13
+            WHERE id = $1
+            RETURNING id, slug, title, excerpt, body_markdown,
+                     status AS "status: PostStatus", pinned, scheduled_at, published_at, archived_at,
+                     summary_markdown, summary_html, created_at, updated_at,
+                     CASE
+                         WHEN status = 'published'::post_status THEN COALESCE(published_at, updated_at, created_at)
+                         ELSE COALESCE(updated_at, created_at)
+                     END AS "primary_time!"
+            "#,
+            id,
+            slug,
+            title,
+            excerpt,
+            body_markdown,
+            summary_markdown,
+            summary_html,
+            status as PostStatus,
+            pinned,
+            scheduled_at,
+            published_at,
+            archived_at,
+            now
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_sqlx_error)?;
+
+        // Replace sections
+        let section_rows: Vec<PersistedPostSectionOwned> = sections
+            .into_iter()
+            .map(|s| PersistedPostSectionOwned {
+                id: s.id,
+                parent_id: s.parent_id,
+                position: s.position,
+                level: s.level,
+                heading_html: s.heading_html,
+                heading_text: s.heading_text,
+                body_html: s.body_html,
+                contains_code: s.contains_code,
+                contains_math: s.contains_math,
+                contains_mermaid: s.contains_mermaid,
+                anchor_slug: s.anchor_slug,
+            })
+            .collect();
+
+        self.replace_post_sections_bulk(&mut tx, id, &section_rows)
+            .await?;
+
+        // Replace tags
+        sqlx::query!(
+            r#"
+            DELETE FROM post_tags WHERE post_id = $1
+            "#,
+            id
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(map_sqlx_error)?;
+
+        if !tag_ids.is_empty() {
+            sqlx::query!(
+                r#"
+                INSERT INTO post_tags (post_id, tag_id)
+                SELECT $1, id FROM UNNEST($2::uuid[]) AS id
+                "#,
+                id,
+                &tag_ids
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(map_sqlx_error)?;
+        }
+
+        tx.commit().await.map_err(map_sqlx_error)?;
+
+        Ok(PostRecord::from(row))
     }
 }

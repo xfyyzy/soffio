@@ -1,0 +1,60 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}snapshots{% endblock %}
+
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_toolbar %}{% endblock panel_toolbar %}
+
+{% block panel_controls %}
+<form data-datastar-form method="post" action="{{ content.panel_action }}" data-datastar-restore-scroll>
+    <div class="form-row">
+        <label for="entity_type">Entity</label>
+        <select id="entity_type" name="entity_type">
+            <option value="" {% if content.filter_entity_type.is_none() %}selected{% endif %}>All</option>
+            <option value="post" {% if content.filter_entity_type.as_deref() == Some("post") %}selected{% endif %}>Post</option>
+            <option value="page" {% if content.filter_entity_type.as_deref() == Some("page") %}selected{% endif %}>Page</option>
+        </select>
+        <label for="entity_id">Entity ID</label>
+        <input type="text" id="entity_id" name="entity_id" value="{{ content.filter_entity_id.as_deref().unwrap_or("") }}" />
+        <label for="search">Search</label>
+        <input type="text" id="search" name="search" value="{{ content.filter_search.as_deref().unwrap_or("") }}" />
+        <button type="submit">Filter</button>
+    </div>
+</form>
+{% endblock panel_controls %}
+
+{% block panel_content %}
+<table data-role="publishable-table">
+    <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Entity</th>
+            <th scope="col">Version</th>
+            <th scope="col">Description</th>
+            <th scope="col">Schema</th>
+            <th scope="col">Created</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in content.rows %}
+        <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.entity_type }} · {{ row.entity_id }}</td>
+            <td>{{ row.version }}</td>
+            <td>{% if let Some(desc) = &row.description %}{{ desc }}{% else %}<span data-role="muted">—</span>{% endif %}</td>
+            <td>{{ row.schema_version }}</td>
+            <td>{{ row.created_at }}</td>
+            <td>
+                <form data-datastar-form method="post" action="{{ row.rollback_action }}" data-datastar-confirm="Rollback snapshot?">
+                    <button type="submit" data-role="danger">{{ content.rollback_label }}</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% let panel_action = content.panel_action %}
+{% include "admin/partials/pagination.html" %}
+{% endblock panel_content %}

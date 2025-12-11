@@ -69,6 +69,12 @@ struct ApiKeyCursorPayload {
     id: Uuid,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+struct SnapshotCursorPayload {
+    created_at: OffsetDateTime,
+    id: Uuid,
+}
+
 /// Cursor for paginating posts in public or administrative contexts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PostCursor {
@@ -126,6 +132,13 @@ pub struct UploadCursor {
 /// Cursor for paginating API keys ordered by created_at desc, then id desc.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ApiKeyCursor {
+    created_at: OffsetDateTime,
+    id: Uuid,
+}
+
+/// Cursor for snapshot pagination (reverse chronological).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SnapshotCursor {
     created_at: OffsetDateTime,
     id: Uuid,
 }
@@ -474,6 +487,42 @@ impl ApiKeyCursor {
     }
 }
 
+impl SnapshotCursor {
+    pub fn new(created_at: OffsetDateTime, id: Uuid) -> Self {
+        Self { created_at, id }
+    }
+
+    pub fn created_at(&self) -> OffsetDateTime {
+        self.created_at
+    }
+
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
+    pub fn encode(&self) -> String {
+        let payload = SnapshotCursorPayload {
+            created_at: self.created_at,
+            id: self.id,
+        };
+        let serialized = serde_json::to_vec(&payload)
+            .expect("serializing snapshot cursor payload should succeed");
+        URL_SAFE_NO_PAD.encode(serialized)
+    }
+
+    pub fn decode(cursor: &str) -> Result<Self, PaginationError> {
+        let bytes = URL_SAFE_NO_PAD
+            .decode(cursor)
+            .map_err(|err| PaginationError::InvalidCursor(err.to_string()))?;
+        let payload: SnapshotCursorPayload = serde_json::from_slice(&bytes)
+            .map_err(|err| PaginationError::InvalidCursor(err.to_string()))?;
+        Ok(Self {
+            created_at: payload.created_at,
+            id: payload.id,
+        })
+    }
+}
+
 /// Cursor-aware pagination request.
 #[derive(Debug, Clone, Copy)]
 pub struct PageRequest<C> {
@@ -599,6 +648,18 @@ mod tests {
         let cursor = AuditCursor::new(when, id);
         let encoded = cursor.encode();
         let decoded = AuditCursor::decode(&encoded).expect("decoded audit cursor");
+
+        assert_eq!(decoded.created_at(), when);
+        assert_eq!(decoded.id(), id);
+    }
+
+    #[test]
+    fn snapshot_cursor_round_trip() {
+        let id = Uuid::new_v4();
+        let when = OffsetDateTime::now_utc();
+        let cursor = SnapshotCursor::new(when, id);
+        let encoded = cursor.encode();
+        let decoded = SnapshotCursor::decode(&encoded).expect("decoded snapshot cursor");
 
         assert_eq!(decoded.created_at(), when);
         assert_eq!(decoded.id(), id);

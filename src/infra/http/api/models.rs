@@ -3,7 +3,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::domain::api_keys::{ApiKeyStatus, ApiScope};
-use crate::domain::types::{NavigationDestinationType, PageStatus, PostStatus};
+use crate::domain::types::{NavigationDestinationType, PageStatus, PostStatus, SnapshotEntityType};
 
 fn default_post_status() -> PostStatus {
     PostStatus::Draft
@@ -240,6 +240,35 @@ pub struct UploadResponse {
     pub size_bytes: i64,
     pub checksum: String,
     pub stored_path: String,
+    pub created_at: OffsetDateTime,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SnapshotListQuery {
+    pub entity_type: Option<SnapshotEntityType>,
+    pub entity_id: Option<Uuid>,
+    pub search: Option<String>,
+    pub cursor: Option<String>,
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SnapshotCreateRequest {
+    pub entity_type: SnapshotEntityType,
+    pub entity_id: Uuid,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SnapshotResponse {
+    pub id: Uuid,
+    pub entity_type: SnapshotEntityType,
+    pub entity_id: Uuid,
+    pub version: i32,
+    pub description: Option<String>,
+    pub schema_version: i64,
+    pub content: serde_json::Value,
+    pub created_by: String,
     pub created_at: OffsetDateTime,
 }
 

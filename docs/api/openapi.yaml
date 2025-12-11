@@ -90,6 +90,16 @@ components:
         next_cursor:
           type: string
       required: [items]
+    CursorPageSnapshot:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Snapshot'
+        next_cursor:
+          type: string
+      required: [items]
     Post:
       type: object
       properties:
@@ -164,6 +174,29 @@ components:
         metadata: { type: object }
         created_at: { type: string, format: date-time }
       required: [id, filename, content_type, size_bytes, checksum, stored_path, created_at]
+    Snapshot:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        entity_type: { $ref: '#/components/schemas/SnapshotEntityType' }
+        entity_id: { type: string, format: uuid }
+        version: { type: integer }
+        description: { type: string }
+        schema_version: { type: integer }
+        content:
+          type: object
+          additionalProperties: true
+        created_by: { type: string }
+        created_at: { type: string, format: date-time }
+      required:
+        [id, entity_type, entity_id, version, schema_version, content, created_by, created_at]
+    SnapshotCreateRequest:
+      type: object
+      required: [entity_type, entity_id]
+      properties:
+        entity_type: { $ref: '#/components/schemas/SnapshotEntityType' }
+        entity_id: { type: string, format: uuid }
+        description: { type: string }
     SiteSettings:
       type: object
       properties:
@@ -224,6 +257,9 @@ components:
     PageStatus:
       type: string
       enum: [draft, published, archived, error]
+    SnapshotEntityType:
+      type: string
+      enum: [post, page]
     NavigationDestinationType:
       type: string
       enum: [internal, external]
@@ -448,6 +484,8 @@ components:
         - settings_write
         - job_read
         - audit_read
+        - snapshot_read
+        - snapshot_write
     SettingsPatchRequest:
       type: object
       properties:
@@ -1402,3 +1440,75 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CursorPageAudit' }
+  /api/v1/snapshots:
+    get:
+      summary: List snapshots
+      description: Requires scope `snapshot_read`.
+      parameters:
+        - in: query
+          name: entity_type
+          schema: { $ref: '#/components/schemas/SnapshotEntityType' }
+        - in: query
+          name: entity_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        '200':
+          description: Paginated snapshots
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CursorPageSnapshot' }
+    post:
+      summary: Create snapshot
+      description: Requires scope `snapshot_write`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SnapshotCreateRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Snapshot' }
+  /api/v1/snapshots/{id}:
+    get:
+      summary: Get snapshot by id
+      description: Requires scope `snapshot_read`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Snapshot
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Snapshot' }
+        '404': { description: Not found }
+  /api/v1/snapshots/{id}/rollback:
+    post:
+      summary: Rollback snapshot
+      description: Requires scope `snapshot_write`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Snapshot after rollback
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Snapshot' }
+        '404': { description: Not found }

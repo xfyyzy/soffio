@@ -11,6 +11,7 @@ mod posts;
 mod selectors;
 mod settings;
 mod shared;
+mod snapshots;
 mod state;
 mod tags;
 mod toasts;
@@ -173,6 +174,12 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route(
             "/api-keys/{id}/delete",
             post(api_keys::admin_api_key_delete),
+        )
+        .route("/snapshots", get(snapshots::admin_snapshots))
+        .route("/snapshots/panel", post(snapshots::admin_snapshots_panel))
+        .route(
+            "/snapshots/{id}/rollback",
+            post(snapshots::admin_snapshot_rollback),
         )
         .route("/_health/db", get(health::admin_health))
         .route("/cache/invalidate", post(cache::invalidate_cache))

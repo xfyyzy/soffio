@@ -19,8 +19,8 @@ use soffio::{
         admin::{
             audit::AdminAuditService, chrome::AdminChromeService, dashboard::AdminDashboardService,
             jobs::AdminJobService, navigation::AdminNavigationService, pages::AdminPageService,
-            posts::AdminPostService, settings::AdminSettingsService, tags::AdminTagService,
-            uploads::AdminUploadService,
+            posts::AdminPostService, settings::AdminSettingsService,
+            snapshots::AdminSnapshotService, tags::AdminTagService, uploads::AdminUploadService,
         },
         api_keys::ApiKeyService,
         chrome::ChromeService,
@@ -38,8 +38,8 @@ use soffio::{
         },
         repos::{
             ApiKeysRepo, AuditRepo, JobsRepo, NavigationRepo, NavigationWriteRepo, PagesRepo,
-            PagesWriteRepo, PostsRepo, PostsWriteRepo, SectionsRepo, SettingsRepo, TagsRepo,
-            TagsWriteRepo, UploadsRepo,
+            PagesWriteRepo, PostsRepo, PostsWriteRepo, SectionsRepo, SettingsRepo, SnapshotsRepo,
+            TagsRepo, TagsWriteRepo, UploadsRepo,
         },
         site,
     },
@@ -283,11 +283,20 @@ fn build_application_context(
     let api_keys_repo: Arc<dyn ApiKeysRepo> = http_repositories.clone();
     let audit_repo: Arc<dyn AuditRepo> = http_repositories.clone();
     let jobs_repo: Arc<dyn JobsRepo> = http_repositories.clone();
+    let snapshots_repo: Arc<dyn SnapshotsRepo> = http_repositories.clone();
 
     let (feed_service_http, page_service_http, chrome_service_http) =
         build_site_services(&http_repositories);
     let (feed_service_jobs, page_service_jobs, chrome_service_jobs) =
         build_site_services(&job_repositories);
+
+    let upload_storage = Arc::new(
+        UploadStorage::new(settings.uploads.directory.clone())
+            .map_err(|err| AppError::from(InfraError::Io(err)))?,
+    );
+
+    let response_cache = Arc::new(ResponseCache::new());
+    let cache_warm_debouncer = Arc::new(CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE));
 
     let audit_service = AdminAuditService::new(audit_repo.clone());
     let admin_post_service = Arc::new(AdminPostService::new(
@@ -328,16 +337,14 @@ fn build_application_context(
         jobs_repo.clone(),
         audit_service.clone(),
     ));
+    let admin_snapshot_service = Arc::new(AdminSnapshotService::new(
+        snapshots_repo.clone(),
+        jobs_repo.clone(),
+        response_cache.clone(),
+        cache_warm_debouncer.clone(),
+    ));
     let admin_audit_service = Arc::new(audit_service);
     let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
-
-    let upload_storage = Arc::new(
-        UploadStorage::new(settings.uploads.directory.clone())
-            .map_err(|err| AppError::from(InfraError::Io(err)))?,
-    );
-
-    let response_cache = Arc::new(ResponseCache::new());
-    let cache_warm_debouncer = Arc::new(CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE));
 
     let http_state = HttpState {
         feed: feed_service_http.clone(),
@@ -373,6 +380,7 @@ fn build_application_context(
         jobs: admin_job_service,
         audit: admin_audit_service,
         api_keys: api_key_service.clone(),
+        snapshots: admin_snapshot_service.clone(),
     };
 
     let rate_limiter = Arc::new(http::ApiRateLimiter::new(
@@ -390,6 +398,7 @@ fn build_application_context(
         settings: admin_state.settings.clone(),
         jobs: admin_state.jobs.clone(),
         audit: admin_state.audit.clone(),
+        snapshots: admin_state.snapshots.clone(),
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
         rate_limiter,

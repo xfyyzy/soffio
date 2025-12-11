@@ -8,6 +8,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Snapshot system for posts and pages: new `snapshots` table with schema-versioned payloads, admin list/rollback UI, and API/CLI support (`/api/v1/snapshots` list/get/create/rollback) guarded by dedicated snapshot scopes.
+- Snapshot scopes (`snapshot_read`, `snapshot_write`) added to seeds and OpenAPI/CLI docs; DB migration includes type expansion and cleanup triggers for entity deletes.
 - Live API coverage for snapshot endpoints (`live_api_snapshots_cover_flow`): create, list, get, and rollback for posts, including scope gate checks and rollback correctness on a running server.
 - Documented that the seeded "all" API key used by live tests must include `snapshot_read` and `snapshot_write` scopes.
 

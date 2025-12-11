@@ -220,3 +220,122 @@ fn pages_get_by_id_hits_new_endpoint() {
 
     mock.assert();
 }
+
+#[test]
+fn snapshots_get_hits_endpoint() {
+    let server = MockServer::start();
+    let snap_id = Uuid::new_v4();
+    let mock = server.mock(|when, then| {
+        when.method("GET")
+            .path(format!("/api/v1/snapshots/{snap_id}"));
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(format!(
+                r#"{{"id":"{snap_id}","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{{}},"created_by":"tester","created_at":"2025-01-01T00:00:00Z"}}"#
+            ));
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("snapshots")
+        .arg("get")
+        .arg(snap_id.to_string())
+        .assert()
+        .success()
+        .stdout(contains(snap_id.to_string()));
+
+    mock.assert();
+}
+
+#[test]
+fn snapshots_list_hits_endpoint() {
+    let server = MockServer::start();
+    let mock = server.mock(|when, then| {
+        when.method("GET")
+            .path("/api/v1/snapshots")
+            .query_param("limit", "50")
+            .query_param("entity_type", "post");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(r#"{"items":[],"next_cursor":null}"#);
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("snapshots")
+        .arg("list")
+        .arg("--entity-type")
+        .arg("post")
+        .arg("--limit")
+        .arg("50")
+        .assert()
+        .success();
+
+    mock.assert();
+}
+
+#[test]
+fn snapshots_create_hits_endpoint() {
+    let server = MockServer::start();
+    let post_id = Uuid::new_v4();
+    let mock = server.mock(|when, then| {
+        when.method("POST")
+            .path("/api/v1/snapshots")
+            .json_body(serde_json::json!({
+                "entity_type": "post",
+                "entity_id": post_id.to_string(),
+                "description": "desc"
+            }));
+        then.status(201)
+            .header("content-type", "application/json")
+            .body(r#"{"id":"00000000-0000-0000-0000-000000000002","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{},"created_by":"tester","created_at":"2025-01-01T00:00:00Z"}"#);
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("snapshots")
+        .arg("create")
+        .arg("--entity-type")
+        .arg("post")
+        .arg("--entity-id")
+        .arg(post_id.to_string())
+        .arg("--description")
+        .arg("desc")
+        .assert()
+        .success();
+
+    mock.assert();
+}
+
+#[test]
+fn snapshots_rollback_hits_endpoint() {
+    let server = MockServer::start();
+    let snap_id = Uuid::new_v4();
+    let mock = server.mock(|when, then| {
+        when.method("POST")
+            .path(format!("/api/v1/snapshots/{snap_id}/rollback"));
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(format!(
+                r#"{{"id":"{snap_id}","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{{}},"created_by":"tester","created_at":"2025-01-01T00:00:00Z"}}"#
+            ));
+    });
+
+    let key = key_file("cli-test-key");
+    Command::new(assert_cmd::cargo::cargo_bin!("soffio-cli"))
+        .env("SOFFIO_SITE_URL", server.base_url())
+        .env("SOFFIO_API_KEY_FILE", key.path())
+        .arg("snapshots")
+        .arg("rollback")
+        .arg(snap_id.to_string())
+        .assert()
+        .success();
+
+    mock.assert();
+}

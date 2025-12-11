@@ -12,7 +12,9 @@ use clap::Parser;
 
 use args::{Cli, Commands};
 use client::{CliError, build_ctx_from_cli};
-use handlers::{api_keys, audit, jobs, navigation, pages, posts, settings, tags, uploads};
+use handlers::{
+    api_keys, audit, jobs, navigation, pages, posts, settings, snapshots, tags, uploads,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), CliError> {
@@ -29,6 +31,7 @@ async fn main() -> Result<(), CliError> {
         Commands::Settings(cmd) => settings::handle(&ctx, cmd.action).await?,
         Commands::Jobs(cmd) => jobs::handle(&ctx, cmd.action).await?,
         Commands::Audit(cmd) => audit::handle(&ctx, cmd.action).await?,
+        Commands::Snapshots(cmd) => snapshots::handle(&ctx, cmd.action).await?,
     }
 
     Ok(())

@@ -1,0 +1,115 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE pages\n            SET slug = $2,\n                title = $3,\n                body_markdown = $4,\n                rendered_html = $5,\n                status = $6,\n                scheduled_at = $7,\n                published_at = $8,\n                archived_at = $9,\n                updated_at = $10\n            WHERE id = $1\n            RETURNING id, slug, title, body_markdown, rendered_html,\n                     status AS \"status: PageStatus\",\n                     scheduled_at, published_at, archived_at, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "body_markdown",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "rendered_html",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "status: PageStatus",
+        "type_info": {
+          "Custom": {
+            "name": "page_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "published",
+                "archived",
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "scheduled_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "archived_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "page_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "published",
+                "archived",
+                "error"
+              ]
+            }
+          }
+        },
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "34777ab81ccd8ed3ea34d342b7d08f3450fa7d2801aca709a70ad4f2084b0998"
+}

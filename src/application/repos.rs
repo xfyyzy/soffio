@@ -15,7 +15,9 @@ use crate::domain::entities::{
     AuditLogRecord, JobRecord, NavigationItemRecord, PageRecord, PostRecord, PostSectionRecord,
     SiteSettingsRecord, TagRecord, UploadRecord,
 };
-use crate::domain::types::{JobState, JobType, NavigationDestinationType, PostStatus};
+use crate::domain::types::{
+    JobState, JobType, NavigationDestinationType, PostStatus, SnapshotEntityType,
+};
 
 #[derive(Debug, Error)]
 pub enum RepoError {
@@ -142,6 +144,24 @@ pub struct UpdatePostParams {
 }
 
 #[derive(Debug, Clone)]
+pub struct RestorePostSnapshotParams {
+    pub id: Uuid,
+    pub slug: String,
+    pub title: String,
+    pub excerpt: String,
+    pub body_markdown: String,
+    pub summary_markdown: Option<String>,
+    pub summary_html: Option<String>,
+    pub status: PostStatus,
+    pub pinned: bool,
+    pub scheduled_at: Option<OffsetDateTime>,
+    pub published_at: Option<OffsetDateTime>,
+    pub archived_at: Option<OffsetDateTime>,
+    pub tag_ids: Vec<Uuid>,
+    pub sections: Vec<crate::application::admin::snapshot_types::PostSectionSnapshot>,
+}
+
+#[derive(Debug, Clone)]
 pub struct UpdatePostStatusParams {
     pub id: Uuid,
     pub status: PostStatus,
@@ -220,6 +240,11 @@ pub trait PostsWriteRepo: Send + Sync {
     async fn delete_post(&self, id: Uuid) -> Result<(), RepoError>;
 
     async fn replace_post_tags(&self, post_id: Uuid, tag_ids: &[Uuid]) -> Result<(), RepoError>;
+
+    async fn restore_post_snapshot(
+        &self,
+        params: RestorePostSnapshotParams,
+    ) -> Result<PostRecord, RepoError>;
 }
 
 #[async_trait]
@@ -284,6 +309,19 @@ pub struct UpdatePageStatusParams {
     pub archived_at: Option<OffsetDateTime>,
 }
 
+#[derive(Debug, Clone)]
+pub struct RestorePageSnapshotParams {
+    pub id: Uuid,
+    pub slug: String,
+    pub title: String,
+    pub body_markdown: String,
+    pub rendered_html: String,
+    pub status: crate::domain::types::PageStatus,
+    pub scheduled_at: Option<OffsetDateTime>,
+    pub published_at: Option<OffsetDateTime>,
+    pub archived_at: Option<OffsetDateTime>,
+}
+
 #[async_trait]
 pub trait PagesWriteRepo: Send + Sync {
     async fn create_page(&self, params: CreatePageParams) -> Result<PageRecord, RepoError>;
@@ -302,6 +340,11 @@ pub trait PagesWriteRepo: Send + Sync {
     ) -> Result<PageRecord, RepoError>;
 
     async fn delete_page(&self, id: Uuid) -> Result<(), RepoError>;
+
+    async fn restore_page_snapshot(
+        &self,
+        params: RestorePageSnapshotParams,
+    ) -> Result<PageRecord, RepoError>;
 }
 
 #[async_trait]
@@ -467,6 +510,30 @@ pub trait AuditRepo: Send + Sync {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<AuditLogRecord>, RepoError>;
 }
 
+#[async_trait]
+pub trait SnapshotsRepo: Send + Sync {
+    async fn create(&self, record: SnapshotRecord) -> Result<(), RepoError>;
+
+    async fn list_snapshots(
+        &self,
+        filter: &SnapshotFilter,
+        page: PageRequest<SnapshotCursor>,
+    ) -> Result<CursorPage<SnapshotRecord>, RepoError>;
+
+    async fn count_snapshots(&self, filter: &SnapshotFilter) -> Result<u64, RepoError>;
+
+    async fn find_snapshot(&self, id: uuid::Uuid) -> Result<Option<SnapshotRecord>, RepoError>;
+
+    async fn latest_snapshot(
+        &self,
+        entity_type: SnapshotEntityType,
+        entity_id: uuid::Uuid,
+    ) -> Result<Option<SnapshotRecord>, RepoError>;
+
+    /// Highest applied migration version from `_sqlx_migrations`.
+    async fn current_schema_version(&self) -> Result<i64, RepoError>;
+}
+
 #[derive(Debug, Clone)]
 pub struct NewJobRecord {
     pub job_type: JobType,
@@ -543,6 +610,28 @@ pub struct UploadMonthCount {
     pub key: String,
     pub label: String,
     pub count: u64,
+}
+
+pub type SnapshotCursor = crate::application::pagination::SnapshotCursor;
+
+#[derive(Debug, Clone, Default)]
+pub struct SnapshotFilter {
+    pub entity_type: Option<SnapshotEntityType>,
+    pub entity_id: Option<uuid::Uuid>,
+    pub search: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SnapshotRecord {
+    pub id: uuid::Uuid,
+    pub entity_type: SnapshotEntityType,
+    pub entity_id: uuid::Uuid,
+    pub version: i32,
+    pub description: Option<String>,
+    pub schema_version: i64,
+    pub content: serde_json::Value,
+    pub created_by: String,
+    pub created_at: time::OffsetDateTime,
 }
 
 #[derive(Debug, Clone)]

@@ -6,6 +6,7 @@ use crate::application::admin::navigation::AdminNavigationService;
 use crate::application::admin::pages::AdminPageService;
 use crate::application::admin::posts::AdminPostService;
 use crate::application::admin::settings::AdminSettingsService;
+use crate::application::admin::snapshots::AdminSnapshotService;
 use crate::application::admin::tags::AdminTagService;
 use crate::application::admin::uploads::AdminUploadService;
 use crate::application::api_keys::{ApiKeyService, ApiPrincipal};
@@ -25,6 +26,7 @@ pub struct ApiState {
     pub settings: Arc<AdminSettingsService>,
     pub jobs: Arc<AdminJobService>,
     pub audit: Arc<AdminAuditService>,
+    pub snapshots: Arc<AdminSnapshotService>,
     pub db: Arc<PostgresRepositories>,
     pub upload_storage: Arc<UploadStorage>,
     pub rate_limiter: Arc<ApiRateLimiter>,
