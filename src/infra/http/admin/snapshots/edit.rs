@@ -48,7 +48,7 @@ pub async fn admin_snapshot_edit(
     };
 
     let view = admin_views::AdminSnapshotEditorView {
-        heading: format!("Edit Snapshot v{}", record.version),
+        heading: "Edit Snapshot".to_string(),
         entity_label: entity_label(record.entity_type).to_string(),
         form_action: format!("/snapshots/{}/edit", record.id),
         back_href: format!("/{}/{}/snapshots", entity_slug, record.entity_id),
