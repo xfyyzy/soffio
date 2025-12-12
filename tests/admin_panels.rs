@@ -16,7 +16,6 @@ fn snapshot_admin_posts_panel() {
         posts: vec![AdminPostRowView {
             id: "123".into(),
             title: "Hello World".into(),
-            slug: "hello-world".into(),
             status_key: "draft".into(),
             status_label: "Draft".into(),
             display_time: Some("2025-10-24T12:00:00Z".into()),
@@ -41,6 +40,7 @@ fn snapshot_admin_posts_panel() {
             preview_href: "http://localhost:3000/posts/_preview/123".into(),
             edit_href: "/posts/hello-world/edit".into(),
             is_pinned: false,
+            snapshots_href: Some("/posts/123/snapshots".into()),
         }],
         tag_options: vec![AdminPostTagOption {
             slug: "rust".into(),
@@ -111,6 +111,7 @@ fn snapshot_admin_pages_panel() {
             }],
             preview_href: "http://localhost:3000/pages/_preview/321".into(),
             edit_href: "/pages/about/edit".into(),
+            snapshots_href: Some("/pages/321/snapshots".into()),
         }],
         filter_search: Some("about".into()),
         filter_tag: None,

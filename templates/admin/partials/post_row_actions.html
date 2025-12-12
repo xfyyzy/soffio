@@ -1,5 +1,8 @@
               <div data-role="row-actions">
                 <a href="{{ item.edit_href }}">Edit</a>
+                {% if item.snapshots_href.is_some() %}
+                <a href="{{ item.snapshots_href.as_ref().unwrap() }}">Snapshots</a>
+                {% endif %}
                 {% for action in item.actions %}
                 {% match action.value %}
                 {% when "pin" %}

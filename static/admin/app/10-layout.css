@@ -125,19 +125,6 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
   text-overflow: ellipsis;
 }
 
-[data-column="slug"] {
-  width: 14rem;
-  max-width: 16rem;
-}
-
-[data-column="slug"] [data-role="slug-value"] {
-  display: inline-block;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 [data-column="filename"] {
   width: 24rem;
   max-width: 26rem;

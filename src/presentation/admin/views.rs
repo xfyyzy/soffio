@@ -140,7 +140,6 @@ pub struct AdminToastStackTemplate {
 pub struct AdminPostRowView {
     pub id: String,
     pub title: String,
-    pub slug: String,
     pub status_key: String,
     pub status_label: String,
     pub display_time: Option<String>,
@@ -149,6 +148,7 @@ pub struct AdminPostRowView {
     pub preview_href: String,
     pub edit_href: String,
     pub is_pinned: bool,
+    pub snapshots_href: Option<String>,
 }
 
 #[derive(Clone, Copy)]
@@ -252,6 +252,7 @@ pub struct AdminPageRowView {
     pub actions: Vec<AdminPostRowActionView>,
     pub preview_href: String,
     pub edit_href: String,
+    pub snapshots_href: Option<String>,
 }
 
 #[derive(Clone)]
