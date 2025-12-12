@@ -231,7 +231,7 @@ fn snapshots_get_hits_endpoint() {
         then.status(200)
             .header("content-type", "application/json")
             .body(format!(
-                r#"{{"id":"{snap_id}","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{{}},"created_by":"tester","created_at":"2025-01-01T00:00:00Z"}}"#
+                r#"{{"id":"{snap_id}","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{{}},"created_at":"2025-01-01T00:00:00Z"}}"#
             ));
     });
 
@@ -292,7 +292,7 @@ fn snapshots_create_hits_endpoint() {
             }));
         then.status(201)
             .header("content-type", "application/json")
-            .body(r#"{"id":"00000000-0000-0000-0000-000000000002","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{},"created_by":"tester","created_at":"2025-01-01T00:00:00Z"}"#);
+            .body(r#"{"id":"00000000-0000-0000-0000-000000000002","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{},"created_at":"2025-01-01T00:00:00Z"}"#);
     });
 
     let key = key_file("cli-test-key");
@@ -323,7 +323,7 @@ fn snapshots_rollback_hits_endpoint() {
         then.status(200)
             .header("content-type", "application/json")
             .body(format!(
-                r#"{{"id":"{snap_id}","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{{}},"created_by":"tester","created_at":"2025-01-01T00:00:00Z"}}"#
+                r#"{{"id":"{snap_id}","entity_type":"post","entity_id":"00000000-0000-0000-0000-000000000001","version":1,"description":null,"schema_version":1,"content":{{}},"created_at":"2025-01-01T00:00:00Z"}}"#
             ));
     });
 

@@ -18,7 +18,6 @@ struct SnapshotRow {
     description: Option<String>,
     schema_version: i64,
     content: serde_json::Value,
-    created_by: String,
     created_at: OffsetDateTime,
 }
 
@@ -32,7 +31,6 @@ impl From<SnapshotRow> for SnapshotRecord {
             description: row.description,
             schema_version: row.schema_version,
             content: row.content,
-            created_by: row.created_by,
             created_at: row.created_at,
         }
     }
@@ -44,8 +42,8 @@ impl SnapshotsRepo for PostgresRepositories {
         sqlx::query!(
             r#"
             INSERT INTO snapshots (
-                id, entity_type, entity_id, version, description, schema_version, content, created_by, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                id, entity_type, entity_id, version, description, schema_version, content, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             "#,
             record.id,
             record.entity_type as SnapshotEntityType,
@@ -54,7 +52,6 @@ impl SnapshotsRepo for PostgresRepositories {
             record.description,
             record.schema_version,
             record.content,
-            record.created_by,
             record.created_at
         )
         .execute(self.pool())
@@ -71,7 +68,7 @@ impl SnapshotsRepo for PostgresRepositories {
     ) -> Result<CursorPage<SnapshotRecord>, RepoError> {
         let limit = page.limit.clamp(1, 100) as i64;
         let mut qb = QueryBuilder::new(
-            "SELECT id, entity_type, entity_id, version, description, schema_version, content, created_by, created_at FROM snapshots WHERE 1=1 ",
+            "SELECT id, entity_type, entity_id, version, description, schema_version, content, created_at FROM snapshots WHERE 1=1 ",
         );
 
         if let Some(entity_type) = filter.entity_type {
@@ -86,8 +83,6 @@ impl SnapshotsRepo for PostgresRepositories {
 
         if let Some(search) = filter.search.as_ref() {
             qb.push(" AND (description ILIKE ");
-            qb.push_bind(format!("%{}%", search));
-            qb.push(" OR created_by ILIKE ");
             qb.push_bind(format!("%{}%", search));
             qb.push(")");
         }
@@ -141,8 +136,6 @@ impl SnapshotsRepo for PostgresRepositories {
         if let Some(search) = filter.search.as_ref() {
             qb.push(" AND (description ILIKE ");
             qb.push_bind(format!("%{}%", search));
-            qb.push(" OR created_by ILIKE ");
-            qb.push_bind(format!("%{}%", search));
             qb.push(")");
         }
 
@@ -164,7 +157,7 @@ impl SnapshotsRepo for PostgresRepositories {
         let row: Option<SnapshotRow> = sqlx::query_as!(
             SnapshotRow,
             r#"
-            SELECT id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_by, created_at
+            SELECT id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_at
             FROM snapshots WHERE id = $1
             "#,
             id
@@ -184,7 +177,7 @@ impl SnapshotsRepo for PostgresRepositories {
         let row: Option<SnapshotRow> = sqlx::query_as!(
             SnapshotRow,
             r#"
-            SELECT id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_by, created_at
+            SELECT id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_at
             FROM snapshots
             WHERE entity_type = $1 AND entity_id = $2
             ORDER BY version DESC
@@ -237,8 +230,6 @@ impl SnapshotsRepo for PostgresRepositories {
         if let Some(search) = filter.search.as_ref() {
             qb.push(" AND (description ILIKE ");
             qb.push_bind(format!("%{}%", search));
-            qb.push(" OR created_by ILIKE ");
-            qb.push_bind(format!("%{}%", search));
             qb.push(")");
         }
 
@@ -275,7 +266,7 @@ impl SnapshotsRepo for PostgresRepositories {
             UPDATE snapshots
             SET description = $2
             WHERE id = $1
-            RETURNING id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_by, created_at
+            RETURNING id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_at
             "#,
         )
         .bind(id)
@@ -292,7 +283,7 @@ impl SnapshotsRepo for PostgresRepositories {
             r#"
             DELETE FROM snapshots
             WHERE id = $1
-            RETURNING id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_by, created_at
+            RETURNING id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_at
             "#,
         )
         .bind(id)

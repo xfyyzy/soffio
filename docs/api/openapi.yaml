@@ -186,10 +186,9 @@ components:
         content:
           type: object
           additionalProperties: true
-        created_by: { type: string }
         created_at: { type: string, format: date-time }
       required:
-        [id, entity_type, entity_id, version, schema_version, content, created_by, created_at]
+        [id, entity_type, entity_id, version, schema_version, content, created_at]
     SnapshotCreateRequest:
       type: object
       required: [entity_type, entity_id]

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO snapshots (\n                id, entity_type, entity_id, version, description, schema_version, content, created_by, created_at\n            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n            ",
+  "query": "\n            INSERT INTO snapshots (\n                id, entity_type, entity_id, version, description, schema_version, content, created_at\n            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            ",
   "describe": {
     "columns": [],
     "parameters": {
@@ -22,11 +22,10 @@
         "Text",
         "Int8",
         "Jsonb",
-        "Text",
         "Timestamptz"
       ]
     },
     "nullable": []
   },
-  "hash": "e6b1f60004011271d2e5a7e429cecaa1908d11fd9c7b4e9e152a60cd0b7b1085"
+  "hash": "467ac2372dfd991f3292e66e48dc4afd4172d5075d8c30725f8e27d416c5d585"
 }

@@ -20,7 +20,7 @@ checksum = "303867c78ffa1684bf48f49df7f070de7b2bdaf2f4933fe2056dd5408c77c5f4e2ec
 
 [[migrations.entries]]
 version = 20251210130000
-checksum = "7eeafabd04626c031dfca5e32e18324bb24307c5d9c7dbb5f4f7100970f45fcf0d9b26b253384811c2b80a6b791177bb"
+checksum = "24e841bf83c6652697c8129afe60d1a06493c1c9caab15d685bb8bf32f6040a41f9d5a577f32955cff64c4f98c6891db"
 
 [site_settings]
 homepage_size = 6

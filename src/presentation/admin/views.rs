@@ -731,7 +731,6 @@ pub struct AdminSnapshotRowView {
     pub version: i32,
     pub description: Option<String>,
     pub created_at: String,
-    pub created_by: String,
     pub edit_href: String,
     pub rollback_action: String,
     pub delete_action: String,
@@ -781,6 +780,7 @@ pub struct AdminSnapshotNewView {
     pub entity_label: String,
     pub form_action: String,
     pub back_href: String,
+    pub next_version: i32,
     pub description: Option<String>,
     pub submit_label: String,
 }

@@ -15,7 +15,6 @@ CREATE TABLE snapshots (
     description TEXT,
     schema_version BIGINT NOT NULL,
     content JSONB NOT NULL,
-    created_by TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT snapshots_entity_version_unique UNIQUE (entity_type, entity_id, version)
 );

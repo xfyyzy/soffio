@@ -53,7 +53,7 @@ impl AdminSnapshotService {
 
     pub async fn create<E: Snapshotable<Id = Uuid>>(
         &self,
-        actor: &str,
+        _actor: &str,
         entity: &E,
         description: Option<String>,
     ) -> Result<SnapshotRecord, SnapshotServiceError> {
@@ -67,12 +67,7 @@ impl AdminSnapshotService {
 
         let schema_version = self.repo.current_schema_version().await?;
 
-        let version = self
-            .repo
-            .latest_snapshot(entity_type, entity_id)
-            .await?
-            .map(|s| s.version + 1)
-            .unwrap_or(1);
+        let version = self.next_version(entity_type, entity_id).await?;
 
         let record = SnapshotRecord {
             id: Uuid::new_v4(),
@@ -82,7 +77,6 @@ impl AdminSnapshotService {
             description,
             schema_version,
             content,
-            created_by: actor.to_string(),
             created_at: OffsetDateTime::now_utc(),
         };
 
@@ -151,5 +145,20 @@ impl AdminSnapshotService {
 
     pub async fn find(&self, id: Uuid) -> Result<Option<SnapshotRecord>, SnapshotServiceError> {
         Ok(self.repo.find_snapshot(id).await?)
+    }
+
+    pub async fn next_version(
+        &self,
+        entity_type: crate::domain::types::SnapshotEntityType,
+        entity_id: Uuid,
+    ) -> Result<i32, SnapshotServiceError> {
+        let next = self
+            .repo
+            .latest_snapshot(entity_type, entity_id)
+            .await?
+            .map(|s| s.version + 1)
+            .unwrap_or(1);
+
+        Ok(next)
     }
 }

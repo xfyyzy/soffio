@@ -5,6 +5,7 @@ use axum::{
 };
 use uuid::Uuid;
 
+use crate::domain::types::SnapshotEntityType;
 use crate::{
     application::{
         admin::{
@@ -74,6 +75,12 @@ impl Entity {
     fn chrome_path(self) -> &'static str {
         self.slug()
     }
+    fn kind(self) -> SnapshotEntityType {
+        match self {
+            Entity::Post => SnapshotEntityType::Post,
+            Entity::Page => SnapshotEntityType::Page,
+        }
+    }
 }
 
 async fn render_form(state: &AdminState, entity: Entity, id: Uuid) -> Response {
@@ -82,11 +89,25 @@ async fn render_form(state: &AdminState, entity: Entity, id: Uuid) -> Response {
         Err(err) => return err.into_response(),
     };
 
+    let next_version = match state.snapshots.next_version(entity.kind(), id).await {
+        Ok(version) => version,
+        Err(err) => {
+            return HttpError::new(
+                "infra::http::admin::snapshots::new",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to load next snapshot version",
+                err.to_string(),
+            )
+            .into_response();
+        }
+    };
+
     let view = admin_views::AdminSnapshotNewView {
         heading: format!("New {} Snapshot", entity.label()),
         entity_label: entity.label().to_string(),
         form_action: format!("/{}/{}/snapshots/new", entity.slug(), id),
         back_href: format!("/{}/{}/snapshots", entity.slug(), id),
+        next_version,
         description: None,
         submit_label: "Create Snapshot".to_string(),
     };

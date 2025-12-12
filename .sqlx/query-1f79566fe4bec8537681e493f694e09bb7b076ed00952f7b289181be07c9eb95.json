@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, entity_type AS \"entity_type: SnapshotEntityType\", entity_id, version, description, schema_version, content, created_by, created_at\n            FROM snapshots\n            WHERE entity_type = $1 AND entity_id = $2\n            ORDER BY version DESC\n            LIMIT 1\n            ",
+  "query": "\n            SELECT id, entity_type AS \"entity_type: SnapshotEntityType\", entity_id, version, description, schema_version, content, created_at\n            FROM snapshots WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -50,28 +50,12 @@
       },
       {
         "ordinal": 7,
-        "name": "created_by",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        {
-          "Custom": {
-            "name": "snapshot_entity_type",
-            "kind": {
-              "Enum": [
-                "post",
-                "page"
-              ]
-            }
-          }
-        },
         "Uuid"
       ]
     },
@@ -83,9 +67,8 @@
       true,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "b2ef8dc44af0e7c1fdf1744ea1c846474307d64df32b2328b30a29dbfd6a8722"
+  "hash": "1f79566fe4bec8537681e493f694e09bb7b076ed00952f7b289181be07c9eb95"
 }

@@ -27,7 +27,6 @@ fn record_to_response(record: SnapshotRecord) -> SnapshotResponse {
         description: record.description,
         schema_version: record.schema_version,
         content: record.content,
-        created_by: record.created_by,
         created_at: record.created_at,
     }
 }

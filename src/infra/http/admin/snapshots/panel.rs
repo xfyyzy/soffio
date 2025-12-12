@@ -257,7 +257,6 @@ fn build_content(
             version: record.version,
             description: record.description.clone(),
             created_at: admin_views::format_timestamp(record.created_at, timezone),
-            created_by: record.created_by,
             edit_href: format!("/snapshots/{}/edit", record.id),
             rollback_action: format!("/snapshots/{}/rollback", record.id),
             delete_action: format!("/snapshots/{}/delete", record.id),

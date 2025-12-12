@@ -21,7 +21,6 @@
           <th scope="col">Version</th>
           <th scope="col">Description</th>
           <th scope="col">Created At</th>
-          <th scope="col">Created By</th>
           <th scope="col">Actions</th>
         </tr>
       </thead>
@@ -37,7 +36,6 @@
             {% endif %}
           </td>
           <td>{{ item.created_at }}</td>
-          <td>{{ item.created_by }}</td>
           <td data-role="publishable-actions">
             <div data-role="row-actions">
               <a href="{{ item.edit_href }}">Edit</a>

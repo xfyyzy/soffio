@@ -651,7 +651,6 @@ pub struct SnapshotRecord {
     pub description: Option<String>,
     pub schema_version: i64,
     pub content: serde_json::Value,
-    pub created_by: String,
     pub created_at: time::OffsetDateTime,
 }
 
