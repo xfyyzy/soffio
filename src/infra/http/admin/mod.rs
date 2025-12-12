@@ -74,6 +74,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
             "/posts/{id}/snapshots",
             get(snapshots::admin_post_snapshots).post(snapshots::admin_post_snapshots_panel),
         )
+        .route(
+            "/posts/{id}/snapshots/new",
+            get(snapshots::admin_post_snapshot_new).post(snapshots::admin_post_snapshot_create),
+        )
         .route("/pages", get(pages::admin_pages))
         .route("/pages/panel", post(pages::admin_page_panel))
         .route("/pages/create", post(pages::admin_page_create))
@@ -89,6 +93,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route(
             "/pages/{id}/snapshots",
             get(snapshots::admin_page_snapshots).post(snapshots::admin_page_snapshots_panel),
+        )
+        .route(
+            "/pages/{id}/snapshots/new",
+            get(snapshots::admin_page_snapshot_new).post(snapshots::admin_page_snapshot_create),
         )
         .route("/jobs", get(jobs::admin_jobs))
         .route("/jobs/panel", post(jobs::admin_jobs_panel))

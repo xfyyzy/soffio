@@ -1,0 +1,19 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}snapshot-new{% endblock %}
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_content %}
+    <form data-role="snapshot-new" method="post" action="{{ content.form_action }}"
+      data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
+      <p><strong>{{ content.entity_label }}</strong> snapshot</p>
+      <label>
+        <span>Description (optional)</span>
+        <textarea name="description" rows="3">{% if let Some(desc) = &content.description %}{{ desc }}{% endif %}</textarea>
+      </label>
+      <div data-role="form-actions">
+        <a href="{{ content.back_href }}" data-role="secondary">Cancel</a>
+        <button type="submit">{{ content.submit_label }}</button>
+      </div>
+    </form>
+{% endblock panel_content %}

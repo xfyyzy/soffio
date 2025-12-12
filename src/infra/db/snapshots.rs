@@ -264,4 +264,42 @@ impl SnapshotsRepo for PostgresRepositories {
 
         Ok(counts)
     }
+
+    async fn update_description(
+        &self,
+        id: Uuid,
+        description: Option<String>,
+    ) -> Result<Option<SnapshotRecord>, RepoError> {
+        let row: Option<SnapshotRow> = sqlx::query_as::<_, SnapshotRow>(
+            r#"
+            UPDATE snapshots
+            SET description = $2
+            WHERE id = $1
+            RETURNING id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_by, created_at
+            "#,
+        )
+        .bind(id)
+        .bind(description)
+        .fetch_optional(self.pool())
+        .await
+        .map_err(map_sqlx_error)?;
+
+        Ok(row.map(SnapshotRecord::from))
+    }
+
+    async fn delete_snapshot(&self, id: Uuid) -> Result<Option<SnapshotRecord>, RepoError> {
+        let row: Option<SnapshotRow> = sqlx::query_as::<_, SnapshotRow>(
+            r#"
+            DELETE FROM snapshots
+            WHERE id = $1
+            RETURNING id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_by, created_at
+            "#,
+        )
+        .bind(id)
+        .fetch_optional(self.pool())
+        .await
+        .map_err(map_sqlx_error)?;
+
+        Ok(row.map(SnapshotRecord::from))
+    }
 }

@@ -774,6 +774,28 @@ pub struct AdminSnapshotsTemplate {
 pub struct AdminSnapshotsPanelTemplate {
     pub content: AdminSnapshotListView,
 }
+
+#[derive(Clone)]
+pub struct AdminSnapshotNewView {
+    pub heading: String,
+    pub entity_label: String,
+    pub form_action: String,
+    pub back_href: String,
+    pub description: Option<String>,
+    pub submit_label: String,
+}
+
+#[derive(Template)]
+#[template(path = "admin/snapshot_new.html")]
+pub struct AdminSnapshotNewTemplate {
+    pub view: AdminLayout<AdminSnapshotNewView>,
+}
+
+#[derive(Template)]
+#[template(path = "admin/snapshot_new_panel.html")]
+pub struct AdminSnapshotNewPanelTemplate {
+    pub content: AdminSnapshotNewView,
+}
 #[derive(Clone)]
 pub struct AdminPostEditorView {
     pub title: String,

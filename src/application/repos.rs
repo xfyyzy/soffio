@@ -537,6 +537,14 @@ pub trait SnapshotsRepo: Send + Sync {
         &self,
         filter: &SnapshotFilter,
     ) -> Result<Vec<SnapshotMonthCount>, RepoError>;
+
+    async fn update_description(
+        &self,
+        id: uuid::Uuid,
+        description: Option<String>,
+    ) -> Result<Option<SnapshotRecord>, RepoError>;
+
+    async fn delete_snapshot(&self, id: uuid::Uuid) -> Result<Option<SnapshotRecord>, RepoError>;
 }
 
 #[derive(Debug, Clone)]
