@@ -532,6 +532,11 @@ pub trait SnapshotsRepo: Send + Sync {
 
     /// Highest applied migration version from `_sqlx_migrations`.
     async fn current_schema_version(&self) -> Result<i64, RepoError>;
+
+    async fn month_counts(
+        &self,
+        filter: &SnapshotFilter,
+    ) -> Result<Vec<SnapshotMonthCount>, RepoError>;
 }
 
 #[derive(Debug, Clone)]
@@ -619,6 +624,14 @@ pub struct SnapshotFilter {
     pub entity_type: Option<SnapshotEntityType>,
     pub entity_id: Option<uuid::Uuid>,
     pub search: Option<String>,
+    pub month: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SnapshotMonthCount {
+    pub key: String,
+    pub label: String,
+    pub count: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]

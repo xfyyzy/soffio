@@ -142,6 +142,13 @@ impl AdminSnapshotService {
         Ok(self.repo.count_snapshots(filter).await?)
     }
 
+    pub async fn month_counts(
+        &self,
+        filter: &SnapshotFilter,
+    ) -> Result<Vec<crate::application::repos::SnapshotMonthCount>, SnapshotServiceError> {
+        Ok(self.repo.month_counts(filter).await?)
+    }
+
     pub async fn find(&self, id: Uuid) -> Result<Option<SnapshotRecord>, SnapshotServiceError> {
         Ok(self.repo.find_snapshot(id).await?)
     }

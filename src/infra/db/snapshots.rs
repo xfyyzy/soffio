@@ -92,6 +92,11 @@ impl SnapshotsRepo for PostgresRepositories {
             qb.push(")");
         }
 
+        if let Some(month) = filter.month.as_ref() {
+            qb.push(" AND to_char(created_at, 'YYYY-MM') = ");
+            qb.push_bind(month);
+        }
+
         if let Some(cursor) = page.cursor {
             qb.push(" AND (created_at, id) < (");
             qb.push_bind(cursor.created_at());
@@ -139,6 +144,11 @@ impl SnapshotsRepo for PostgresRepositories {
             qb.push(" OR created_by ILIKE ");
             qb.push_bind(format!("%{}%", search));
             qb.push(")");
+        }
+
+        if let Some(month) = filter.month.as_ref() {
+            qb.push(" AND to_char(created_at, 'YYYY-MM') = ");
+            qb.push_bind(month);
         }
 
         let count: i64 = qb
@@ -198,5 +208,60 @@ impl SnapshotsRepo for PostgresRepositories {
                 .map_err(map_sqlx_error)?;
 
         Ok(version.unwrap_or(0))
+    }
+
+    async fn month_counts(
+        &self,
+        filter: &SnapshotFilter,
+    ) -> Result<Vec<crate::application::repos::SnapshotMonthCount>, RepoError> {
+        #[derive(sqlx::FromRow)]
+        struct MonthRow {
+            bucket: OffsetDateTime,
+            count: i64,
+        }
+
+        let mut qb = QueryBuilder::new(
+            "SELECT date_trunc('month', created_at) AS bucket, COUNT(*) AS count FROM snapshots WHERE 1=1 ",
+        );
+
+        if let Some(entity_type) = filter.entity_type {
+            qb.push(" AND entity_type = ");
+            qb.push_bind(entity_type);
+        }
+
+        if let Some(entity_id) = filter.entity_id {
+            qb.push(" AND entity_id = ");
+            qb.push_bind(entity_id);
+        }
+
+        if let Some(search) = filter.search.as_ref() {
+            qb.push(" AND (description ILIKE ");
+            qb.push_bind(format!("%{}%", search));
+            qb.push(" OR created_by ILIKE ");
+            qb.push_bind(format!("%{}%", search));
+            qb.push(")");
+        }
+
+        qb.push(" GROUP BY bucket ORDER BY bucket DESC ");
+
+        let rows: Vec<MonthRow> = qb
+            .build_query_as::<MonthRow>()
+            .fetch_all(self.pool())
+            .await
+            .map_err(map_sqlx_error)?;
+
+        let mut counts = Vec::with_capacity(rows.len());
+        for row in rows {
+            let date = row.bucket.date();
+            let key = crate::domain::posts::month_key_for(date);
+            let label = crate::domain::posts::month_label_for(date);
+            counts.push(crate::application::repos::SnapshotMonthCount {
+                key,
+                label,
+                count: row.count as usize,
+            });
+        }
+
+        Ok(counts)
     }
 }

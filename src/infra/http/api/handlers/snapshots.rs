@@ -60,6 +60,7 @@ pub async fn list_snapshots(
         entity_type: query.entity_type,
         entity_id: query.entity_id,
         search: query.search,
+        month: None,
     };
 
     let limit = query.limit.unwrap_or(20).clamp(1, 100);

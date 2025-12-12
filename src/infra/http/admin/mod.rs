@@ -11,6 +11,7 @@ mod posts;
 mod selectors;
 mod settings;
 mod shared;
+mod snapshots;
 mod state;
 mod tags;
 mod toasts;
@@ -69,6 +70,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/posts/{id}/archive", post(posts::admin_post_archive))
         .route("/posts/{id}/pin", post(posts::admin_post_pin))
         .route("/posts/{id}/unpin", post(posts::admin_post_unpin))
+        .route(
+            "/posts/{id}/snapshots",
+            get(snapshots::admin_entity_snapshots).post(snapshots::admin_entity_snapshots_panel),
+        )
         .route("/pages", get(pages::admin_pages))
         .route("/pages/panel", post(pages::admin_page_panel))
         .route("/pages/create", post(pages::admin_page_create))
@@ -81,6 +86,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/pages/{id}/publish", post(pages::admin_page_publish))
         .route("/pages/{id}/draft", post(pages::admin_page_move_to_draft))
         .route("/pages/{id}/archive", post(pages::admin_page_archive))
+        .route(
+            "/pages/{id}/snapshots",
+            get(snapshots::admin_entity_snapshots).post(snapshots::admin_entity_snapshots_panel),
+        )
         .route("/jobs", get(jobs::admin_jobs))
         .route("/jobs/panel", post(jobs::admin_jobs_panel))
         .route("/jobs/{id}", get(jobs::admin_job_detail))
