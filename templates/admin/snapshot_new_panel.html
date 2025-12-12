@@ -4,7 +4,7 @@
 {% block panel_heading %}{{ content.heading }}{% endblock %}
 
 {% block panel_content %}
-    <form data-role="snapshot-new" method="post" action="{{ content.form_action }}"
+    <form data-role="snapshot-create-form" method="post" action="{{ content.form_action }}"
       data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
       <label>
         <span>Description</span>
