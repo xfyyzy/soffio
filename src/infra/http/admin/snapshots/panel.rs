@@ -1,8 +1,7 @@
-//! Snapshot list panel for admin (per-entity, posts/pages).
+//! Snapshot list panel for posts/pages.
 use askama::Template;
 use axum::{
     extract::{Form, Path, Query, State},
-    http::StatusCode,
     response::{IntoResponse, Response},
 };
 use uuid::Uuid;
@@ -19,9 +18,10 @@ use crate::{
         AdminState,
         pagination::{self, CursorState},
         selectors::PANEL,
-        shared::{AdminPostQuery, datastar_replace},
+        shared::{AdminPostQuery, blank_to_none_opt, datastar_replace, template_render_http_error},
     },
     presentation::admin::views as admin_views,
+    presentation::views::render_template_response,
 };
 
 const SOURCE: &str = "infra::http::admin::snapshots";
@@ -48,29 +48,23 @@ enum SnapshotEntity {
 }
 
 impl SnapshotEntity {
-    fn snapshot_type(self) -> SnapshotEntityType {
+    fn kind(self) -> SnapshotEntityType {
         match self {
             SnapshotEntity::Post => SnapshotEntityType::Post,
             SnapshotEntity::Page => SnapshotEntityType::Page,
         }
     }
-
     fn label(self) -> &'static str {
         match self {
             SnapshotEntity::Post => "Post",
             SnapshotEntity::Page => "Page",
         }
     }
-
     fn slug(self) -> &'static str {
         match self {
             SnapshotEntity::Post => "posts",
             SnapshotEntity::Page => "pages",
         }
-    }
-
-    fn chrome_path(self) -> &'static str {
-        self.slug()
     }
 }
 
@@ -95,7 +89,7 @@ pub async fn admin_post_snapshots_panel(
     Path(id): Path<Uuid>,
     Form(form): Form<SnapshotPanelForm>,
 ) -> Response {
-    render_snapshots_panel_impl(&state, SnapshotEntity::Post, id, form).await
+    render_snapshots_panel(&state, SnapshotEntity::Post, id, form).await
 }
 
 pub async fn admin_page_snapshots_panel(
@@ -103,7 +97,7 @@ pub async fn admin_page_snapshots_panel(
     Path(id): Path<Uuid>,
     Form(form): Form<SnapshotPanelForm>,
 ) -> Response {
-    render_snapshots_panel_impl(&state, SnapshotEntity::Page, id, form).await
+    render_snapshots_panel(&state, SnapshotEntity::Page, id, form).await
 }
 
 async fn render_snapshots(
@@ -112,7 +106,7 @@ async fn render_snapshots(
     id: Uuid,
     query: AdminPostQuery,
 ) -> Response {
-    let chrome = match state.chrome.load(entity.chrome_path()).await {
+    let chrome = match state.chrome.load(entity.slug()).await {
         Ok(chrome) => chrome,
         Err(err) => return err.into_response(),
     };
@@ -124,41 +118,57 @@ async fn render_snapshots(
     };
 
     let filter = SnapshotFilter {
-        entity_type: Some(entity.snapshot_type()),
+        entity_type: Some(entity.kind()),
         entity_id: Some(id),
-        search: query.search.clone(),
-        month: query.month.clone(),
+        search: blank_to_none_opt(query.search.clone()),
+        month: blank_to_none_opt(query.month.clone()),
     };
 
     match build_snapshot_view(state, entity, id, filter, cursor_state, cursor).await {
         Ok(content) => {
             let view = admin_views::AdminLayout::new(chrome, content);
-            render_template_response(admin_views::AdminSnapshotsTemplate { view })
+            render_template_response(
+                admin_views::AdminSnapshotsTemplate { view },
+                axum::http::StatusCode::OK,
+            )
         }
         Err(resp) => resp,
     }
 }
 
-fn render_template_response<T: Template>(template: T) -> Response {
-    match template.render() {
-        Ok(html) => axum::response::Html(html).into_response(),
-        Err(err) => {
-            template_render_http_error(SOURCE, "Template rendering failed", err).into_response()
-        }
-    }
-}
+async fn render_snapshots_panel(
+    state: &AdminState,
+    entity: SnapshotEntity,
+    id: Uuid,
+    form: SnapshotPanelForm,
+) -> Response {
+    let cursor_state = CursorState::new(form.cursor.clone(), form.trail.clone());
+    let cursor = match cursor_state.decode_with(SnapshotCursor::decode, SOURCE) {
+        Ok(cursor) => cursor,
+        Err(err) => return err.into_response(),
+    };
 
-fn template_render_http_error(
-    source: &'static str,
-    message: &'static str,
-    err: impl std::fmt::Display,
-) -> HttpError {
-    HttpError::new(
-        source,
-        StatusCode::INTERNAL_SERVER_ERROR,
-        message,
-        err.to_string(),
-    )
+    let mut filter = SnapshotFilter {
+        entity_type: Some(entity.kind()),
+        entity_id: Some(id),
+        search: blank_to_none_opt(form.search.clone()),
+        month: blank_to_none_opt(form.month.clone()),
+    };
+
+    if form.clear.is_some() {
+        filter.search = None;
+        filter.month = None;
+    }
+
+    match build_snapshot_view(state, entity, id, filter, cursor_state, cursor).await {
+        Ok(content) => match (AdminSnapshotsPanelTemplate { content }).render() {
+            Ok(html) => datastar_replace(PANEL, html).into_response(),
+            Err(err) => {
+                template_render_http_error(SOURCE, "Template rendering failed", err).into_response()
+            }
+        },
+        Err(resp) => resp,
+    }
 }
 
 async fn build_snapshot_view(
@@ -176,7 +186,7 @@ async fn build_snapshot_view(
         Err(err) => {
             return Err(HttpError::new(
                 SOURCE,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 "Failed to load settings",
                 err.to_string(),
             )
@@ -202,41 +212,6 @@ async fn build_snapshot_view(
 
     apply_pagination_links(&mut content, &cursor_state);
     Ok(content)
-}
-
-async fn render_snapshots_panel_impl(
-    state: &AdminState,
-    entity: SnapshotEntity,
-    id: Uuid,
-    form: SnapshotPanelForm,
-) -> Response {
-    let cursor_state = CursorState::new(form.cursor.clone(), form.trail.clone());
-    let cursor = match cursor_state.decode_with(SnapshotCursor::decode, SOURCE) {
-        Ok(cursor) => cursor,
-        Err(err) => return err.into_response(),
-    };
-
-    let mut filter = SnapshotFilter {
-        entity_type: Some(entity.snapshot_type()),
-        entity_id: Some(id),
-        search: form.search.clone(),
-        month: form.month.clone(),
-    };
-
-    if form.clear.is_some() {
-        filter.search = None;
-        filter.month = None;
-    }
-
-    match build_snapshot_view(state, entity, id, filter, cursor_state, cursor).await {
-        Ok(content) => match (AdminSnapshotsPanelTemplate { content }).render() {
-            Ok(html) => datastar_replace(PANEL, html).into_response(),
-            Err(err) => {
-                template_render_http_error(SOURCE, "Template rendering failed", err).into_response()
-            }
-        },
-        Err(resp) => resp,
-    }
 }
 
 async fn admin_page_size(state: &AdminState) -> u32 {
@@ -366,28 +341,28 @@ fn snapshot_error(err: SnapshotServiceError) -> Response {
     match err {
         Repo(repo) => HttpError::new(
             SOURCE,
-            StatusCode::INTERNAL_SERVER_ERROR,
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             "Snapshot repository error",
             repo.to_string(),
         )
         .into_response(),
         Snapshot(inner) => HttpError::new(
             SOURCE,
-            StatusCode::BAD_REQUEST,
+            axum::http::StatusCode::BAD_REQUEST,
             "Snapshot validation failed",
             inner.to_string(),
         )
         .into_response(),
         App(app) => HttpError::new(
             SOURCE,
-            StatusCode::INTERNAL_SERVER_ERROR,
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             "Snapshot error",
             app.to_string(),
         )
         .into_response(),
         NotFound => HttpError::new(
             SOURCE,
-            StatusCode::NOT_FOUND,
+            axum::http::StatusCode::NOT_FOUND,
             "Snapshot not found",
             "Snapshot not found".to_string(),
         )
