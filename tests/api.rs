@@ -223,12 +223,7 @@ async fn build_state(pool: PgPool) -> (ApiState, String) {
         settings: admin_settings_service,
         jobs: admin_job_service,
         audit: admin_audit_service,
-        snapshots: Arc::new(AdminSnapshotService::new(
-            repos.clone(),
-            repos.clone(),
-            _response_cache.clone(),
-            Arc::new(CacheWarmDebouncer::new(std::time::Duration::from_secs(1))),
-        )),
+        snapshots: Arc::new(AdminSnapshotService::new(repos.clone())),
         db: repos.clone(),
         upload_storage,
         rate_limiter: Arc::new(soffio::infra::http::api::rate_limit::ApiRateLimiter::new(

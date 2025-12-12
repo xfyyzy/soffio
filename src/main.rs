@@ -352,12 +352,7 @@ fn build_application_context(
         jobs_repo.clone(),
         audit_service.clone(),
     ));
-    let admin_snapshot_service = Arc::new(AdminSnapshotService::new(
-        snapshots_repo.clone(),
-        jobs_repo.clone(),
-        response_cache.clone(),
-        cache_warm_debouncer.clone(),
-    ));
+    let admin_snapshot_service = Arc::new(AdminSnapshotService::new(snapshots_repo.clone()));
     let admin_audit_service = Arc::new(audit_service);
     let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
 

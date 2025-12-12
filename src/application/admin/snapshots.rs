@@ -7,11 +7,8 @@ use uuid::Uuid;
 
 use crate::application::error::AppError;
 use crate::application::pagination::{CursorPage, PageRequest, SnapshotCursor};
-use crate::application::repos::{
-    JobsRepo, RepoError, SnapshotFilter, SnapshotRecord, SnapshotsRepo,
-};
+use crate::application::repos::{RepoError, SnapshotFilter, SnapshotRecord, SnapshotsRepo};
 use crate::domain::snapshots::{SnapshotError, Snapshotable};
-use crate::infra::cache::{CacheWarmDebouncer, ResponseCache};
 
 use futures::future::Future;
 
@@ -30,24 +27,11 @@ pub enum SnapshotServiceError {
 #[derive(Clone)]
 pub struct AdminSnapshotService {
     repo: Arc<dyn SnapshotsRepo>,
-    _jobs: Arc<dyn JobsRepo>,
-    _cache: Arc<ResponseCache>,
-    _debouncer: Arc<CacheWarmDebouncer>,
 }
 
 impl AdminSnapshotService {
-    pub fn new(
-        repo: Arc<dyn SnapshotsRepo>,
-        jobs: Arc<dyn JobsRepo>,
-        cache: Arc<ResponseCache>,
-        debouncer: Arc<CacheWarmDebouncer>,
-    ) -> Self {
-        Self {
-            repo,
-            _jobs: jobs,
-            _cache: cache,
-            _debouncer: debouncer,
-        }
+    pub fn new(repo: Arc<dyn SnapshotsRepo>) -> Self {
+        Self { repo }
     }
 
     pub async fn create<E: Snapshotable<Id = Uuid>>(
