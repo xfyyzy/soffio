@@ -1,4 +1,4 @@
-//! Snapshot list panel for admin (per-entity).
+//! Snapshot list panel for admin (per-entity, posts/pages).
 use askama::Template;
 use axum::{
     extract::{Form, Path, Query, State},
@@ -12,15 +12,14 @@ use crate::{
         admin::snapshots::SnapshotServiceError,
         error::HttpError,
         pagination::{CursorPage, PageRequest, SnapshotCursor},
-        repos::SettingsRepo,
-        repos::{SnapshotFilter, SnapshotMonthCount, SnapshotRecord},
+        repos::{SettingsRepo, SnapshotFilter, SnapshotMonthCount, SnapshotRecord},
     },
     domain::types::SnapshotEntityType,
     infra::http::admin::{
         AdminState,
         pagination::{self, CursorState},
         selectors::PANEL,
-        shared::{AdminPostQuery, datastar_replace, template_render_http_error},
+        shared::{AdminPostQuery, datastar_replace},
     },
     presentation::admin::views as admin_views,
 };
@@ -42,18 +41,78 @@ pub struct SnapshotPanelForm {
     pub clear: Option<String>,
 }
 
-pub async fn admin_entity_snapshots(
+#[derive(Clone, Copy)]
+enum SnapshotEntity {
+    Post,
+    Page,
+}
+
+impl SnapshotEntity {
+    fn snapshot_type(self) -> SnapshotEntityType {
+        match self {
+            SnapshotEntity::Post => SnapshotEntityType::Post,
+            SnapshotEntity::Page => SnapshotEntityType::Page,
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            SnapshotEntity::Post => "Post",
+            SnapshotEntity::Page => "Page",
+        }
+    }
+
+    fn slug(self) -> &'static str {
+        match self {
+            SnapshotEntity::Post => "posts",
+            SnapshotEntity::Page => "pages",
+        }
+    }
+
+    fn chrome_path(self) -> &'static str {
+        self.slug()
+    }
+}
+
+pub async fn admin_post_snapshots(
     State(state): State<AdminState>,
-    Path((entity, id)): Path<(String, Uuid)>,
+    Path(id): Path<Uuid>,
     Query(query): Query<AdminPostQuery>,
 ) -> Response {
-    let chrome_path = match entity.as_str() {
-        "posts" => "/posts",
-        "pages" => "/pages",
-        _ => return not_found(entity),
-    };
+    render_snapshots(&state, SnapshotEntity::Post, id, query).await
+}
 
-    let chrome = match state.chrome.load(chrome_path).await {
+pub async fn admin_page_snapshots(
+    State(state): State<AdminState>,
+    Path(id): Path<Uuid>,
+    Query(query): Query<AdminPostQuery>,
+) -> Response {
+    render_snapshots(&state, SnapshotEntity::Page, id, query).await
+}
+
+pub async fn admin_post_snapshots_panel(
+    State(state): State<AdminState>,
+    Path(id): Path<Uuid>,
+    Form(form): Form<SnapshotPanelForm>,
+) -> Response {
+    render_snapshots_panel_impl(&state, SnapshotEntity::Post, id, form).await
+}
+
+pub async fn admin_page_snapshots_panel(
+    State(state): State<AdminState>,
+    Path(id): Path<Uuid>,
+    Form(form): Form<SnapshotPanelForm>,
+) -> Response {
+    render_snapshots_panel_impl(&state, SnapshotEntity::Page, id, form).await
+}
+
+async fn render_snapshots(
+    state: &AdminState,
+    entity: SnapshotEntity,
+    id: Uuid,
+    query: AdminPostQuery,
+) -> Response {
+    let chrome = match state.chrome.load(entity.chrome_path()).await {
         Ok(chrome) => chrome,
         Err(err) => return err.into_response(),
     };
@@ -64,58 +123,92 @@ pub async fn admin_entity_snapshots(
         Err(err) => return err.into_response(),
     };
 
-    let (entity_type, entity_label) = match entity.as_str() {
-        "posts" => (SnapshotEntityType::Post, "Post"),
-        "pages" => (SnapshotEntityType::Page, "Page"),
-        _ => return not_found(entity),
-    };
-
     let filter = SnapshotFilter {
-        entity_type: Some(entity_type),
+        entity_type: Some(entity.snapshot_type()),
         entity_id: Some(id),
         search: query.search.clone(),
         month: query.month.clone(),
     };
 
-    let page_request = PageRequest::new(admin_page_size(&state).await, cursor);
+    match build_snapshot_view(state, entity, id, filter, cursor_state, cursor).await {
+        Ok(content) => {
+            let view = admin_views::AdminLayout::new(chrome, content);
+            render_template_response(admin_views::AdminSnapshotsTemplate { view })
+        }
+        Err(resp) => resp,
+    }
+}
+
+fn render_template_response<T: Template>(template: T) -> Response {
+    match template.render() {
+        Ok(html) => axum::response::Html(html).into_response(),
+        Err(err) => {
+            template_render_http_error(SOURCE, "Template rendering failed", err).into_response()
+        }
+    }
+}
+
+fn template_render_http_error(
+    source: &'static str,
+    message: &'static str,
+    err: impl std::fmt::Display,
+) -> HttpError {
+    HttpError::new(
+        source,
+        StatusCode::INTERNAL_SERVER_ERROR,
+        message,
+        err.to_string(),
+    )
+}
+
+async fn build_snapshot_view(
+    state: &AdminState,
+    entity: SnapshotEntity,
+    id: Uuid,
+    filter: SnapshotFilter,
+    cursor_state: CursorState,
+    cursor: Option<SnapshotCursor>,
+) -> Result<admin_views::AdminSnapshotListView, Response> {
+    let page_request = PageRequest::new(admin_page_size(state).await, cursor);
 
     let timezone = match state.db.load_site_settings().await {
         Ok(settings) => settings.timezone,
         Err(err) => {
-            return HttpError::new(
+            return Err(HttpError::new(
                 SOURCE,
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Failed to load settings",
                 err.to_string(),
             )
-            .into_response();
+            .into_response());
         }
     };
 
-    let (page, month_counts) = match load_snapshots(&state, &filter, page_request).await {
+    let (page, month_counts) = match load_snapshots(state, &filter, page_request).await {
         Ok(res) => res,
-        Err(err) => return err,
+        Err(err) => return Err(err),
     };
 
-    let content = build_content(
+    let mut content = build_content(
         &filter,
         page,
         month_counts,
-        entity_label,
-        entity_slug(entity_label),
+        entity.label(),
+        entity.slug(),
         id,
         timezone,
         &cursor_state,
     );
 
-    let view = admin_views::AdminLayout::new(chrome, content);
-    render_template_response(admin_views::AdminSnapshotsTemplate { view })
+    apply_pagination_links(&mut content, &cursor_state);
+    Ok(content)
 }
 
-pub async fn admin_entity_snapshots_panel(
-    State(state): State<AdminState>,
-    Path((entity, id)): Path<(String, Uuid)>,
-    Form(form): Form<SnapshotPanelForm>,
+async fn render_snapshots_panel_impl(
+    state: &AdminState,
+    entity: SnapshotEntity,
+    id: Uuid,
+    form: SnapshotPanelForm,
 ) -> Response {
     let cursor_state = CursorState::new(form.cursor.clone(), form.trail.clone());
     let cursor = match cursor_state.decode_with(SnapshotCursor::decode, SOURCE) {
@@ -123,73 +216,26 @@ pub async fn admin_entity_snapshots_panel(
         Err(err) => return err.into_response(),
     };
 
-    let entity_type = match entity.as_str() {
-        "posts" => SnapshotEntityType::Post,
-        "pages" => SnapshotEntityType::Page,
-        _ => return not_found(entity),
+    let mut filter = SnapshotFilter {
+        entity_type: Some(entity.snapshot_type()),
+        entity_id: Some(id),
+        search: form.search.clone(),
+        month: form.month.clone(),
     };
 
-    let filter = if form.clear.is_some() {
-        SnapshotFilter {
-            entity_type: Some(entity_type),
-            entity_id: Some(id),
-            search: None,
-            month: None,
-        }
-    } else {
-        SnapshotFilter {
-            entity_type: Some(entity_type),
-            entity_id: Some(id),
-            search: form.search.clone(),
-            month: form.month.clone(),
-        }
-    };
+    if form.clear.is_some() {
+        filter.search = None;
+        filter.month = None;
+    }
 
-    let page_request = PageRequest::new(admin_page_size(&state).await, cursor);
-    let timezone = match state.db.load_site_settings().await {
-        Ok(settings) => settings.timezone,
-        Err(err) => {
-            return HttpError::new(
-                SOURCE,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to load settings",
-                err.to_string(),
-            )
-            .into_response();
-        }
-    };
-
-    let (page, month_counts) = match load_snapshots(&state, &filter, page_request).await {
-        Ok(res) => res,
-        Err(err) => return err,
-    };
-
-    let (entity_label, slug) = match entity.as_str() {
-        "posts" => ("Post", "posts"),
-        "pages" => ("Page", "pages"),
-        _ => return not_found(entity),
-    };
-
-    let content = build_content(
-        &filter,
-        page,
-        month_counts,
-        entity_label,
-        slug,
-        id,
-        timezone,
-        &cursor_state,
-    );
-
-    match (AdminSnapshotsPanelTemplate {
-        content: content.clone(),
-    })
-    .render()
-    {
-        Ok(html) => datastar_replace(PANEL, html).into_response(),
-        Err(err) => {
-            template_render_http_error(SOURCE, "Template rendering failed", err).into_response()
-        }
+    match build_snapshot_view(state, entity, id, filter, cursor_state, cursor).await {
+        Ok(content) => match (AdminSnapshotsPanelTemplate { content }).render() {
+            Ok(html) => datastar_replace(PANEL, html).into_response(),
+            Err(err) => {
+                template_render_http_error(SOURCE, "Template rendering failed", err).into_response()
+            }
+        },
+        Err(resp) => resp,
     }
 }
 
@@ -216,14 +262,6 @@ async fn load_snapshots(
         .await
         .map_err(snapshot_error)?;
     Ok((page, months))
-}
-
-fn entity_slug(label: &str) -> &'static str {
-    match label {
-        "Post" => "posts",
-        "Page" => "pages",
-        _ => "entities",
-    }
 }
 
 fn build_content(
@@ -354,24 +392,5 @@ fn snapshot_error(err: SnapshotServiceError) -> Response {
             "Snapshot not found".to_string(),
         )
         .into_response(),
-    }
-}
-
-fn not_found(entity: String) -> Response {
-    HttpError::new(
-        SOURCE,
-        StatusCode::NOT_FOUND,
-        "Unsupported entity",
-        format!("entity `{entity}` not supported"),
-    )
-    .into_response()
-}
-
-fn render_template_response<T: Template>(template: T) -> Response {
-    match template.render() {
-        Ok(html) => axum::response::Html(html).into_response(),
-        Err(err) => {
-            template_render_http_error(SOURCE, "Template rendering failed", err).into_response()
-        }
     }
 }

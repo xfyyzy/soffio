@@ -72,7 +72,7 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/posts/{id}/unpin", post(posts::admin_post_unpin))
         .route(
             "/posts/{id}/snapshots",
-            get(snapshots::admin_entity_snapshots).post(snapshots::admin_entity_snapshots_panel),
+            get(snapshots::admin_post_snapshots).post(snapshots::admin_post_snapshots_panel),
         )
         .route("/pages", get(pages::admin_pages))
         .route("/pages/panel", post(pages::admin_page_panel))
@@ -88,7 +88,7 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
         .route("/pages/{id}/archive", post(pages::admin_page_archive))
         .route(
             "/pages/{id}/snapshots",
-            get(snapshots::admin_entity_snapshots).post(snapshots::admin_entity_snapshots_panel),
+            get(snapshots::admin_page_snapshots).post(snapshots::admin_page_snapshots_panel),
         )
         .route("/jobs", get(jobs::admin_jobs))
         .route("/jobs/panel", post(jobs::admin_jobs_panel))
