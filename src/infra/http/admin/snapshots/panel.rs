@@ -42,7 +42,7 @@ pub struct SnapshotPanelForm {
 }
 
 #[derive(Clone, Copy)]
-enum SnapshotEntity {
+pub(super) enum SnapshotEntity {
     Post,
     Page,
 }
@@ -171,7 +171,7 @@ async fn render_snapshots_panel(
     }
 }
 
-async fn build_snapshot_view(
+pub(super) async fn build_snapshot_view(
     state: &AdminState,
     entity: SnapshotEntity,
     id: Uuid,
@@ -221,7 +221,7 @@ async fn admin_page_size(state: &AdminState) -> u32 {
     }
 }
 
-async fn load_snapshots(
+pub(super) async fn load_snapshots(
     state: &AdminState,
     filter: &SnapshotFilter,
     page: PageRequest<SnapshotCursor>,
@@ -239,7 +239,7 @@ async fn load_snapshots(
     Ok((page, months))
 }
 
-fn build_content(
+pub(super) fn build_content(
     filter: &SnapshotFilter,
     page: CursorPage<SnapshotRecord>,
     month_counts: Vec<SnapshotMonthCount>,
@@ -301,7 +301,7 @@ fn build_content(
     content
 }
 
-fn apply_pagination_links(
+pub(super) fn apply_pagination_links(
     content: &mut admin_views::AdminSnapshotListView,
     cursor_state: &CursorState,
 ) {

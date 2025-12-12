@@ -12,3 +12,6 @@ pub use new::{
 
 pub mod edit;
 pub use edit::{admin_snapshot_edit, admin_snapshot_update};
+
+pub mod actions;
+pub use actions::{admin_snapshot_delete, admin_snapshot_rollback};

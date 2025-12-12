@@ -99,6 +99,14 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
             get(snapshots::admin_page_snapshot_new).post(snapshots::admin_page_snapshot_create),
         )
         .route(
+            "/snapshots/{id}/rollback",
+            post(snapshots::admin_snapshot_rollback),
+        )
+        .route(
+            "/snapshots/{id}/delete",
+            post(snapshots::admin_snapshot_delete),
+        )
+        .route(
             "/snapshots/{id}/edit",
             get(snapshots::admin_snapshot_edit).post(snapshots::admin_snapshot_update),
         )

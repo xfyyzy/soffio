@@ -1,5 +1,6 @@
 ---
 source: tests/admin_panels.rs
+assertion_line: 147
 expression: rendered
 ---
 
@@ -94,6 +95,9 @@ expression: rendered
           <td data-role="publishable-actions">
               <div data-role="row-actions">
                 <a href="/pages/about/edit">Edit</a>
+                
+                <a href="/pages/321/snapshots">Snapshots</a>
+                
                 
                 
                 <form data-role="inline-form" method="post" action="/pages/321/draft"

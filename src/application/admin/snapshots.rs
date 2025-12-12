@@ -6,7 +6,6 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::application::error::AppError;
-use crate::application::jobs::invalidate_and_enqueue_warm;
 use crate::application::pagination::{CursorPage, PageRequest, SnapshotCursor};
 use crate::application::repos::{
     JobsRepo, RepoError, SnapshotFilter, SnapshotRecord, SnapshotsRepo,
@@ -31,9 +30,9 @@ pub enum SnapshotServiceError {
 #[derive(Clone)]
 pub struct AdminSnapshotService {
     repo: Arc<dyn SnapshotsRepo>,
-    jobs: Arc<dyn JobsRepo>,
-    cache: Arc<ResponseCache>,
-    debouncer: Arc<CacheWarmDebouncer>,
+    _jobs: Arc<dyn JobsRepo>,
+    _cache: Arc<ResponseCache>,
+    _debouncer: Arc<CacheWarmDebouncer>,
 }
 
 impl AdminSnapshotService {
@@ -45,9 +44,9 @@ impl AdminSnapshotService {
     ) -> Self {
         Self {
             repo,
-            jobs,
-            cache,
-            debouncer,
+            _jobs: jobs,
+            _cache: cache,
+            _debouncer: debouncer,
         }
     }
 
@@ -86,7 +85,7 @@ impl AdminSnapshotService {
 
     pub async fn rollback<E, ApplyFn, Fut>(
         &self,
-        actor: &str,
+        _actor: &str,
         snapshot_id: Uuid,
         apply: ApplyFn,
     ) -> Result<SnapshotRecord, SnapshotServiceError>
@@ -112,14 +111,6 @@ impl AdminSnapshotService {
         E::validate_snapshot(&payload)?;
 
         apply(payload).await?;
-
-        invalidate_and_enqueue_warm(
-            self.cache.as_ref(),
-            self.debouncer.as_ref(),
-            self.jobs.as_ref(),
-            Some(format!("snapshot.rollback:{}:{}", actor, snapshot.id)),
-        )
-        .await?;
 
         Ok(snapshot)
     }
@@ -169,6 +160,13 @@ impl AdminSnapshotService {
     ) -> Result<SnapshotRecord, SnapshotServiceError> {
         self.repo
             .update_description(id, description)
+            .await?
+            .ok_or(SnapshotServiceError::NotFound)
+    }
+
+    pub async fn delete(&self, id: Uuid) -> Result<SnapshotRecord, SnapshotServiceError> {
+        self.repo
+            .delete_snapshot(id)
             .await?
             .ok_or(SnapshotServiceError::NotFound)
     }
