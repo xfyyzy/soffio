@@ -1,14 +1,14 @@
 {% extends "admin/layouts/panel.html" %}
 
-{% block panel_id %}snapshot-new{% endblock %}
+{% block panel_id %}snapshot-editor{% endblock %}
 {% block panel_heading %}{{ content.heading }}{% endblock %}
 
 {% block panel_content %}
-    <form data-role="snapshot-create-form" method="post" action="{{ content.form_action }}"
+    <form data-role="snapshot-editor" method="post" action="{{ content.form_action }}"
       data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
       <label>
         <span>Version</span>
-        <input type="text" value="{{ content.next_version }}" disabled aria-disabled="true">
+        <input type="text" value="{{ content.version }}" disabled aria-disabled="true">
       </label>
       <label>
         <span>Description</span>

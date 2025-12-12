@@ -98,6 +98,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
             "/pages/{id}/snapshots/new",
             get(snapshots::admin_page_snapshot_new).post(snapshots::admin_page_snapshot_create),
         )
+        .route(
+            "/snapshots/{id}/edit",
+            get(snapshots::admin_snapshot_edit).post(snapshots::admin_snapshot_update),
+        )
         .route("/jobs", get(jobs::admin_jobs))
         .route("/jobs/panel", post(jobs::admin_jobs_panel))
         .route("/jobs/{id}", get(jobs::admin_job_detail))

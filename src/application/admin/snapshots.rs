@@ -161,4 +161,15 @@ impl AdminSnapshotService {
 
         Ok(next)
     }
+
+    pub async fn update_description(
+        &self,
+        id: Uuid,
+        description: Option<String>,
+    ) -> Result<SnapshotRecord, SnapshotServiceError> {
+        self.repo
+            .update_description(id, description)
+            .await?
+            .ok_or(SnapshotServiceError::NotFound)
+    }
 }

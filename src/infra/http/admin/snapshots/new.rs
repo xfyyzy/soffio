@@ -89,7 +89,7 @@ async fn render_form(state: &AdminState, entity: Entity, id: Uuid) -> Response {
         Err(err) => return err.into_response(),
     };
 
-    let next_version = match state.snapshots.next_version(entity.kind(), id).await {
+    let version = match state.snapshots.next_version(entity.kind(), id).await {
         Ok(version) => version,
         Err(err) => {
             return HttpError::new(
@@ -102,12 +102,12 @@ async fn render_form(state: &AdminState, entity: Entity, id: Uuid) -> Response {
         }
     };
 
-    let view = admin_views::AdminSnapshotNewView {
+    let view = admin_views::AdminSnapshotEditorView {
         heading: format!("New {} Snapshot", entity.label()),
         entity_label: entity.label().to_string(),
         form_action: format!("/{}/{}/snapshots/new", entity.slug(), id),
         back_href: format!("/{}/{}/snapshots", entity.slug(), id),
-        next_version,
+        version,
         description: None,
         submit_label: "Create Snapshot".to_string(),
     };
