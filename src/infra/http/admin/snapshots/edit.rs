@@ -89,7 +89,13 @@ pub async fn admin_snapshot_update(
     };
 
     let mut stream = datastar_replace("[data-role=\"panel\"]", panel_html);
-    if let Err(err) = push_toasts(&mut stream, &[Toast::success("Snapshot saved")]) {
+    if let Err(err) = push_toasts(
+        &mut stream,
+        &[Toast::success(format!(
+            "Saved snapshot v{}",
+            record.version
+        ))],
+    ) {
         return err.into_response();
     }
 
