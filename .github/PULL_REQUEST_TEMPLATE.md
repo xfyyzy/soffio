@@ -1,29 +1,29 @@
 # PR Checklist
 
-感谢你的贡献！请确认以下事项：
+Thank you for your contribution! Please confirm the following:
 
-## 类型
-- [ ] Bug 修复
-- [ ] 新功能
-- [ ] 重构 / 清理
-- [ ] 文档
-- [ ] 其他（请说明）：<!-- 填写 -->
+## Type
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Refactor / cleanup
+- [ ] Documentation
+- [ ] Other (please specify): <!-- fill in -->
 
-## 描述
-<!-- 简要说明改动目的、背景以及对用户/系统的影响。 -->
+## Description
+<!-- Briefly describe the purpose, context, and impact on users/system. -->
 
-## 验证
+## Verification
 - [ ] `cargo fmt --all -- --check`
 - [ ] `cargo check --workspace --all-targets`
 - [ ] `cargo clippy --workspace --all-targets -- -D warnings`
 - [ ] `cargo test --workspace --all-targets -- --nocapture`
-- [ ] 其他验证（请列出）：<!-- 可选 -->
+- [ ] Other verification (list): <!-- optional -->
 
-## 风险与迁移
-- 相关配置/环境变量变更：
-- 数据库迁移：
-- 受影响的缓存或后台任务：
+## Risk & Migration
+- Related config/env changes:
+- Database migrations:
+- Affected caches or background jobs:
 
-## 关联
-- Issue / 讨论链接：
-- 文档更新：<!-- 如无请写 N/A -->
+## Links
+- Issue / discussion link:
+- Documentation updates: <!-- write N/A if none -->

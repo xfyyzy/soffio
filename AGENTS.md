@@ -139,6 +139,7 @@ Use a single atomic commit when possible. Use the template in §9.
 
 - Always identify and label Breaking changes in `CHANGELOG.md`.
 - Default behavior: log every codebase-related change under **Unreleased** (in the same commit as the code change or in a dedicated changelog commit).
+- Changelog entries must describe user-visible experience or behavior changes, not internal technical details.
 - Release flow (run **only when the user explicitly asks to publish**):
   1) Bump version in `Cargo.toml` to the user-specified value.
  2) Run the full gate (fmt, clippy, tests, etc.) with the env vars in §0.8; accept snapshot diffs caused by the version bump.
