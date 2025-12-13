@@ -1,13 +1,17 @@
+use askama::Template;
 use axum::{
     extract::{Form, Path, State},
     http::StatusCode,
-    response::{IntoResponse, Redirect, Response},
+    response::{IntoResponse, Response},
 };
 use uuid::Uuid;
 
 use crate::application::{admin::snapshots::SnapshotServiceError, error::HttpError};
 use crate::domain::types::SnapshotEntityType;
-use crate::infra::http::admin::{AdminState, shared::blank_to_none_opt};
+use crate::infra::http::admin::{
+    AdminState,
+    shared::{Toast, blank_to_none_opt, datastar_replace, push_toasts, template_render_http_error},
+};
 use crate::presentation::{admin::views as admin_views, views::render_template_response};
 
 #[derive(Debug, serde::Deserialize)]
@@ -68,7 +72,28 @@ pub async fn admin_snapshot_update(
         Err(err) => return map_error(err),
     };
 
-    Redirect::to(&format!("/snapshots/{}/edit", record.id)).into_response()
+    let panel_html = match (admin_views::AdminSnapshotEditorPanelTemplate {
+        content: build_editor_view(&record),
+    })
+    .render()
+    {
+        Ok(html) => html,
+        Err(err) => {
+            return template_render_http_error(
+                "infra::http::admin::snapshots::update",
+                "Template rendering failed",
+                err,
+            )
+            .into_response();
+        }
+    };
+
+    let mut stream = datastar_replace("[data-role=\"panel\"]", panel_html);
+    if let Err(err) = push_toasts(&mut stream, &[Toast::success("Snapshot saved")]) {
+        return err.into_response();
+    }
+
+    stream.into_response()
 }
 
 pub(super) fn build_editor_view(
