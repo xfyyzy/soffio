@@ -96,30 +96,39 @@ async fn handle_action(
         Action::Delete => format!("Deleted snapshot v{}", snapshot.version),
     };
 
-    let result = match action {
+    let page_request = PageRequest::new(admin_page_size(&state).await, cursor);
+    let panel_result = match action {
         Action::Rollback => {
             do_rollback(&state, actor, id, snapshot.entity_type, snapshot.entity_id).await
         }
         Action::Delete => state.snapshots.delete(id).await.map(|_| ()),
     };
 
-    if let Err(err) = result {
-        return map_error(err);
+    match panel_result {
+        Ok(()) => {
+            load_panel(
+                &state,
+                &filter,
+                cursor_state,
+                page_request,
+                &success_message,
+                None,
+            )
+            .await
+        }
+        Err(err) => {
+            load_panel(
+                &state,
+                &filter,
+                cursor_state,
+                page_request,
+                &success_message,
+                Some(err),
+            )
+            .await
+        }
     }
-
-    let page_request = PageRequest::new(admin_page_size(&state).await, cursor);
-    match load_panel(
-        &state,
-        &filter,
-        cursor_state,
-        page_request,
-        &success_message,
-    )
-    .await
-    {
-        Ok(resp) => resp,
-        Err(resp) => resp,
-    }
+    .unwrap_or_else(|resp| resp)
 }
 
 async fn do_rollback(
@@ -198,7 +207,8 @@ async fn load_panel(
     filter: &SnapshotFilter,
     cursor_state: CursorState,
     page: PageRequest<SnapshotCursor>,
-    message: &str,
+    success_message: &str,
+    error: Option<SnapshotServiceError>,
 ) -> Result<Response, Response> {
     let timezone = match state.db.load_site_settings().await {
         Ok(settings) => settings.timezone,
@@ -234,7 +244,11 @@ async fn load_panel(
     match (admin_views::AdminSnapshotsPanelTemplate { content }).render() {
         Ok(html) => {
             let mut stream = datastar_replace(PANEL, html);
-            if let Err(err) = push_toasts(&mut stream, &[Toast::success(message)]) {
+            let toasts = match error {
+                None => vec![Toast::success(success_message.to_string())],
+                Some(err) => vec![Toast::error(error_to_message(&err))],
+            };
+            if let Err(err) = push_toasts(&mut stream, &toasts) {
                 return Err(err.into_response());
             }
             Ok(stream.into_response())
@@ -242,6 +256,15 @@ async fn load_panel(
         Err(err) => Err(
             template_render_http_error(SOURCE, "Template rendering failed", err).into_response(),
         ),
+    }
+}
+
+fn error_to_message(err: &SnapshotServiceError) -> String {
+    match err {
+        SnapshotServiceError::NotFound => "Snapshot not found".to_string(),
+        SnapshotServiceError::Snapshot(inner) => format!("Snapshot validation failed: {}", inner),
+        SnapshotServiceError::Repo(repo) => format!("Snapshot repository error: {}", repo),
+        SnapshotServiceError::App(app) => format!("Snapshot error: {}", app),
     }
 }
 
@@ -263,40 +286,6 @@ fn entity_label(entity_type: SnapshotEntityType) -> &'static str {
     match entity_type {
         SnapshotEntityType::Post => "Post",
         SnapshotEntityType::Page => "Page",
-    }
-}
-
-fn map_error(err: SnapshotServiceError) -> Response {
-    use SnapshotServiceError::*;
-    match err {
-        NotFound => HttpError::new(
-            SOURCE,
-            StatusCode::NOT_FOUND,
-            "Snapshot not found",
-            "Snapshot not found".to_string(),
-        )
-        .into_response(),
-        Snapshot(inner) => HttpError::new(
-            SOURCE,
-            StatusCode::BAD_REQUEST,
-            "Snapshot validation failed",
-            inner.to_string(),
-        )
-        .into_response(),
-        Repo(repo) => HttpError::new(
-            SOURCE,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Snapshot repository error",
-            repo.to_string(),
-        )
-        .into_response(),
-        App(app) => HttpError::new(
-            SOURCE,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Snapshot error",
-            app.to_string(),
-        )
-        .into_response(),
     }
 }
 

@@ -72,8 +72,27 @@ pub async fn admin_snapshot_update(
         Err(err) => return map_error(err),
     };
 
+    render_editor_and_panel_stream(&record)
+}
+
+pub(super) fn build_editor_view(
+    record: &crate::application::repos::SnapshotRecord,
+) -> admin_views::AdminSnapshotEditorView {
+    let entity_slug = entity_slug(record.entity_type);
+    admin_views::AdminSnapshotEditorView {
+        heading: "Edit Snapshot".to_string(),
+        entity_label: entity_label(record.entity_type).to_string(),
+        form_action: format!("/snapshots/{}/edit", record.id),
+        back_href: format!("/{}/{}/snapshots", entity_slug, record.entity_id),
+        version: record.version,
+        description: record.description.clone(),
+        submit_label: "Save Changes".to_string(),
+    }
+}
+
+fn render_editor_and_panel_stream(record: &crate::application::repos::SnapshotRecord) -> Response {
     let panel_html = match (admin_views::AdminSnapshotEditorPanelTemplate {
-        content: build_editor_view(&record),
+        content: build_editor_view(record),
     })
     .render()
     {
@@ -100,21 +119,6 @@ pub async fn admin_snapshot_update(
     }
 
     stream.into_response()
-}
-
-pub(super) fn build_editor_view(
-    record: &crate::application::repos::SnapshotRecord,
-) -> admin_views::AdminSnapshotEditorView {
-    let entity_slug = entity_slug(record.entity_type);
-    admin_views::AdminSnapshotEditorView {
-        heading: "Edit Snapshot".to_string(),
-        entity_label: entity_label(record.entity_type).to_string(),
-        form_action: format!("/snapshots/{}/edit", record.id),
-        back_href: format!("/{}/{}/snapshots", entity_slug, record.entity_id),
-        version: record.version,
-        description: record.description.clone(),
-        submit_label: "Save Changes".to_string(),
-    }
 }
 
 fn map_error(err: SnapshotServiceError) -> Response {
