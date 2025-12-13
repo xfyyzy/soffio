@@ -261,16 +261,17 @@ impl SnapshotsRepo for PostgresRepositories {
         id: Uuid,
         description: Option<String>,
     ) -> Result<Option<SnapshotRecord>, RepoError> {
-        let row: Option<SnapshotRow> = sqlx::query_as::<_, SnapshotRow>(
+        let row: Option<SnapshotRow> = sqlx::query_as!(
+            SnapshotRow,
             r#"
             UPDATE snapshots
             SET description = $2
             WHERE id = $1
             RETURNING id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_at
             "#,
+            id,
+            description
         )
-        .bind(id)
-        .bind(description)
         .fetch_optional(self.pool())
         .await
         .map_err(map_sqlx_error)?;
@@ -279,14 +280,15 @@ impl SnapshotsRepo for PostgresRepositories {
     }
 
     async fn delete_snapshot(&self, id: Uuid) -> Result<Option<SnapshotRecord>, RepoError> {
-        let row: Option<SnapshotRow> = sqlx::query_as::<_, SnapshotRow>(
+        let row: Option<SnapshotRow> = sqlx::query_as!(
+            SnapshotRow,
             r#"
             DELETE FROM snapshots
             WHERE id = $1
             RETURNING id, entity_type AS "entity_type: SnapshotEntityType", entity_id, version, description, schema_version, content, created_at
             "#,
+            id
         )
-        .bind(id)
         .fetch_optional(self.pool())
         .await
         .map_err(map_sqlx_error)?;
