@@ -153,6 +153,33 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
   min-width: 11rem;
 }
 
+[data-column="snapshot-version"] {
+  width: 7ch;
+  min-width: 7ch;
+  max-width: 8ch;
+  white-space: nowrap;
+}
+
+[data-column="snapshot-description"] {
+  width: 22rem;
+  max-width: 26rem;
+}
+
+[data-column="snapshot-description"] span {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-column="snapshot-created"] {
+  width: 20ch;
+  min-width: 18ch;
+  max-width: 22ch;
+  white-space: nowrap;
+}
+
 /* UUID column: Full UUID is 36 characters, needs wider width */
 [data-column="uuid"] {
   width: 38ch;

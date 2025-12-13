@@ -18,26 +18,26 @@
     <table data-role="publishable-table">
       <thead>
         <tr>
-          <th scope="col">Version</th>
-          <th scope="col">Description</th>
-          <th scope="col">Created At</th>
+          <th scope="col" data-column="snapshot-version">Version</th>
+          <th scope="col" data-column="snapshot-description">Description</th>
+          <th scope="col" data-column="snapshot-created">Created At</th>
           <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for item in content.snapshots %}
         <tr data-role="snapshot-row" data-snapshot-id="{{ item.id }}">
-          <td>
+          <td data-column="snapshot-version">
             <a href="{{ item.preview_href }}" target="_blank" rel="noopener">v{{ item.version }}</a>
           </td>
-          <td>
+          <td data-column="snapshot-description">
             {% if let Some(desc) = &item.description %}
-            {{ desc }}
+            <span title="{{ desc }}">{{ desc }}</span>
             {% else %}
             <span data-role="muted">—</span>
             {% endif %}
           </td>
-          <td>{{ item.created_at }}</td>
+          <td data-column="snapshot-created">{{ item.created_at }}</td>
           <td data-role="publishable-actions">
             <div data-role="row-actions">
               <a href="{{ item.edit_href }}">Edit</a>
