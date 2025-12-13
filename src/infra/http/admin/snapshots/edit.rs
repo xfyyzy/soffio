@@ -47,15 +47,7 @@ pub async fn admin_snapshot_edit(
         Err(err) => return err.into_response(),
     };
 
-    let view = admin_views::AdminSnapshotEditorView {
-        heading: "Edit Snapshot".to_string(),
-        entity_label: entity_label(record.entity_type).to_string(),
-        form_action: format!("/snapshots/{}/edit", record.id),
-        back_href: format!("/{}/{}/snapshots", entity_slug, record.entity_id),
-        version: record.version,
-        description: record.description.clone(),
-        submit_label: "Save Changes".to_string(),
-    };
+    let view = build_editor_view(&record);
 
     let layout = admin_views::AdminLayout::new(chrome, view);
     render_template_response(
@@ -77,6 +69,21 @@ pub async fn admin_snapshot_update(
     };
 
     Redirect::to(&format!("/snapshots/{}/edit", record.id)).into_response()
+}
+
+pub(super) fn build_editor_view(
+    record: &crate::application::repos::SnapshotRecord,
+) -> admin_views::AdminSnapshotEditorView {
+    let entity_slug = entity_slug(record.entity_type);
+    admin_views::AdminSnapshotEditorView {
+        heading: "Edit Snapshot".to_string(),
+        entity_label: entity_label(record.entity_type).to_string(),
+        form_action: format!("/snapshots/{}/edit", record.id),
+        back_href: format!("/{}/{}/snapshots", entity_slug, record.entity_id),
+        version: record.version,
+        description: record.description.clone(),
+        submit_label: "Save Changes".to_string(),
+    }
 }
 
 fn map_error(err: SnapshotServiceError) -> Response {

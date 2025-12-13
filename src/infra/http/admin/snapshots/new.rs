@@ -1,7 +1,7 @@
 use axum::{
     extract::{Form, Path, State},
     http::StatusCode,
-    response::{IntoResponse, Redirect, Response},
+    response::{IntoResponse, Response},
 };
 use uuid::Uuid;
 
@@ -14,9 +14,13 @@ use crate::{
         },
         error::HttpError,
     },
-    infra::http::admin::{AdminState, shared::blank_to_none_opt},
+    infra::http::admin::{
+        AdminState,
+        shared::{Toast, blank_to_none_opt, datastar_replace, push_toasts},
+    },
     presentation::{admin::views as admin_views, views::render_template_response},
 };
+use askama::Template;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SnapshotCreateForm {
@@ -166,7 +170,10 @@ async fn create_snapshot(
     };
 
     match result {
-        Ok(record) => Redirect::to(&format!("/snapshots/{}/edit", record.id)).into_response(),
+        Ok(record) => match render_editor_stream(state, record) {
+            Ok(resp) => resp,
+            Err(err) => err.into_response(),
+        },
         Err(err) => map_error(err),
     }
 }
@@ -203,4 +210,37 @@ fn map_error(err: SnapshotServiceError) -> Response {
         )
         .into_response(),
     }
+}
+
+fn render_editor_stream(
+    _state: &AdminState,
+    record: crate::application::repos::SnapshotRecord,
+) -> Result<Response, HttpError> {
+    let panel_html = match (admin_views::AdminSnapshotEditorPanelTemplate {
+        content: super::edit::build_editor_view(&record),
+    })
+    .render()
+    {
+        Ok(html) => html,
+        Err(err) => {
+            return Err(HttpError::new(
+                "infra::http::admin::snapshots::create",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Template rendering failed",
+                err.to_string(),
+            ));
+        }
+    };
+
+    let mut stream = datastar_replace("[data-role=\"panel\"]", panel_html);
+    if let Err(err) = push_toasts(&mut stream, &[Toast::success("Snapshot created")]) {
+        return Err(err);
+    }
+
+    stream.push_script(format!(
+        "window.history.replaceState(null, '', '/snapshots/{}/edit');",
+        record.id
+    ));
+
+    Ok(stream.into_response())
 }
