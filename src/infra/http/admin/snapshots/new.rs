@@ -233,15 +233,13 @@ fn render_editor_stream(
     };
 
     let mut stream = datastar_replace("[data-role=\"panel\"]", panel_html);
-    if let Err(err) = push_toasts(
+    push_toasts(
         &mut stream,
         &[Toast::success(format!(
             "Created snapshot v{}",
             record.version
         ))],
-    ) {
-        return Err(err);
-    }
+    )?;
 
     stream.push_script(format!(
         "window.history.replaceState(null, '', '/snapshots/{}/edit');",

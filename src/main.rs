@@ -42,6 +42,7 @@ use soffio::{
             TagsRepo, TagsWriteRepo, UploadsRepo,
         },
         site,
+        snapshot_preview::SnapshotPreviewService,
     },
     config,
     domain::entities::{PageRecord, PostRecord},
@@ -353,6 +354,11 @@ fn build_application_context(
         audit_service.clone(),
     ));
     let admin_snapshot_service = Arc::new(AdminSnapshotService::new(snapshots_repo.clone()));
+    let snapshot_preview_service = Arc::new(SnapshotPreviewService::new(
+        snapshots_repo.clone(),
+        tags_repo.clone(),
+        settings_repo.clone(),
+    ));
     let admin_audit_service = Arc::new(audit_service);
     let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
 
@@ -364,6 +370,7 @@ fn build_application_context(
         cache_warm_debouncer: cache_warm_debouncer.clone(),
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
+        snapshot_preview: snapshot_preview_service.clone(),
     };
 
     let admin_state = AdminState {
@@ -424,6 +431,7 @@ fn build_application_context(
         cache_warm_debouncer: cache_warm_debouncer.clone(),
         feed: feed_service_jobs,
         pages: page_service_jobs,
+        snapshot_preview: snapshot_preview_service.clone(),
         chrome: chrome_service_jobs,
         upload_storage,
         render_mailbox,

@@ -31,7 +31,7 @@ use soffio::application::repos::{
 use soffio::domain::api_keys::ApiScope;
 use soffio::domain::entities::{JobRecord, UploadRecord};
 use soffio::domain::types::JobState;
-use soffio::infra::cache::{CacheWarmDebouncer, ResponseCache};
+use soffio::infra::cache::ResponseCache;
 use soffio::infra::db::PostgresRepositories;
 use soffio::infra::http::api::handlers;
 use soffio::infra::http::api::models::*;

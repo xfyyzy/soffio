@@ -94,6 +94,7 @@ pub async fn process_cache_warm_job(
         cache_warm_debouncer: ctx.cache_warm_debouncer.clone(),
         db: ctx.repositories.clone(),
         upload_storage: ctx.upload_storage.clone(),
+        snapshot_preview: ctx.snapshot_preview.clone(),
     };
 
     if let Err(err) = CacheWarmer::new(state).warm_initial().await {

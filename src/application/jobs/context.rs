@@ -6,6 +6,7 @@ use crate::{
     application::render::{InFlightRenders, RenderMailbox},
     application::{
         chrome::ChromeService, feed::FeedService, page::PageService, render::ComrakRenderService,
+        snapshot_preview::SnapshotPreviewService,
     },
     infra::{
         cache::{CacheWarmDebouncer, ResponseCache},
@@ -25,6 +26,7 @@ pub struct JobWorkerContext {
     pub cache_warm_debouncer: Arc<CacheWarmDebouncer>,
     pub feed: Arc<FeedService>,
     pub pages: Arc<PageService>,
+    pub snapshot_preview: Arc<SnapshotPreviewService>,
     pub chrome: Arc<ChromeService>,
     pub upload_storage: Arc<UploadStorage>,
     pub render_mailbox: RenderMailbox,

@@ -27,7 +27,9 @@
       <tbody>
         {% for item in content.snapshots %}
         <tr data-role="snapshot-row" data-snapshot-id="{{ item.id }}">
-          <td>{{ item.version }}</td>
+          <td>
+            <a href="{{ item.preview_href }}" target="_blank" rel="noopener">v{{ item.version }}</a>
+          </td>
           <td>
             {% if let Some(desc) = &item.description %}
             {{ desc }}

@@ -24,6 +24,7 @@ use crate::{
         error::HttpError,
         feed::{self, FeedError, FeedFilter, FeedService},
         page::PageService,
+        snapshot_preview::SnapshotPreviewService,
     },
     infra::{
         cache::{ResponseCache, SeoKey},
@@ -57,6 +58,7 @@ pub struct HttpState {
     pub cache_warm_debouncer: Arc<CacheWarmDebouncer>,
     pub db: Arc<PostgresRepositories>,
     pub upload_storage: Arc<UploadStorage>,
+    pub snapshot_preview: Arc<SnapshotPreviewService>,
 }
 
 pub fn build_router(state: RouterState) -> Router<RouterState> {
@@ -78,6 +80,8 @@ pub fn build_router(state: RouterState) -> Router<RouterState> {
     let static_routes = Router::new()
         .route("/posts/_preview/{id}", get(post_preview))
         .route("/pages/_preview/{id}", get(page_preview))
+        .route("/posts/_preview/snapshot/{id}", get(post_snapshot_preview))
+        .route("/pages/_preview/snapshot/{id}", get(page_snapshot_preview))
         .route("/_health/db", get(public_health))
         .route("/sitemap.xml", get(sitemap))
         .route("/rss.xml", get(rss_feed))
@@ -344,6 +348,65 @@ async fn page_preview(State(state): State<HttpState>, Path(id): Path<Uuid>) -> R
         Ok(None) => render_not_found_response(chrome),
         Err(err) => err.into_response(),
     }
+}
+
+async fn post_snapshot_preview(State(state): State<HttpState>, Path(id): Path<Uuid>) -> Response {
+    let chrome = match state.chrome.load().await {
+        Ok(chrome) => chrome,
+        Err(err) => return err.into_response(),
+    };
+
+    match state.snapshot_preview.post_snapshot_view(id).await {
+        Ok(Some(content)) => {
+            let canonical = canonical_url(
+                &chrome.meta.canonical,
+                &format!("/posts/_preview/snapshot/{id}"),
+            );
+            let meta = post_meta(&chrome, &content, canonical);
+            let mut response = render_template_response(
+                PostTemplate {
+                    view: LayoutContext::new(chrome.clone().with_meta(meta), content),
+                },
+                StatusCode::OK,
+            );
+            set_no_store(&mut response);
+            response
+        }
+        Ok(None) => render_not_found_response(chrome),
+        Err(err) => err.into_response(),
+    }
+}
+
+async fn page_snapshot_preview(State(state): State<HttpState>, Path(id): Path<Uuid>) -> Response {
+    let chrome = match state.chrome.load().await {
+        Ok(chrome) => chrome,
+        Err(err) => return err.into_response(),
+    };
+
+    match state.snapshot_preview.page_snapshot_view(id).await {
+        Ok(Some(content)) => {
+            let canonical = canonical_url(
+                &chrome.meta.canonical,
+                &format!("/pages/_preview/snapshot/{id}"),
+            );
+            let meta = page_meta(&chrome, &content, canonical);
+            let mut response = render_template_response(
+                PageTemplate {
+                    view: LayoutContext::new(chrome.clone().with_meta(meta), content),
+                },
+                StatusCode::OK,
+            );
+            set_no_store(&mut response);
+            response
+        }
+        Ok(None) => render_not_found_response(chrome),
+        Err(err) => err.into_response(),
+    }
+}
+
+fn set_no_store(response: &mut Response) {
+    let value = HeaderValue::from_static("no-store");
+    response.headers_mut().insert(CACHE_CONTROL, value);
 }
 
 async fn fallback_router(State(state): State<HttpState>, request: Request<Body>) -> Response {

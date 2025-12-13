@@ -210,8 +210,8 @@ async fn load_panel(
     success_message: &str,
     error: Option<SnapshotServiceError>,
 ) -> Result<Response, Response> {
-    let timezone = match state.db.load_site_settings().await {
-        Ok(settings) => settings.timezone,
+    let settings = match state.db.load_site_settings().await {
+        Ok(settings) => settings,
         Err(err) => {
             return Err(HttpError::new(
                 SOURCE,
@@ -228,16 +228,19 @@ async fn load_panel(
         Err(err) => return Err(err),
     };
 
-    let mut content = super::panel::build_content(
+    let timezone = settings.timezone;
+    let public_site_url = super::panel::normalize_public_site_url(&settings.public_site_url);
+
+    let meta = super::panel::SnapshotContentMeta {
         filter,
-        page,
-        month_counts,
-        entity_label(filter.entity_type.unwrap()),
-        entity_slug(filter.entity_type.unwrap()),
-        filter.entity_id.unwrap(),
+        entity_label: entity_label(filter.entity_type.unwrap()),
+        entity_slug: entity_slug(filter.entity_type.unwrap()),
+        entity_id: filter.entity_id.unwrap(),
         timezone,
-        &cursor_state,
-    );
+        public_site_url: &public_site_url,
+    };
+
+    let mut content = super::panel::build_content(meta, page, month_counts);
 
     super::panel::apply_pagination_links(&mut content, &cursor_state);
 

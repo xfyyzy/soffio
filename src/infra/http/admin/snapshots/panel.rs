@@ -181,8 +181,8 @@ pub(super) async fn build_snapshot_view(
 ) -> Result<admin_views::AdminSnapshotListView, Response> {
     let page_request = PageRequest::new(admin_page_size(state).await, cursor);
 
-    let timezone = match state.db.load_site_settings().await {
-        Ok(settings) => settings.timezone,
+    let settings = match state.db.load_site_settings().await {
+        Ok(settings) => settings,
         Err(err) => {
             return Err(HttpError::new(
                 SOURCE,
@@ -193,22 +193,24 @@ pub(super) async fn build_snapshot_view(
             .into_response());
         }
     };
+    let timezone = settings.timezone;
+    let public_site_url = normalize_public_site_url(&settings.public_site_url);
 
     let (page, month_counts) = match load_snapshots(state, &filter, page_request).await {
         Ok(res) => res,
         Err(err) => return Err(err),
     };
 
-    let mut content = build_content(
-        &filter,
-        page,
-        month_counts,
-        entity.label(),
-        entity.slug(),
-        id,
+    let meta = SnapshotContentMeta {
+        filter: &filter,
+        entity_label: entity.label(),
+        entity_slug: entity.slug(),
+        entity_id: id,
         timezone,
-        &cursor_state,
-    );
+        public_site_url: &public_site_url,
+    };
+
+    let mut content = build_content(meta, page, month_counts);
 
     apply_pagination_links(&mut content, &cursor_state);
     Ok(content)
@@ -239,15 +241,19 @@ pub(super) async fn load_snapshots(
     Ok((page, months))
 }
 
+pub(super) struct SnapshotContentMeta<'a> {
+    pub filter: &'a SnapshotFilter,
+    pub entity_label: &'a str,
+    pub entity_slug: &'a str,
+    pub entity_id: Uuid,
+    pub timezone: chrono_tz::Tz,
+    pub public_site_url: &'a str,
+}
+
 pub(super) fn build_content(
-    filter: &SnapshotFilter,
+    meta: SnapshotContentMeta<'_>,
     page: CursorPage<SnapshotRecord>,
     month_counts: Vec<SnapshotMonthCount>,
-    entity_label: &str,
-    entity_slug: &str,
-    id: Uuid,
-    timezone: chrono_tz::Tz,
-    cursor_state: &CursorState,
 ) -> admin_views::AdminSnapshotListView {
     let rows = page
         .items
@@ -256,7 +262,11 @@ pub(super) fn build_content(
             id: record.id.to_string(),
             version: record.version,
             description: record.description.clone(),
-            created_at: admin_views::format_timestamp(record.created_at, timezone),
+            created_at: admin_views::format_timestamp(record.created_at, meta.timezone),
+            preview_href: format!(
+                "{}{}/_preview/snapshot/{}",
+                meta.public_site_url, meta.entity_slug, record.id
+            ),
             edit_href: format!("/snapshots/{}/edit", record.id),
             rollback_action: format!("/snapshots/{}/rollback", record.id),
             delete_action: format!("/snapshots/{}/delete", record.id),
@@ -272,12 +282,12 @@ pub(super) fn build_content(
         })
         .collect();
 
-    let mut content = admin_views::AdminSnapshotListView {
-        heading: format!("{entity_label} Snapshots"),
-        entity_label: entity_label.to_string(),
-        filter_search: filter.search.clone(),
+    admin_views::AdminSnapshotListView {
+        heading: format!("{} Snapshots", meta.entity_label),
+        entity_label: meta.entity_label.to_string(),
+        filter_search: meta.filter.search.clone(),
         filter_tag: None,
-        filter_month: filter.month.clone(),
+        filter_month: meta.filter.month.clone(),
         month_options,
         tag_options: Vec::new(),
         tag_filter_label: "Tag".to_string(),
@@ -286,8 +296,8 @@ pub(super) fn build_content(
         tag_filter_enabled: false,
         month_filter_enabled: true,
         snapshots: rows,
-        new_snapshot_href: format!("/{entity_slug}/{id}/snapshots/new"),
-        panel_action: format!("/{entity_slug}/{id}/snapshots"),
+        new_snapshot_href: format!("/{}/{}/snapshots/new", meta.entity_slug, meta.entity_id),
+        panel_action: format!("/{}/{}/snapshots", meta.entity_slug, meta.entity_id),
         next_cursor: page.next_cursor,
         cursor_param: None,
         trail: None,
@@ -295,10 +305,15 @@ pub(super) fn build_content(
         next_page_state: None,
         custom_hidden_fields: Vec::new(),
         active_status_key: None,
-    };
+    }
+}
 
-    apply_pagination_links(&mut content, cursor_state);
-    content
+pub(super) fn normalize_public_site_url(url: &str) -> String {
+    if url.ends_with('/') {
+        url.to_string()
+    } else {
+        format!("{url}/")
+    }
 }
 
 pub(super) fn apply_pagination_links(

@@ -731,6 +731,7 @@ pub struct AdminSnapshotRowView {
     pub version: i32,
     pub description: Option<String>,
     pub created_at: String,
+    pub preview_href: String,
     pub edit_href: String,
     pub rollback_action: String,
     pub delete_action: String,
