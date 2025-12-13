@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.14] - 2025-12-13
+
 ### Added
 - Snapshots for posts and pages: admin list/preview/create/rollback UI plus API/CLI endpoints (`/api/v1/snapshots` list/get/create/rollback) gated by new `snapshot_read` / `snapshot_write` scopes. Seeded “all” API key includes the new scopes so existing automation keeps working.
 - Snapshot previews now render and validate saved content for posts and pages, matching the live view before rollback or publish.
