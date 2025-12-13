@@ -141,6 +141,15 @@ pub fn build_api_router(state: RouterState) -> Router<RouterState> {
         )
         .route("/api/v1/jobs", get(handlers::list_jobs))
         .route("/api/v1/audit", get(handlers::list_audit_logs))
+        .route(
+            "/api/v1/snapshots",
+            get(handlers::list_snapshots).post(handlers::create_snapshot),
+        )
+        .route("/api/v1/snapshots/{id}", get(handlers::get_snapshot))
+        .route(
+            "/api/v1/snapshots/{id}/rollback",
+            post(handlers::rollback_snapshot),
+        )
         .with_state(state)
         // Order matters: layers run in reverse order (last added = first to run on request).
         // Cache invalidation + async warming runs first on the response (after all handlers complete).

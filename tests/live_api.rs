@@ -8,7 +8,8 @@ use chrono::Utc;
 use reqwest::{Client, Method, StatusCode, multipart};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{collections::HashSet, fs, path::Path, time::Duration};
+use std::{collections::HashSet, fs, path::Path, process::Command, time::Duration};
+use tokio::task::spawn_blocking;
 
 type TestResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -901,6 +902,228 @@ async fn live_api_end_to_end() -> TestResult<()> {
     Ok(())
 }
 
+/// Live coverage for snapshot APIs: create → list → get → rollback.
+#[tokio::test]
+#[ignore]
+async fn live_api_snapshots_cover_flow() -> TestResult<()> {
+    let config = load_config()?;
+    let client = Client::builder().build()?;
+    let base = config.base_url.trim_end_matches('/').to_string();
+
+    // Ensure the seeded "all" key actually carries snapshot scopes; fail fast if not.
+    let key_info = get_json(
+        &client,
+        &base,
+        &config.keys.all,
+        "/api/v1/api-keys/me",
+        &[StatusCode::OK],
+    )
+    .await?;
+    let scopes: Vec<String> = key_info
+        .get("scopes")
+        .and_then(Value::as_array)
+        .map(|arr| {
+            arr.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    assert!(
+        scopes.contains(&"snapshot_read".to_string())
+            && scopes.contains(&"snapshot_write".to_string()),
+        "Seeded api-keys must include snapshot scopes for live snapshot test"
+    );
+
+    let suf = current_suffix();
+    let original_title = format!("Live Snapshot Post {suf}");
+    let original_excerpt = "snapshot excerpt";
+    let original_body = format!("# Snapshot Body {suf}\n\nOriginal content.");
+
+    // Create a post we can snapshot and mutate.
+    let (post_id, post_slug) = post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        "/api/v1/posts",
+        &[StatusCode::CREATED],
+        json!({
+            "title": original_title,
+            "excerpt": original_excerpt,
+            "body_markdown": original_body,
+        }),
+    )
+    .await?;
+
+    // Create snapshot (positive) and ensure it shows up in list/get with proper auth.
+    let (snapshot_id, _) = post_json(
+        &client,
+        &base,
+        &config.keys.all,
+        "/api/v1/snapshots",
+        &[StatusCode::CREATED],
+        json!({
+            "entity_type": "post",
+            "entity_id": post_id,
+            "description": "live snapshot coverage",
+        }),
+    )
+    .await?;
+    assert!(
+        !snapshot_id.is_empty(),
+        "snapshot creation should return an id"
+    );
+
+    // Scope gate: a key without snapshot scopes should be forbidden.
+    let _ = request(
+        &client,
+        &base,
+        Method::GET,
+        &format!("/api/v1/snapshots?entity_type=post&entity_id={post_id}"),
+        &config.keys.read,
+        &[StatusCode::FORBIDDEN],
+        |r| r,
+    )
+    .await?;
+
+    // Authorized list should include the created snapshot id.
+    let list_json = get_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/snapshots?entity_type=post&entity_id={post_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+    let list_contains_snapshot = list_json
+        .get("items")
+        .and_then(Value::as_array)
+        .map(|items| {
+            items.iter().any(|item| {
+                item.get("id")
+                    .and_then(Value::as_str)
+                    .map(|id| id == snapshot_id)
+                    .unwrap_or(false)
+            })
+        })
+        .unwrap_or(false);
+    assert!(
+        list_contains_snapshot,
+        "snapshot list should contain the newly created snapshot"
+    );
+
+    let snap_json = get_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/snapshots/{snapshot_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+    assert_eq!(
+        snap_json.get("id").and_then(Value::as_str).unwrap_or(""),
+        snapshot_id,
+        "snapshot get should return the same id"
+    );
+
+    // Mutate the post so rollback has an effect.
+    let mutated_slug = format!("{post_slug}-mut");
+    let mutated_title = format!("{original_title} changed");
+    let mutated_body = "# mutated body";
+    patch_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::OK],
+        json!({
+            "slug": mutated_slug,
+            "title": mutated_title,
+            "excerpt": "changed excerpt",
+            "body_markdown": mutated_body,
+        }),
+    )
+    .await?;
+
+    let mutated_json = get_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+    assert_eq!(
+        mutated_json
+            .get("title")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+        mutated_title
+    );
+
+    // Rollback using the snapshot.
+    let _ = request(
+        &client,
+        &base,
+        Method::POST,
+        &format!("/api/v1/snapshots/{snapshot_id}/rollback"),
+        &config.keys.all,
+        &[StatusCode::OK],
+        |r| r,
+    )
+    .await?;
+
+    // Verify the post is restored to the original snapshot content (including slug).
+    let restored_json = get_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::OK],
+    )
+    .await?;
+    assert_eq!(
+        restored_json
+            .get("title")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+        original_title
+    );
+    assert_eq!(
+        restored_json
+            .get("excerpt")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+        original_excerpt
+    );
+    assert_eq!(
+        restored_json
+            .get("body_markdown")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+        original_body
+    );
+    assert_eq!(
+        restored_json
+            .get("slug")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+        post_slug
+    );
+
+    // Cleanup
+    delete(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::NO_CONTENT],
+    )
+    .await?;
+
+    Ok(())
+}
+
 fn load_config() -> TestResult<SeedConfig> {
     let path = Path::new("tests/api_keys.seed.toml");
     let content = fs::read_to_string(path).map_err(|e| {
@@ -1083,6 +1306,79 @@ async fn get_public_page(client: &Client, base: &str, path: &str) -> TestResult<
     }
 
     Ok(resp.text().await.unwrap_or_default())
+}
+
+/// Counts warm_cache jobs (any state) via the public API.
+async fn warm_cache_job_count(client: &Client, base: &str, key: &str) -> TestResult<usize> {
+    let json = get_json(
+        client,
+        base,
+        key,
+        "/api/v1/jobs?job_type=warm_cache&limit=200",
+        &[StatusCode::OK],
+    )
+    .await?;
+
+    Ok(json
+        .get("items")
+        .and_then(Value::as_array)
+        .map(|a| a.len())
+        .unwrap_or(0))
+}
+
+async fn cli_output(args: &[&str], base: &str, key: &str) -> TestResult<(i32, String, String)> {
+    let bin = assert_cmd::cargo::cargo_bin!("soffio-cli");
+    let args = args.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    let base = base.to_string();
+    let key = key.to_string();
+    let output = spawn_blocking(move || {
+        Command::new(bin)
+            .env("SOFFIO_SITE_URL", base)
+            .env("SOFFIO_API_KEY", key)
+            .args(args)
+            .output()
+    })
+    .await
+    .map_err(|e| format!("failed to join soffio-cli task: {e}"))?
+    .map_err(|e| format!("failed to run soffio-cli: {e}"))?;
+
+    let code = output.status.code().unwrap_or(-1);
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    Ok((code, stdout, stderr))
+}
+
+async fn cli_json(args: &[&str], base: &str, key: &str) -> TestResult<Value> {
+    let (code, stdout, stderr) = cli_output(args, base, key).await?;
+    if code != 0 {
+        return Err(format!(
+            "soffio-cli {:?} failed (code {code}): stderr={stderr}, stdout={stdout}",
+            args
+        )
+        .into());
+    }
+    serde_json::from_str(&stdout)
+        .map_err(|e| format!("failed to parse stdout as JSON: {e}; stdout={stdout}").into())
+}
+
+async fn cli_plain(args: &[&str], base: &str, key: &str) -> TestResult<String> {
+    let (code, stdout, stderr) = cli_output(args, base, key).await?;
+    if code != 0 {
+        return Err(format!(
+            "soffio-cli {:?} failed (code {code}): stderr={stderr}, stdout={stdout}",
+            args
+        )
+        .into());
+    }
+    Ok(stdout)
+}
+
+async fn cli_expect_fail(args: &[&str], base: &str, key: &str) -> TestResult<()> {
+    let (code, _stdout, _stderr) = cli_output(args, base, key).await?;
+    if code == 0 {
+        return Err(format!("expected soffio-cli {:?} to fail", args).into());
+    }
+    Ok(())
 }
 
 /// Cache consistency test: verifies that API modifications invalidate the public cache.
@@ -1407,6 +1703,389 @@ async fn live_api_post_body_renders_immediately() -> TestResult<()> {
         &[StatusCode::NO_CONTENT],
     )
     .await?;
+
+    Ok(())
+}
+
+/// Verifies that editing a published post triggers cache invalidation/warm **after**
+/// the render job finishes, so the public page does not stay cached with empty
+/// summary or stale body content.
+#[tokio::test]
+#[ignore]
+async fn live_api_post_edit_warms_cache_after_render() -> TestResult<()> {
+    let config = load_config()?;
+    let client = Client::builder().build()?;
+    let base = config.base_url.trim_end_matches('/').to_string();
+
+    let suf = current_suffix();
+    let summary_v1 = format!("SUMMARY_V1_{suf}");
+    let summary_v2 = format!("SUMMARY_V2_{suf}");
+    let body_v1 = format!(
+        "# Heading V1 {suf}\n\n## Section One\n\nBody V1 marker {suf}-A\n\n### Sub\n\nMore V1 content."
+    );
+    let body_v2 = format!(
+        "# Heading V2 {suf}\n\n## Section One Updated\n\nBody V2 marker {suf}-B\n\n### Sub Updated\n\nFresh content."
+    );
+    let title_v1 = format!("Cache Warm Post {suf}");
+    let title_v2 = format!("Cache Warm Post Updated {suf}");
+
+    // Create with summary.
+    let (post_id, post_slug) = post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        "/api/v1/posts",
+        &[StatusCode::CREATED],
+        json!({
+            "title": title_v1,
+            "excerpt": "live cache warm test",
+            "body_markdown": body_v1,
+            "summary_markdown": summary_v1,
+        }),
+    )
+    .await?;
+
+    // Publish.
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}/status"),
+        &[StatusCode::OK],
+        json!({"status": "published"}),
+    )
+    .await?;
+
+    // Allow initial render/publish to finish.
+    tokio::time::sleep(Duration::from_millis(800)).await;
+
+    // Warm cache once.
+    let public_path = format!("/posts/{post_slug}");
+    let first_fetch = get_public_page(&client, &base, &public_path).await?;
+    assert!(
+        first_fetch.contains(&summary_v1) && first_fetch.contains(&post_slug),
+        "initial render should include v1 summary and slug"
+    );
+
+    let warm_jobs_before = warm_cache_job_count(&client, &base, &config.keys.all).await?;
+
+    // Wait past debounce window to ensure a new warm job can be enqueued.
+    tokio::time::sleep(Duration::from_secs(6)).await;
+
+    // Update body + summary; keep slug stable.
+    patch_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::OK],
+        json!({
+            "slug": post_slug,
+            "title": title_v2,
+            "excerpt": "live cache warm test updated",
+            "body_markdown": body_v2,
+            "summary_markdown": summary_v2,
+        }),
+    )
+    .await?;
+
+    // Poll public page until new summary/body appear (render + post-render invalidation).
+    let mut updated_html = String::new();
+    for _ in 0..20 {
+        let html = get_public_page(&client, &base, &public_path).await?;
+        if html.contains(&summary_v2) && html.contains(&format!("{suf}-B")) {
+            updated_html = html;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+
+    assert!(
+        !updated_html.is_empty(),
+        "public page did not reflect updated summary/body within timeout"
+    );
+    assert!(
+        !updated_html.contains(&summary_v1) && !updated_html.contains(&format!("{suf}-A")),
+        "old summary/body markers should be absent after render completes"
+    );
+
+    // Warm cache job should have been enqueued after render completion.
+    let mut saw_new_warm_job = false;
+    for _ in 0..20 {
+        let current = warm_cache_job_count(&client, &base, &config.keys.all).await?;
+        if current > warm_jobs_before {
+            saw_new_warm_job = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    }
+    assert!(saw_new_warm_job, "expected a new warm_cache job after edit");
+
+    // Cleanup.
+    delete(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::NO_CONTENT],
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// End-to-end coverage of `soffio-cli snapshots` commands against a running server.
+#[tokio::test]
+#[ignore]
+async fn live_cli_snapshots_cover_all_flows() -> TestResult<()> {
+    let cfg = load_config()?;
+    let base = cfg.base_url.trim_end_matches('/').to_string();
+    let all_key = &cfg.keys.all;
+    let read_key = &cfg.keys.read;
+    let suf = current_suffix();
+
+    // Create a published post with summary.
+    let post_title_v1 = format!("CLI Snap Post {suf}");
+    let post_title_v2 = format!("CLI Snap Post Updated {suf}");
+    let post_body_v1 = format!("# Post V1 {suf}\n\nBody marker V1-{suf}");
+    let post_body_v2 = format!("# Post V2 {suf}\n\nBody marker V2-{suf}");
+    let post_summary_v1 = format!("Summary V1 {suf}");
+    let post_summary_v2 = format!("Summary V2 {suf}");
+
+    let post_json = cli_json(
+        &[
+            "posts",
+            "create",
+            "--title",
+            &post_title_v1,
+            "--excerpt",
+            "cli snap test",
+            "--body",
+            &post_body_v1,
+            "--summary",
+            &post_summary_v1,
+            "--status",
+            "published",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let post_id = post_json
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("missing post id")?
+        .to_string();
+    let post_slug = post_json
+        .get("slug")
+        .and_then(Value::as_str)
+        .ok_or("missing post slug")?
+        .to_string();
+
+    // Create a published page.
+    let page_title_v1 = format!("CLI Snap Page {suf}");
+    let page_title_v2 = format!("CLI Snap Page Updated {suf}");
+    let page_body_v1 = format!("# Page V1 {suf}\n\nPage body V1");
+    let page_body_v2 = format!("# Page V2 {suf}\n\nPage body V2");
+
+    let page_json = cli_json(
+        &[
+            "pages",
+            "create",
+            "--title",
+            &page_title_v1,
+            "--body",
+            &page_body_v1,
+            "--status",
+            "published",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let page_id = page_json
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("missing page id")?
+        .to_string();
+    let page_slug = page_json
+        .get("slug")
+        .and_then(Value::as_str)
+        .ok_or("missing page slug")?
+        .to_string();
+
+    // Create snapshots for post and page.
+    let post_snap = cli_json(
+        &[
+            "snapshots",
+            "create",
+            "--entity-type",
+            "post",
+            "--entity-id",
+            &post_id,
+            "--description",
+            "cli snap post v1",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let post_snap_id = post_snap
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("missing post snapshot id")?
+        .to_string();
+
+    let page_snap = cli_json(
+        &[
+            "snapshots",
+            "create",
+            "--entity-type",
+            "page",
+            "--entity-id",
+            &page_id,
+            "--description",
+            "cli snap page v1",
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let page_snap_id = page_snap
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("missing page snapshot id")?
+        .to_string();
+
+    // List snapshots filtered by entity_id.
+    let list_post = cli_json(
+        &[
+            "snapshots",
+            "list",
+            "--entity-type",
+            "post",
+            "--entity-id",
+            &post_id,
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+    let items = list_post
+        .get("items")
+        .and_then(Value::as_array)
+        .ok_or("missing items in list")?;
+    assert!(
+        items
+            .iter()
+            .any(|v| v.get("id").and_then(Value::as_str) == Some(post_snap_id.as_str())),
+        "post snapshot not present in list"
+    );
+
+    // Get snapshot detail.
+    let snap_detail = cli_json(&["snapshots", "get", &post_snap_id], &base, all_key).await?;
+    assert_eq!(
+        snap_detail.get("entity_id").and_then(Value::as_str),
+        Some(post_id.as_str())
+    );
+    assert_eq!(
+        snap_detail.get("entity_type").and_then(Value::as_str),
+        Some("post")
+    );
+
+    // Mutate post & page.
+    cli_json(
+        &[
+            "posts",
+            "update",
+            "--id",
+            &post_id,
+            "--slug",
+            &post_slug,
+            "--title",
+            &post_title_v2,
+            "--excerpt",
+            "cli snap test updated",
+            "--body",
+            &post_body_v2,
+            "--summary",
+            &post_summary_v2,
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+
+    cli_json(
+        &[
+            "pages",
+            "update",
+            "--id",
+            &page_id,
+            "--slug",
+            &page_slug,
+            "--title",
+            &page_title_v2,
+            "--body",
+            &page_body_v2,
+        ],
+        &base,
+        all_key,
+    )
+    .await?;
+
+    // Rollback post snapshot and verify content restored.
+    let rollback_msg = cli_plain(&["snapshots", "rollback", &post_snap_id], &base, all_key).await?;
+    assert!(
+        rollback_msg.contains("Rolled back snapshot"),
+        "unexpected rollback message: {rollback_msg}"
+    );
+
+    let post_after = cli_json(&["posts", "get", "--id", &post_id], &base, all_key).await?;
+    let body_after = post_after
+        .get("body_markdown")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let summary_after = post_after
+        .get("summary_markdown")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    assert!(
+        body_after.contains(&post_body_v1),
+        "post body not rolled back"
+    );
+    assert_eq!(summary_after, post_summary_v1);
+
+    // Rollback page snapshot and verify.
+    cli_plain(&["snapshots", "rollback", &page_snap_id], &base, all_key).await?;
+    let page_after = cli_json(&["pages", "get", "--id", &page_id], &base, all_key).await?;
+    let page_body_after = page_after
+        .get("body_markdown")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    assert!(
+        page_body_after.contains(&page_body_v1),
+        "page body not rolled back"
+    );
+
+    // Permission check: create snapshot with read-only key should fail.
+    cli_expect_fail(
+        &[
+            "snapshots",
+            "create",
+            "--entity-type",
+            "post",
+            "--entity-id",
+            &post_id,
+        ],
+        &base,
+        read_key,
+    )
+    .await?;
+
+    // Cleanup test content.
+    let _ = cli_plain(&["posts", "delete", &post_id], &base, all_key).await?;
+    let _ = cli_plain(&["pages", "delete", &page_id], &base, all_key).await?;
 
     Ok(())
 }

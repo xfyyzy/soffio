@@ -18,23 +18,19 @@
 {% let panel_action = content.panel_action %}
 {% let row_action_prefix = content.row_action_prefix %}
     <table data-role="publishable-table">
-        <thead>
-          <tr>
-            <th scope="col" data-column="title">Title</th>
-            <th scope="col" data-column="slug">Slug</th>
-            <th scope="col" data-column="status">Status</th>
-            <th scope="col">{{ content.time_column_label }}</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th scope="col" data-column="title">Title</th>
+          <th scope="col" data-column="status">Status</th>
+          <th scope="col">{{ content.time_column_label }}</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
         <tbody>
           {% for item in content.posts %}
           <tr data-role="post-row" data-post-id="{{ item.id }}">
             <td data-column="title">
               <a href="{{ item.preview_href }}" target="_blank" rel="noopener" title="{{ item.title }}">{{ item.title }}</a>
-            </td>
-            <td data-column="slug">
-              <span data-role="slug-value" title="{{ item.slug }}">{{ item.slug }}</span>
             </td>
             <td data-column="status">
               <span data-role="status-badges">

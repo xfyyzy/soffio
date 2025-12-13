@@ -8,5 +8,6 @@ pub mod pages;
 pub mod posts;
 pub mod sections;
 pub mod slug;
+pub mod snapshots;
 pub mod types;
 pub mod uploads;

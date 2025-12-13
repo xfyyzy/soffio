@@ -81,6 +81,11 @@ SOFFIO_API_KEY_FILE=~/.config/soffio/key \
 | `soffio-cli jobs list` | List background jobs |
 | `soffio-cli audit` | Audit log access |
 | `soffio-cli audit list` | List audit logs |
+| `soffio-cli snapshots` | Snapshots management |
+| `soffio-cli snapshots list` | List snapshots |
+| `soffio-cli snapshots get` | Get a snapshot |
+| `soffio-cli snapshots create` | Create a snapshot |
+| `soffio-cli snapshots rollback` | Rollback to a snapshot |
 
 
 ## 常用场景示例

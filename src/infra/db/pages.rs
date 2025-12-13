@@ -7,8 +7,8 @@ use uuid::Uuid;
 use crate::{
     application::pagination::{CursorPage, PageCursor},
     application::repos::{
-        CreatePageParams, PagesRepo, PagesWriteRepo, RepoError, UpdatePageParams,
-        UpdatePageStatusParams,
+        CreatePageParams, PagesRepo, PagesWriteRepo, RepoError, RestorePageSnapshotParams,
+        UpdatePageParams, UpdatePageStatusParams,
     },
     domain::{entities::PageRecord, types::PageStatus},
 };
@@ -507,6 +507,59 @@ impl PagesWriteRepo for PostgresRepositories {
         .map_err(map_sqlx_error)?;
 
         Ok(())
+    }
+
+    async fn restore_page_snapshot(
+        &self,
+        params: RestorePageSnapshotParams,
+    ) -> Result<PageRecord, RepoError> {
+        let now = OffsetDateTime::now_utc();
+        let RestorePageSnapshotParams {
+            id,
+            slug,
+            title,
+            body_markdown,
+            rendered_html,
+            status,
+            scheduled_at,
+            published_at,
+            archived_at,
+        } = params;
+
+        let row = sqlx::query_as!(
+            PageRow,
+            r#"
+            UPDATE pages
+            SET slug = $2,
+                title = $3,
+                body_markdown = $4,
+                rendered_html = $5,
+                status = $6,
+                scheduled_at = $7,
+                published_at = $8,
+                archived_at = $9,
+                updated_at = $10
+            WHERE id = $1
+            RETURNING id, slug, title, body_markdown, rendered_html,
+                     status AS "status: PageStatus",
+                     scheduled_at, published_at, archived_at, created_at, updated_at
+            "#,
+            id,
+            slug,
+            title,
+            body_markdown,
+            rendered_html,
+            status as PageStatus,
+            scheduled_at,
+            published_at,
+            archived_at,
+            now
+        )
+        .fetch_one(self.pool())
+        .await
+        .map_err(map_sqlx_error)?;
+
+        Ok(PageRecord::from(row))
     }
 }
 

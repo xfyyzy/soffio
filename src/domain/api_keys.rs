@@ -73,6 +73,8 @@ pub enum ApiScope {
     SettingsWrite,
     JobRead,
     AuditRead,
+    SnapshotRead,
+    SnapshotWrite,
 }
 
 impl ApiScope {
@@ -93,6 +95,8 @@ impl ApiScope {
             Self::SettingsWrite => "settings_write",
             Self::JobRead => "job_read",
             Self::AuditRead => "audit_read",
+            Self::SnapshotRead => "snapshot_read",
+            Self::SnapshotWrite => "snapshot_write",
         }
     }
 
@@ -113,6 +117,8 @@ impl ApiScope {
             Self::SettingsWrite => "Settings write",
             Self::JobRead => "Job read",
             Self::AuditRead => "Audit read",
+            Self::SnapshotRead => "Snapshot read",
+            Self::SnapshotWrite => "Snapshot write",
         }
     }
 
@@ -133,6 +139,8 @@ impl ApiScope {
             Self::SettingsWrite,
             Self::JobRead,
             Self::AuditRead,
+            Self::SnapshotRead,
+            Self::SnapshotWrite,
         ]
     }
 }
@@ -162,6 +170,8 @@ impl FromStr for ApiScope {
             "settings_write" => Ok(Self::SettingsWrite),
             "job_read" => Ok(Self::JobRead),
             "audit_read" => Ok(Self::AuditRead),
+            "snapshot_read" => Ok(Self::SnapshotRead),
+            "snapshot_write" => Ok(Self::SnapshotWrite),
             _ => Err(()),
         }
     }

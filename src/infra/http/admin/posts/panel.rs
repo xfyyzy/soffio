@@ -50,7 +50,6 @@ pub(super) async fn build_post_list_view(
         .items
         .into_iter()
         .map(|post| {
-            let slug = post.slug.clone();
             let preview_href = format!("{}posts/_preview/{}", public_site_url, post.id);
             let edit_href = format!("/posts/{}/edit", post.id);
 
@@ -72,7 +71,6 @@ pub(super) async fn build_post_list_view(
             admin_views::AdminPostRowView {
                 id: post.id.to_string(),
                 title: post.title,
-                slug,
                 status_key: status_key(post.status).to_string(),
                 status_label: status_label(post.status).to_string(),
                 display_time,
@@ -81,6 +79,7 @@ pub(super) async fn build_post_list_view(
                 preview_href,
                 edit_href,
                 is_pinned: post.pinned,
+                snapshots_href: Some(format!("/posts/{}/snapshots", post.id)),
             }
         })
         .collect();
