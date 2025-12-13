@@ -6,6 +6,7 @@ use time::OffsetDateTime;
 use uuid::Uuid;
 
 use crate::application::admin::audit::AdminAuditService;
+use crate::application::admin::snapshot_types::{PageSnapshotPayload, PageSnapshotSource};
 use crate::application::jobs::{
     PUBLISH_JOB_WAIT_TIMEOUT, enqueue_publish_page_job, wait_for_job_completion,
 };
@@ -16,7 +17,7 @@ use crate::application::render::{
 };
 use crate::application::repos::{
     CreatePageParams, JobsRepo, PageQueryFilter, PagesRepo, PagesWriteRepo, RepoError,
-    SettingsRepo, UpdatePageParams, UpdatePageStatusParams,
+    RestorePageSnapshotParams, SettingsRepo, UpdatePageParams, UpdatePageStatusParams,
 };
 use crate::domain::entities::PageRecord;
 use crate::domain::{
@@ -94,6 +95,37 @@ impl AdminPageService {
             audit,
             settings,
         }
+    }
+
+    pub async fn snapshot_source(&self, id: Uuid) -> Result<PageSnapshotSource, AdminPageError> {
+        let page = self
+            .reader
+            .find_by_id(id)
+            .await?
+            .ok_or(AdminPageError::Repo(RepoError::NotFound))?;
+
+        Ok(PageSnapshotSource { page })
+    }
+
+    pub async fn restore_from_snapshot(
+        &self,
+        payload: PageSnapshotPayload,
+        page_id: Uuid,
+    ) -> Result<PageRecord, AdminPageError> {
+        let params = RestorePageSnapshotParams {
+            id: page_id,
+            slug: payload.slug,
+            title: payload.title,
+            body_markdown: payload.body_markdown,
+            rendered_html: payload.rendered_html,
+            status: payload.status,
+            scheduled_at: payload.scheduled_at,
+            published_at: payload.published_at,
+            archived_at: payload.archived_at,
+        };
+
+        let page = self.writer.restore_page_snapshot(params).await?;
+        Ok(page)
     }
 
     pub async fn list(

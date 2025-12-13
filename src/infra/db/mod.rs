@@ -7,6 +7,7 @@ mod navigation;
 mod pages;
 mod posts;
 mod settings;
+mod snapshots;
 mod tags;
 mod timezone;
 mod uploads;

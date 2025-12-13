@@ -1,7 +1,13 @@
 use std::sync::Arc;
 
-use crate::application::admin::audit::AdminAuditService;
-use crate::application::repos::{JobsRepo, PostsRepo, PostsWriteRepo, SectionsRepo, TagsRepo};
+use crate::application::admin::{
+    audit::AdminAuditService,
+    snapshot_types::{PostSnapshotPayload, PostSnapshotSource},
+};
+use crate::application::repos::{
+    JobsRepo, PostsRepo, PostsWriteRepo, RestorePostSnapshotParams, SectionsRepo, TagsRepo,
+};
+use crate::domain::entities::PostRecord;
 
 #[derive(Clone)]
 pub struct AdminPostService {
@@ -30,5 +36,57 @@ impl AdminPostService {
             tags,
             audit,
         }
+    }
+
+    pub async fn snapshot_source(
+        &self,
+        id: uuid::Uuid,
+    ) -> Result<PostSnapshotSource, crate::application::admin::posts::types::AdminPostError> {
+        use crate::application::admin::posts::types::AdminPostError;
+
+        let post = self
+            .reader
+            .find_by_id(id)
+            .await?
+            .ok_or(AdminPostError::Repo(
+                crate::application::repos::RepoError::NotFound,
+            ))?;
+
+        let tags = self.tags.list_for_post(id).await?;
+        let sections = self.sections.list_sections(id).await?;
+
+        let tag_ids: Vec<uuid::Uuid> = tags.into_iter().map(|t| t.id).collect();
+
+        Ok(PostSnapshotSource {
+            post,
+            tags: tag_ids,
+            sections,
+        })
+    }
+
+    pub async fn restore_from_snapshot(
+        &self,
+        payload: PostSnapshotPayload,
+        post_id: uuid::Uuid,
+    ) -> Result<PostRecord, crate::application::admin::posts::types::AdminPostError> {
+        let params = RestorePostSnapshotParams {
+            id: post_id,
+            slug: payload.slug,
+            title: payload.title,
+            excerpt: payload.excerpt,
+            body_markdown: payload.body_markdown,
+            summary_markdown: payload.summary_markdown,
+            summary_html: payload.summary_html,
+            status: payload.status,
+            pinned: payload.pinned,
+            scheduled_at: payload.scheduled_at,
+            published_at: payload.published_at,
+            archived_at: payload.archived_at,
+            tag_ids: payload.tags,
+            sections: payload.sections,
+        };
+
+        let post = self.writer.restore_post_snapshot(params).await?;
+        Ok(post)
     }
 }

@@ -7,5 +7,6 @@ pub mod navigation;
 pub mod pages;
 pub mod posts;
 pub mod settings;
+pub mod snapshots;
 pub mod tags;
 pub mod uploads;

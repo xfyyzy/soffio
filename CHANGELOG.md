@@ -7,8 +7,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Snapshots for posts and pages: admin list/preview/create/rollback UI plus API/CLI endpoints (`/api/v1/snapshots` list/get/create/rollback) gated by new `snapshot_read` / `snapshot_write` scopes. Seeded “all” API key includes the new scopes so existing automation keeps working.
+- Snapshot previews now render and validate saved content for posts and pages, matching the live view before rollback or publish.
+
 ### Changed
-- Unified cache invalidation behavior between Admin and API routes: Admin routes now also trigger async cache warming after write operations (previously Admin only invalidated without warming). Both use `invalidate_and_enqueue_warm` middleware.
+- Published post edits show up immediately: render jobs now invalidate and then (debounced) warm the response cache; admin and API writes share the same invalidate+warm path so public pages stay fresh.
+- Snapshot admin list uses fixed column widths with ellipsis + title tooltip for descriptions, keeping the table from shifting horizontally while still exposing full text on hover.
+- Snapshot rollback/delete flows in the admin UI now mirror posts/pages and use consistent toast messaging.
+
+### Breaking
+- `update-migration-version` is now `soffio migrations reconcile <ARCHIVE>` (inside the main binary). The standalone utility binary was removed. Database URL follows the same precedence as other commands (config → `SOFFIO__DATABASE__URL`/`DATABASE_URL` → `--database-url`). Update scripts and automation to use the new subcommand.
 
 ## [0.1.13] - 2025-12-10
 

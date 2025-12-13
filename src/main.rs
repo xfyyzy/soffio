@@ -19,8 +19,8 @@ use soffio::{
         admin::{
             audit::AdminAuditService, chrome::AdminChromeService, dashboard::AdminDashboardService,
             jobs::AdminJobService, navigation::AdminNavigationService, pages::AdminPageService,
-            posts::AdminPostService, settings::AdminSettingsService, tags::AdminTagService,
-            uploads::AdminUploadService,
+            posts::AdminPostService, settings::AdminSettingsService,
+            snapshots::AdminSnapshotService, tags::AdminTagService, uploads::AdminUploadService,
         },
         api_keys::ApiKeyService,
         chrome::ChromeService,
@@ -38,10 +38,11 @@ use soffio::{
         },
         repos::{
             ApiKeysRepo, AuditRepo, JobsRepo, NavigationRepo, NavigationWriteRepo, PagesRepo,
-            PagesWriteRepo, PostsRepo, PostsWriteRepo, SectionsRepo, SettingsRepo, TagsRepo,
-            TagsWriteRepo, UploadsRepo,
+            PagesWriteRepo, PostsRepo, PostsWriteRepo, SectionsRepo, SettingsRepo, SnapshotsRepo,
+            TagsRepo, TagsWriteRepo, UploadsRepo,
         },
         site,
+        snapshot_preview::SnapshotPreviewService,
     },
     config,
     domain::entities::{PageRecord, PostRecord},
@@ -59,6 +60,8 @@ use soffio::{
 use tokio::try_join;
 use tracing::{Dispatch, Level, dispatcher, error, info};
 use tracing_subscriber::fmt as tracing_fmt;
+
+mod migrations_tool;
 
 #[tokio::main]
 async fn main() {
@@ -98,6 +101,7 @@ async fn run() -> Result<(), AppError> {
         config::Command::RenderAll(args) => run_renderall(settings, args).await,
         config::Command::ExportSite(args) => run_export_site(settings, args).await,
         config::Command::ImportSite(args) => run_import_site(settings, args).await,
+        config::Command::Migrations(args) => run_migrations(settings, args).await,
     }
 }
 
@@ -204,6 +208,18 @@ async fn run_import_site(
     Ok(())
 }
 
+async fn run_migrations(
+    settings: config::Settings,
+    args: config::MigrationsArgs,
+) -> Result<(), AppError> {
+    match args.command {
+        config::MigrationsCommand::Reconcile(cmd) => {
+            migrations_tool::reconcile_archive(&settings.database, &cmd).await?
+        }
+    }
+    Ok(())
+}
+
 struct ApplicationContext {
     http_state: HttpState,
     admin_state: AdminState,
@@ -283,11 +299,20 @@ fn build_application_context(
     let api_keys_repo: Arc<dyn ApiKeysRepo> = http_repositories.clone();
     let audit_repo: Arc<dyn AuditRepo> = http_repositories.clone();
     let jobs_repo: Arc<dyn JobsRepo> = http_repositories.clone();
+    let snapshots_repo: Arc<dyn SnapshotsRepo> = http_repositories.clone();
 
     let (feed_service_http, page_service_http, chrome_service_http) =
         build_site_services(&http_repositories);
     let (feed_service_jobs, page_service_jobs, chrome_service_jobs) =
         build_site_services(&job_repositories);
+
+    let upload_storage = Arc::new(
+        UploadStorage::new(settings.uploads.directory.clone())
+            .map_err(|err| AppError::from(InfraError::Io(err)))?,
+    );
+
+    let response_cache = Arc::new(ResponseCache::new());
+    let cache_warm_debouncer = Arc::new(CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE));
 
     let audit_service = AdminAuditService::new(audit_repo.clone());
     let admin_post_service = Arc::new(AdminPostService::new(
@@ -328,16 +353,14 @@ fn build_application_context(
         jobs_repo.clone(),
         audit_service.clone(),
     ));
+    let admin_snapshot_service = Arc::new(AdminSnapshotService::new(snapshots_repo.clone()));
+    let snapshot_preview_service = Arc::new(SnapshotPreviewService::new(
+        snapshots_repo.clone(),
+        tags_repo.clone(),
+        settings_repo.clone(),
+    ));
     let admin_audit_service = Arc::new(audit_service);
     let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
-
-    let upload_storage = Arc::new(
-        UploadStorage::new(settings.uploads.directory.clone())
-            .map_err(|err| AppError::from(InfraError::Io(err)))?,
-    );
-
-    let response_cache = Arc::new(ResponseCache::new());
-    let cache_warm_debouncer = Arc::new(CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE));
 
     let http_state = HttpState {
         feed: feed_service_http.clone(),
@@ -347,6 +370,7 @@ fn build_application_context(
         cache_warm_debouncer: cache_warm_debouncer.clone(),
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
+        snapshot_preview: snapshot_preview_service.clone(),
     };
 
     let admin_state = AdminState {
@@ -373,6 +397,7 @@ fn build_application_context(
         jobs: admin_job_service,
         audit: admin_audit_service,
         api_keys: api_key_service.clone(),
+        snapshots: admin_snapshot_service.clone(),
     };
 
     let rate_limiter = Arc::new(http::ApiRateLimiter::new(
@@ -390,6 +415,7 @@ fn build_application_context(
         settings: admin_state.settings.clone(),
         jobs: admin_state.jobs.clone(),
         audit: admin_state.audit.clone(),
+        snapshots: admin_snapshot_service.clone(),
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
         rate_limiter,
@@ -405,6 +431,7 @@ fn build_application_context(
         cache_warm_debouncer: cache_warm_debouncer.clone(),
         feed: feed_service_jobs,
         pages: page_service_jobs,
+        snapshot_preview: snapshot_preview_service.clone(),
         chrome: chrome_service_jobs,
         upload_storage,
         render_mailbox,

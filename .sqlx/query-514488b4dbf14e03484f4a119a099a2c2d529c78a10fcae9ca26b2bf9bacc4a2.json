@@ -1,0 +1,85 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, entity_type AS \"entity_type: SnapshotEntityType\", entity_id, version, description, schema_version, content, created_at\n            FROM snapshots\n            WHERE entity_type = $1 AND entity_id = $2\n            ORDER BY version DESC\n            LIMIT 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "entity_type: SnapshotEntityType",
+        "type_info": {
+          "Custom": {
+            "name": "snapshot_entity_type",
+            "kind": {
+              "Enum": [
+                "post",
+                "page"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "entity_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "version",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "schema_version",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "content",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "snapshot_entity_type",
+            "kind": {
+              "Enum": [
+                "post",
+                "page"
+              ]
+            }
+          }
+        },
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "514488b4dbf14e03484f4a119a099a2c2d529c78a10fcae9ca26b2bf9bacc4a2"
+}

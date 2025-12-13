@@ -125,19 +125,6 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
   text-overflow: ellipsis;
 }
 
-[data-column="slug"] {
-  width: 14rem;
-  max-width: 16rem;
-}
-
-[data-column="slug"] [data-role="slug-value"] {
-  display: inline-block;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 [data-column="filename"] {
   width: 24rem;
   max-width: 26rem;
@@ -164,6 +151,33 @@ table[data-role="upload-queue-table"] td[data-column="message"] {
 [data-column="status"] {
   width: 12rem;
   min-width: 11rem;
+}
+
+[data-column="snapshot-version"] {
+  width: 7ch;
+  min-width: 7ch;
+  max-width: 8ch;
+  white-space: nowrap;
+}
+
+[data-column="snapshot-description"] {
+  width: 22rem;
+  max-width: 26rem;
+}
+
+[data-column="snapshot-description"] span {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-column="snapshot-created"] {
+  width: 20ch;
+  min-width: 18ch;
+  max-width: 22ch;
+  white-space: nowrap;
 }
 
 /* UUID column: Full UUID is 36 characters, needs wider width */
@@ -333,10 +347,12 @@ table[data-table="api-keys"] td[data-column="scopes"] {
 [data-role="tag-editor"],
 [data-role="navigation-editor"],
 [data-role="api-key-editor"],
+[data-role="snapshot-editor"],
 [data-role="post-create-form"],
 [data-role="page-create-form"],
 [data-role="tag-create-form"],
-[data-role="navigation-create-form"] {
+[data-role="navigation-create-form"],
+[data-role="snapshot-create-form"] {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -348,10 +364,12 @@ table[data-table="api-keys"] td[data-column="scopes"] {
 [data-role="tag-editor"] label,
 [data-role="navigation-editor"] label,
 [data-role="api-key-editor"] label,
+[data-role="snapshot-editor"] label,
 [data-role="post-create-form"] label,
 [data-role="page-create-form"] label,
 [data-role="tag-create-form"] label,
-[data-role="navigation-create-form"] label {
+[data-role="navigation-create-form"] label,
+[data-role="snapshot-create-form"] label {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -370,7 +388,13 @@ table[data-table="api-keys"] td[data-column="scopes"] {
 [data-role="api-key-editor"] textarea,
 [data-role="api-key-editor"] select,
 [data-role="page-editor"] select,
-[data-role="post-editor"] select {
+[data-role="post-editor"] select,
+[data-role="snapshot-editor"] textarea,
+[data-role="snapshot-editor"] input,
+[data-role="snapshot-editor"] select,
+[data-role="snapshot-create-form"] textarea,
+[data-role="snapshot-create-form"] input,
+[data-role="snapshot-create-form"] select {
   padding: 0.65rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-soft);
@@ -385,6 +409,7 @@ table[data-table="api-keys"] td[data-column="scopes"] {
 [data-role="post-create-form"] button,
 [data-role="page-create-form"] button,
 [data-role="tag-create-form"] button,
-[data-role="navigation-create-form"] button {
+[data-role="navigation-create-form"] button,
+[data-role="snapshot-create-form"] button {
   align-self: flex-start;
 }

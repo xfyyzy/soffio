@@ -8,5 +8,9 @@ pub mod navigation;
 pub mod pages;
 pub mod posts;
 pub mod settings;
+pub mod snapshot_types;
+pub mod snapshots;
 pub mod tags;
 pub mod uploads;
+
+pub use snapshots::AdminSnapshotService;

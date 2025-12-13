@@ -67,6 +67,7 @@ pub(crate) async fn build_page_list_view(
                 actions: page_actions_for_status(record.status),
                 preview_href: format!("{}pages/_preview/{}", public_site_url, record.id),
                 edit_href: format!("/pages/{}/edit", record.id),
+                snapshots_href: Some(format!("/pages/{}/snapshots", record.id)),
             }
         })
         .collect();

@@ -67,6 +67,15 @@ pub enum JobType {
     WarmCache,
 }
 
+/// Supported snapshot entity types (mirrors Postgres enum `snapshot_entity_type`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[serde(rename_all = "snake_case")]
+#[sqlx(type_name = "snapshot_entity_type", rename_all = "snake_case")]
+pub enum SnapshotEntityType {
+    Post,
+    Page,
+}
+
 impl JobType {
     pub fn as_str(self) -> &'static str {
         match self {

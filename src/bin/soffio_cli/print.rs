@@ -9,3 +9,7 @@ pub fn print_json<T: Serialize>(value: &T) -> Result<(), CliError> {
     println!("{out}");
     Ok(())
 }
+
+pub fn json_value(value: &serde_json::Value) -> Result<(), CliError> {
+    print_json(value)
+}

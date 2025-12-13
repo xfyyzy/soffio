@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM post_tags WHERE post_id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e4fe6e199b1a8bcfa88f0ac9a40ce6f30c81c3ad2b89dc39adc1edfcb25b6c10"
+}

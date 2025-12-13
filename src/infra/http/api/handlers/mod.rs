@@ -10,6 +10,7 @@ mod navigation;
 mod pages;
 mod posts;
 mod settings;
+mod snapshots;
 mod tags;
 mod uploads;
 
@@ -21,6 +22,7 @@ pub use navigation::*;
 pub use pages::*;
 pub use posts::*;
 pub use settings::*;
+pub use snapshots::*;
 pub use tags::*;
 pub use uploads::*;
 
@@ -108,6 +110,7 @@ use crate::application::admin::navigation::AdminNavigationError;
 use crate::application::admin::pages::AdminPageError;
 use crate::application::admin::posts::AdminPostError;
 use crate::application::admin::settings::AdminSettingsError;
+use crate::application::admin::snapshots::SnapshotServiceError;
 use crate::application::admin::tags::AdminTagError;
 use crate::application::admin::uploads::AdminUploadError;
 use crate::application::api_keys::ApiKeyError;
@@ -229,6 +232,25 @@ pub(crate) fn upload_storage_to_api(err: UploadStorageError) -> ApiError {
         "Failed to store upload",
         Some(err.to_string()),
     )
+}
+
+pub(crate) fn snapshot_to_api(err: SnapshotServiceError) -> ApiError {
+    match err {
+        SnapshotServiceError::Repo(repo) => repo_to_api(repo),
+        SnapshotServiceError::Snapshot(inner) => ApiError::new(
+            StatusCode::BAD_REQUEST,
+            codes::INVALID_INPUT,
+            "Invalid snapshot",
+            Some(inner.to_string()),
+        ),
+        SnapshotServiceError::App(app) => ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            codes::REPO,
+            "Snapshot operation failed",
+            Some(app.to_string()),
+        ),
+        SnapshotServiceError::NotFound => ApiError::not_found("snapshot not found"),
+    }
 }
 
 pub(crate) fn settings_to_api(err: AdminSettingsError) -> ApiError {

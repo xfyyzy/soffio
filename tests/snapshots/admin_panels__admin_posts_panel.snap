@@ -1,5 +1,6 @@
 ---
 source: tests/admin_panels.rs
+assertion_line: 86
 expression: rendered
 ---
 
@@ -77,23 +78,19 @@ expression: rendered
 
 
     <table data-role="publishable-table">
-        <thead>
-          <tr>
-            <th scope="col" data-column="title">Title</th>
-            <th scope="col" data-column="slug">Slug</th>
-            <th scope="col" data-column="status">Status</th>
-            <th scope="col">Published/Updated</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th scope="col" data-column="title">Title</th>
+          <th scope="col" data-column="status">Status</th>
+          <th scope="col">Published/Updated</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
         <tbody>
           
           <tr data-role="post-row" data-post-id="123">
             <td data-column="title">
               <a href="http://localhost:3000/posts/_preview/123" target="_blank" rel="noopener" title="Hello World">Hello World</a>
-            </td>
-            <td data-column="slug">
-              <span data-role="slug-value" title="hello-world">hello-world</span>
             </td>
             <td data-column="status">
               <span data-role="status-badges">
@@ -109,6 +106,9 @@ expression: rendered
             <td data-role="publishable-actions">
               <div data-role="row-actions">
                 <a href="/posts/hello-world/edit">Edit</a>
+                
+                <a href="/posts/123/snapshots">Snapshots</a>
+                
                 
                 
                 <form data-role="inline-form" method="post" action="/posts/123/pin"

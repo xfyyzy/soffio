@@ -1,0 +1,21 @@
+{% extends "admin/layouts/panel.html" %}
+
+{% block panel_id %}snapshot-editor{% endblock %}
+{% block panel_heading %}{{ content.heading }}{% endblock %}
+
+{% block panel_content %}
+    <form data-role="snapshot-editor" method="post" action="{{ content.form_action }}"
+      data-on-submit__prevent="(@post(`{{ content.form_action }}`, { contentType: 'form' }))">
+      <label>
+        <span>Version</span>
+        <input type="text" value="{{ content.version }}" disabled aria-disabled="true">
+      </label>
+      <label>
+        <span>Description</span>
+        <textarea name="description" rows="3">{% if let Some(desc) = &content.description %}{{ desc }}{% endif %}</textarea>
+      </label>
+      <div data-role="form-actions">
+        <button type="submit">{{ content.submit_label }}</button>
+      </div>
+    </form>
+{% endblock panel_content %}

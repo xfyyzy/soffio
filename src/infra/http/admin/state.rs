@@ -3,8 +3,8 @@ use std::sync::Arc;
 use crate::application::admin::{
     audit::AdminAuditService, chrome::AdminChromeService, dashboard::AdminDashboardService,
     jobs::AdminJobService, navigation::AdminNavigationService, pages::AdminPageService,
-    posts::AdminPostService, settings::AdminSettingsService, tags::AdminTagService,
-    uploads::AdminUploadService,
+    posts::AdminPostService, settings::AdminSettingsService, snapshots::AdminSnapshotService,
+    tags::AdminTagService, uploads::AdminUploadService,
 };
 use crate::application::api_keys::ApiKeyService;
 use crate::infra::{
@@ -31,4 +31,5 @@ pub struct AdminState {
     pub jobs: Arc<AdminJobService>,
     pub audit: Arc<AdminAuditService>,
     pub api_keys: Arc<ApiKeyService>,
+    pub snapshots: Arc<AdminSnapshotService>,
 }
