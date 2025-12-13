@@ -8,15 +8,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
-- Live regression `live_api_post_edit_warms_cache_after_render`: creates→publishes→edits a post with summary/body markers, then verifies the public page shows fresh content and a `WarmCache` job was enqueued after render completion. Guards against caching half-rendered posts.
-- Snapshot system for posts and pages: new `snapshots` table with schema-versioned payloads, admin list/rollback UI, and API/CLI support (`/api/v1/snapshots` list/get/create/rollback) guarded by dedicated snapshot scopes.
-- Snapshot scopes (`snapshot_read`, `snapshot_write`) added to seeds and OpenAPI/CLI docs; DB migration includes type expansion and cleanup triggers for entity deletes.
-- Live API coverage for snapshot endpoints (`live_api_snapshots_cover_flow`): create, list, get, and rollback for posts, including scope gate checks and rollback correctness on a running server.
-- Documented that the seeded "all" API key used by live tests must include `snapshot_read` and `snapshot_write` scopes.
+- Snapshots for posts and pages: admin list/preview/create/rollback UI plus API/CLI endpoints (`/api/v1/snapshots` list/get/create/rollback) gated by new `snapshot_read` / `snapshot_write` scopes. Seeded “all” API key includes the new scopes so existing automation keeps working.
+- Snapshot previews now render and validate saved content for posts and pages, matching the live view before rollback or publish.
 
 ### Changed
-- Post render worker now invalidates + (debounced) warms the response cache after persisting rendered content, but only for published posts, eliminating the stale/empty-summary window observed when editing published posts.
-- Unified cache invalidation behavior between Admin and API routes: Admin routes now also trigger async cache warming after write operations (previously Admin only invalidated without warming). Both use `invalidate_and_enqueue_warm` middleware.
+- Published post edits show up immediately: render jobs now invalidate and then (debounced) warm the response cache; admin and API writes share the same invalidate+warm path so public pages stay fresh.
+- Snapshot admin list uses fixed column widths with ellipsis + title tooltip for descriptions, keeping the table from shifting horizontally while still exposing full text on hover.
+- Snapshot rollback/delete flows in the admin UI now mirror posts/pages and use consistent toast messaging.
 
 ### Breaking
 - `update-migration-version` is now `soffio migrations reconcile <ARCHIVE>` (inside the main binary). The standalone utility binary was removed. Database URL follows the same precedence as other commands (config → `SOFFIO__DATABASE__URL`/`DATABASE_URL` → `--database-url`). Update scripts and automation to use the new subcommand.
