@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.15-alpha.1] - 2025-12-15
+
+### Removed
+- **Response cache module**: Completely removed the response caching layer. This alpha release is for testing the system behavior without caching before deciding on the final approach.
+
 ## [0.1.14] - 2025-12-13
 
 ### Added
