@@ -19,11 +19,17 @@
 //! ```
 
 mod config;
+mod consumer;
+mod events;
 mod keys;
+mod planner;
 mod registry;
 mod store;
 
 pub use config::CacheConfig;
+pub use consumer::CacheConsumer;
+pub use events::{CacheEvent, Epoch, EventKind, EventQueue};
 pub use keys::{CacheKey, EntityKey, L0Key, L1Key, OutputFormat, hash_query, hash_value};
+pub use planner::ConsumptionPlan;
 pub use registry::CacheRegistry;
 pub use store::{CachedResponse, L0Store, L1Store};
