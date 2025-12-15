@@ -140,6 +140,12 @@ impl AdminPageService {
         };
 
         let page = self.writer.restore_page_snapshot(params).await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.page_upserted(page.id, &page.slug).await;
+        }
+
         Ok(page)
     }
 

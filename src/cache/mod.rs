@@ -20,6 +20,7 @@
 
 mod config;
 mod consumer;
+pub mod deps;
 mod events;
 mod keys;
 mod planner;

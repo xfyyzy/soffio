@@ -132,6 +132,11 @@ impl FeedService {
         filter: FeedFilter,
         cursor: Option<&str>,
     ) -> Result<PageContext, FeedError> {
+        // Record derived collection dependencies for cache invalidation
+        crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
+        crate::cache::deps::record(crate::cache::EntityKey::PostAggTags);
+        crate::cache::deps::record(crate::cache::EntityKey::PostAggMonths);
+
         let decoded_cursor = self.decode_cursor(cursor)?;
         let query_filter = filter.to_query_filter();
         let settings = self.load_site_settings().await?;
@@ -253,6 +258,9 @@ impl FeedService {
     }
 
     pub async fn post_detail(&self, slug: &str) -> Result<Option<PostDetailContext>, FeedError> {
+        // Record post slug dependency for cache invalidation
+        crate::cache::deps::record(crate::cache::EntityKey::PostSlug(slug.to_string()));
+
         let Some(post) = self.posts.find_by_slug(slug).await? else {
             return Ok(None);
         };
@@ -326,6 +334,9 @@ impl FeedService {
     }
 
     async fn load_site_settings(&self) -> Result<SiteSettingsRecord, FeedError> {
+        // Record site settings dependency for cache invalidation
+        crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
+
         self.settings
             .load_site_settings()
             .await

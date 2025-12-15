@@ -102,6 +102,12 @@ impl AdminPostService {
         };
 
         let post = self.writer.restore_post_snapshot(params).await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.post_upserted(post.id, &post.slug).await;
+        }
+
         Ok(post)
     }
 }

@@ -111,6 +111,11 @@ async fn run_serve(settings: config::Settings) -> Result<(), AppError> {
         &settings,
     )?;
 
+    // Perform startup cache warmup
+    if let Some(trigger) = &app.cache_trigger {
+        trigger.warmup_on_startup().await;
+    }
+
     let monitor_handle = spawn_job_monitor(
         job_repositories,
         app.job_context.clone(),
@@ -222,6 +227,7 @@ struct ApplicationContext {
     api_state: ApiState,
     job_context: JobWorkerContext,
     api_keys: Arc<ApiKeyService>,
+    cache_trigger: Option<Arc<CacheTrigger>>,
 }
 
 fn build_site_services(
@@ -463,6 +469,7 @@ fn build_application_context(
         api_state,
         job_context,
         api_keys: api_key_service,
+        cache_trigger,
     })
 }
 
