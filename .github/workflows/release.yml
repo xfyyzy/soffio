@@ -85,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Cache prebuilt dir
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: prebuilt/${{ matrix.cpu_level }}
           key: prebuilt-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}
