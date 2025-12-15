@@ -27,7 +27,6 @@ use crate::{
         snapshot_preview::SnapshotPreviewService,
     },
     infra::{
-        cache::{ResponseCache, SeoKey},
         db::PostgresRepositories,
         uploads::{UploadStorage, UploadStorageError},
     },
@@ -40,42 +39,32 @@ use crate::{
 
 use super::{
     DATASTAR_REQUEST_HEADER, RouterState, db_health_response,
-    middleware::{cache_public_responses, log_responses, set_request_context},
+    middleware::{log_responses, set_request_context},
 };
 use crate::application::pagination::{PageCursor, PageRequest, PostCursor};
 use crate::application::repos::{
     PageQueryFilter, PagesRepo, PostListScope, PostQueryFilter, PostsRepo, SettingsRepo,
 };
 use crate::domain::types::{PageStatus, PostStatus};
-use crate::infra::cache::CacheWarmDebouncer;
 
 #[derive(Clone)]
 pub struct HttpState {
     pub feed: Arc<FeedService>,
     pub pages: Arc<PageService>,
     pub chrome: Arc<ChromeService>,
-    pub cache: Arc<ResponseCache>,
-    pub cache_warm_debouncer: Arc<CacheWarmDebouncer>,
     pub db: Arc<PostgresRepositories>,
     pub upload_storage: Arc<UploadStorage>,
     pub snapshot_preview: Arc<SnapshotPreviewService>,
 }
 
 pub fn build_router(state: RouterState) -> Router<RouterState> {
-    let http_state = state.http.clone();
-    let cache = http_state.cache.clone();
-
     let cached_routes = Router::new()
         .route("/", get(index))
         .route("/tags/{tag}", get(tag_index))
         .route("/months/{month}", get(month_index))
         .route("/posts/{slug}", get(post_detail))
         .route("/ui/posts", get(posts_partial))
-        .fallback(fallback_router)
-        .layer(middleware::from_fn_with_state(
-            cache,
-            cache_public_responses,
-        ));
+        .fallback(fallback_router);
 
     let static_routes = Router::new()
         .route("/posts/_preview/{id}", get(post_preview))
@@ -507,76 +496,27 @@ fn build_upload_response(path: &str, bytes: Bytes) -> Response {
 }
 
 async fn sitemap(State(state): State<HttpState>) -> Response {
-    if let Some(body) = state.cache.get_seo(SeoKey::Sitemap).await {
-        return xml_response(body, "application/xml");
-    }
-    tracing::info!(
-        target = "soffio::seo",
-        key = "sitemap",
-        hit = false,
-        "seo cache miss"
-    );
-
     match build_sitemap_xml(&state).await {
-        Ok(body) => {
-            state.cache.put_seo(SeoKey::Sitemap, body.clone()).await;
-            xml_response(body, "application/xml")
-        }
+        Ok(body) => xml_response(body, "application/xml"),
         Err(err) => err.into_response(),
     }
 }
 
 async fn rss_feed(State(state): State<HttpState>) -> Response {
-    if let Some(body) = state.cache.get_seo(SeoKey::Rss).await {
-        return xml_response(body, "application/rss+xml");
-    }
-    tracing::info!(
-        target = "soffio::seo",
-        key = "rss",
-        hit = false,
-        "seo cache miss"
-    );
-
     match build_rss_xml(&state).await {
-        Ok(body) => {
-            state.cache.put_seo(SeoKey::Rss, body.clone()).await;
-            xml_response(body, "application/rss+xml")
-        }
+        Ok(body) => xml_response(body, "application/rss+xml"),
         Err(err) => err.into_response(),
     }
 }
 
 async fn atom_feed(State(state): State<HttpState>) -> Response {
-    if let Some(body) = state.cache.get_seo(SeoKey::Atom).await {
-        return xml_response(body, "application/atom+xml");
-    }
-    tracing::info!(
-        target = "soffio::seo",
-        key = "atom",
-        hit = false,
-        "seo cache miss"
-    );
-
     match build_atom_xml(&state).await {
-        Ok(body) => {
-            state.cache.put_seo(SeoKey::Atom, body.clone()).await;
-            xml_response(body, "application/atom+xml")
-        }
+        Ok(body) => xml_response(body, "application/atom+xml"),
         Err(err) => err.into_response(),
     }
 }
 
 async fn robots_txt(State(state): State<HttpState>) -> Response {
-    if let Some(body) = state.cache.get_seo(SeoKey::Robots).await {
-        return plain_response(body);
-    }
-    tracing::info!(
-        target = "soffio::seo",
-        key = "robots",
-        hit = false,
-        "seo cache miss"
-    );
-
     let settings = match state.db.load_site_settings().await {
         Ok(s) => s,
         Err(err) => {
@@ -594,7 +534,6 @@ async fn robots_txt(State(state): State<HttpState>) -> Response {
     let sitemap_url = format!("{base}sitemap.xml");
     let body = format!("User-agent: *\nAllow: /\nSitemap: {sitemap_url}\n");
 
-    state.cache.put_seo(SeoKey::Robots, body.clone()).await;
     plain_response(body)
 }
 

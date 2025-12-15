@@ -31,7 +31,6 @@ use soffio::application::repos::{
 use soffio::domain::api_keys::ApiScope;
 use soffio::domain::entities::{JobRecord, UploadRecord};
 use soffio::domain::types::JobState;
-use soffio::infra::cache::ResponseCache;
 use soffio::infra::db::PostgresRepositories;
 use soffio::infra::http::api::handlers;
 use soffio::infra::http::api::models::*;
@@ -211,7 +210,6 @@ async fn build_state(pool: PgPool) -> (ApiState, String) {
 
     let upload_storage =
         Arc::new(UploadStorage::new(std::path::PathBuf::from("uploads")).expect("upload storage"));
-    let _response_cache = Arc::new(ResponseCache::new());
 
     let api_state = ApiState {
         api_keys: api_key_service.clone(),

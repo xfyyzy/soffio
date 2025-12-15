@@ -9,11 +9,11 @@ use uuid::Uuid;
 
 use crate::{
     application::{
-        jobs::{JobWorkerContext, enqueue_job, invalidate_and_enqueue_warm, job_failed},
+        jobs::{JobWorkerContext, enqueue_job, job_failed},
         render::runtime::{InFlightError, RenderArtifact, RenderMailboxError},
-        repos::{JobsRepo, PostsRepo, RepoError, SettingsRepo},
+        repos::{JobsRepo, RepoError, SettingsRepo},
     },
-    domain::types::{JobType, PostStatus},
+    domain::types::JobType,
     infra::db::PersistedPostSectionOwned,
 };
 
@@ -253,35 +253,6 @@ pub async fn process_render_post_job(
         elapsed_ms = started_at.elapsed().as_millis() as u64,
         "post render persisted"
     );
-
-    // Only invalidate/warm cache after final rendered content is persisted, and
-    // only for published posts to avoid unnecessary churn for drafts.
-    match ctx.repositories.find_by_id(post_id).await {
-        Ok(Some(post)) if post.status == PostStatus::Published => {
-            if let Err(err) = invalidate_and_enqueue_warm(
-                ctx.cache.as_ref(),
-                &ctx.cache_warm_debouncer,
-                ctx.repositories.as_ref(),
-                Some("render_post".to_string()),
-            )
-            .await
-            {
-                warn!(
-                    target = "application::render::process_render_post_job",
-                    error = %err,
-                    slug = %payload.slug,
-                    "failed to invalidate/warm cache after render"
-                );
-            }
-        }
-        Ok(_) => {}
-        Err(err) => warn!(
-            target = "application::render::process_render_post_job",
-            error = %err,
-            slug = %payload.slug,
-            "skip cache warm; failed to re-load post status"
-        ),
-    }
 
     Ok(())
 }

@@ -27,8 +27,7 @@ use soffio::{
         feed::FeedService,
         jobs::{
             ExpireApiKeysContext, JobWorkerContext, expire_api_keys_schedule,
-            process_cache_warm_job, process_expire_api_keys_job, process_publish_page_job,
-            process_publish_post_job,
+            process_expire_api_keys_job, process_publish_page_job, process_publish_post_job,
         },
         page::PageService,
         render::{
@@ -48,8 +47,6 @@ use soffio::{
     domain::entities::{PageRecord, PostRecord},
     domain::types::JobType,
     infra::{
-        cache::{CacheWarmDebouncer, DEFAULT_CACHE_WARM_DEBOUNCE, ResponseCache},
-        cache_warmer::CacheWarmer,
         db::PostgresRepositories,
         error::InfraError,
         http::{self, AdminState, ApiState, HttpState, RouterState},
@@ -112,8 +109,6 @@ async fn run_serve(settings: config::Settings) -> Result<(), AppError> {
         job_repositories.clone(),
         &settings,
     )?;
-
-    warm_initial_cache(&app.http_state).await?;
 
     let monitor_handle = spawn_job_monitor(
         job_repositories,
@@ -311,9 +306,6 @@ fn build_application_context(
             .map_err(|err| AppError::from(InfraError::Io(err)))?,
     );
 
-    let response_cache = Arc::new(ResponseCache::new());
-    let cache_warm_debouncer = Arc::new(CacheWarmDebouncer::new(DEFAULT_CACHE_WARM_DEBOUNCE));
-
     let audit_service = AdminAuditService::new(audit_repo.clone());
     let admin_post_service = Arc::new(AdminPostService::new(
         posts_repo.clone(),
@@ -366,8 +358,6 @@ fn build_application_context(
         feed: feed_service_http.clone(),
         pages: page_service_http.clone(),
         chrome: chrome_service_http.clone(),
-        cache: response_cache.clone(),
-        cache_warm_debouncer: cache_warm_debouncer.clone(),
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
         snapshot_preview: snapshot_preview_service.clone(),
@@ -375,8 +365,6 @@ fn build_application_context(
 
     let admin_state = AdminState {
         db: http_repositories.clone(),
-        cache: response_cache.clone(),
-        cache_warm_debouncer: cache_warm_debouncer.clone(),
         chrome: Arc::new(AdminChromeService::new(settings_repo.clone())),
         dashboard: Arc::new(AdminDashboardService::new(
             posts_repo.clone(),
@@ -427,8 +415,6 @@ fn build_application_context(
     let job_context = JobWorkerContext {
         repositories: job_repositories,
         renderer: render_service(),
-        cache: response_cache,
-        cache_warm_debouncer: cache_warm_debouncer.clone(),
         feed: feed_service_jobs,
         pages: page_service_jobs,
         snapshot_preview: snapshot_preview_service.clone(),
@@ -532,13 +518,6 @@ async fn render_page(ctx: &JobWorkerContext, page: PageRecord) -> Result<(), App
     Ok(())
 }
 
-async fn warm_initial_cache(http_state: &HttpState) -> Result<(), AppError> {
-    CacheWarmer::new(http_state.clone())
-        .warm_initial()
-        .await
-        .map_err(|err| AppError::unexpected(format!("failed to warm cache: {err}")))
-}
-
 fn spawn_job_monitor(
     repositories: Arc<PostgresRepositories>,
     context: JobWorkerContext,
@@ -560,10 +539,6 @@ fn spawn_job_monitor(
     let publish_page_storage = PostgresStorage::new_with_config(
         repositories.pool().clone(),
         ApalisSqlConfig::new(JobType::PublishPage.as_str()),
-    );
-    let cache_warm_storage = PostgresStorage::new_with_config(
-        repositories.pool().clone(),
-        ApalisSqlConfig::new(JobType::WarmCache.as_str()),
     );
 
     let render_post_concurrency = jobs.render_post_concurrency.get() as usize;
@@ -591,12 +566,6 @@ fn spawn_job_monitor(
         .data(context.clone())
         .backend(publish_page_storage)
         .build_fn(process_publish_page_job);
-    // Cache warm worker: runs with concurrency 1 to avoid redundant warming
-    let cache_warm_worker = WorkerBuilder::new("cache-warm-worker")
-        .concurrency(1)
-        .data(context)
-        .backend(cache_warm_storage)
-        .build_fn(process_cache_warm_job);
 
     // Cron-based API key expiration worker (runs hourly)
     let expire_api_keys_ctx = ExpireApiKeysContext { api_keys };
@@ -610,7 +579,6 @@ fn spawn_job_monitor(
         .register(render_page_worker)
         .register(publish_post_worker)
         .register(publish_page_worker)
-        .register(cache_warm_worker)
         .register(expire_api_keys_worker);
 
     tokio::spawn(async move {

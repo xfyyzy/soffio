@@ -1,6 +1,5 @@
 mod api_keys;
 mod audit;
-mod cache;
 mod dashboard;
 mod health;
 mod jobs;
@@ -34,17 +33,10 @@ use axum::{
 
 use crate::{application::repos::SettingsRepo, infra::assets};
 
-use super::middleware::{
-    CacheInvalidationState, invalidate_admin_writes, log_responses, set_request_context,
-};
+use super::middleware::{log_responses, set_request_context};
 use tracing::error;
 
 pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router {
-    let cache_invalidation_state = CacheInvalidationState {
-        cache: state.cache.clone(),
-        debouncer: state.cache_warm_debouncer.clone(),
-        jobs_repo: state.db.clone(),
-    };
     Router::new()
         .route("/", get(dashboard::admin_dashboard))
         .route("/posts", get(posts::admin_posts))
@@ -204,15 +196,10 @@ pub fn build_admin_router(state: AdminState, upload_body_limit: usize) -> Router
             post(api_keys::admin_api_key_delete),
         )
         .route("/_health/db", get(health::admin_health))
-        .route("/cache/invalidate", post(cache::invalidate_cache))
         .route("/static/admin/{*path}", get(assets::serve_admin))
         .route("/static/common/{*path}", get(assets::serve_common))
         .route("/favicon.ico", get(favicon))
         .with_state(state)
-        .layer(middleware::from_fn_with_state(
-            cache_invalidation_state,
-            invalidate_admin_writes,
-        ))
         .layer(middleware::from_fn(log_responses))
         .layer(middleware::from_fn(set_request_context))
 }

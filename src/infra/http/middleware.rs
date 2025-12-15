@@ -1,23 +1,10 @@
-use std::{sync::Arc, time::Instant};
+use std::time::Instant;
 
-use axum::{
-    body::Body,
-    extract::State,
-    http::{Method, Request},
-    middleware::Next,
-    response::Response,
-};
+use axum::{body::Body, http::Request, middleware::Next, response::Response};
 use tracing::{error, warn};
 use uuid::Uuid;
 
-use crate::{
-    application::api_keys::ApiPrincipal,
-    application::error::ErrorReport,
-    infra::cache::{CacheWarmDebouncer, ResponseCache, should_store_response},
-    infra::db::PostgresRepositories,
-};
-
-use super::DATASTAR_REQUEST_HEADER;
+use crate::{application::api_keys::ApiPrincipal, application::error::ErrorReport};
 
 #[derive(Clone)]
 pub struct RequestContext {
@@ -33,132 +20,6 @@ pub async fn set_request_context(mut request: Request<Body>, next: Next) -> Resp
 
     let mut response = next.run(request).await;
     response.extensions_mut().insert(ctx);
-    response
-}
-
-pub async fn cache_public_responses(
-    State(cache): State<Arc<ResponseCache>>,
-    request: Request<Body>,
-    next: Next,
-) -> Response {
-    if should_bypass_cache(&request) {
-        return next.run(request).await;
-    }
-
-    let key = cache_key(&request);
-    if let Some(response) = cache.get(&key).await {
-        return response;
-    }
-
-    tracing::info!(
-        target = "soffio::http::cache",
-        path = %key,
-        "cache miss"
-    );
-
-    let response = next.run(request).await;
-
-    if !should_store_response(&response) {
-        return response;
-    }
-
-    match cache.store_response(&key, response).await {
-        Ok(rebuilt) => rebuilt,
-        Err((rebuilt, error)) => {
-            warn!(
-                target = "soffio::http::cache",
-                path = %key,
-                error = %error,
-                "failed to store cached response"
-            );
-            rebuilt
-        }
-    }
-}
-
-pub async fn invalidate_admin_writes(
-    State(state): State<CacheInvalidationState>,
-    request: Request<Body>,
-    next: Next,
-) -> Response {
-    use crate::application::jobs::invalidate_and_enqueue_warm;
-    use crate::application::repos::JobsRepo;
-
-    let method = request.method().clone();
-    let response = next.run(request).await;
-
-    if method != Method::GET && response.status().is_success() {
-        let cache = state.cache.clone();
-        let debouncer = state.debouncer.clone();
-        let jobs_repo = state.jobs_repo.clone();
-
-        tokio::spawn(async move {
-            if let Err(err) = invalidate_and_enqueue_warm(
-                cache.as_ref(),
-                &debouncer,
-                jobs_repo.as_ref() as &dyn JobsRepo,
-                Some("admin_write".to_string()),
-            )
-            .await
-            {
-                tracing::warn!(
-                    target = "infra::http::middleware",
-                    error = %err,
-                    "failed to invalidate and enqueue cache warm job (admin)"
-                );
-            }
-        });
-    }
-
-    response
-}
-
-/// State for cache invalidation with async warming support.
-#[derive(Clone)]
-pub struct CacheInvalidationState {
-    pub cache: Arc<ResponseCache>,
-    pub debouncer: Arc<CacheWarmDebouncer>,
-    pub jobs_repo: Arc<PostgresRepositories>,
-}
-
-/// Middleware that invalidates cache on successful writes and triggers async warming.
-///
-/// This is used by API routes to ensure cache consistency after modifications
-/// via soffio-cli or other API consumers.
-pub async fn invalidate_and_warm_cache(
-    State(state): State<CacheInvalidationState>,
-    request: Request<Body>,
-    next: Next,
-) -> Response {
-    use crate::application::jobs::invalidate_and_enqueue_warm;
-    use crate::application::repos::JobsRepo;
-
-    let method = request.method().clone();
-    let response = next.run(request).await;
-
-    if method != Method::GET && response.status().is_success() {
-        let cache = state.cache.clone();
-        let debouncer = state.debouncer.clone();
-        let jobs_repo = state.jobs_repo.clone();
-
-        tokio::spawn(async move {
-            if let Err(err) = invalidate_and_enqueue_warm(
-                cache.as_ref(),
-                &debouncer,
-                jobs_repo.as_ref() as &dyn JobsRepo,
-                Some("api_write".to_string()),
-            )
-            .await
-            {
-                tracing::warn!(
-                    target = "infra::http::middleware",
-                    error = %err,
-                    "failed to invalidate and enqueue cache warm job"
-                );
-            }
-        });
-    }
-
     response
 }
 
@@ -239,20 +100,4 @@ pub async fn log_responses(request: Request<Body>, next: Next) -> Response {
     }
 
     response
-}
-
-fn should_bypass_cache(request: &Request<Body>) -> bool {
-    if request.method() != Method::GET {
-        return true;
-    }
-
-    request.headers().contains_key(DATASTAR_REQUEST_HEADER)
-}
-
-fn cache_key(request: &Request<Body>) -> String {
-    request
-        .uri()
-        .path_and_query()
-        .map(|value| value.as_str().to_string())
-        .unwrap_or_else(|| request.uri().path().to_string())
 }

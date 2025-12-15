@@ -187,22 +187,6 @@ pub struct ServeOverrides {
     #[arg(long = "uploads-max-request-bytes", value_name = "BYTES")]
     pub uploads_max_request_bytes: Option<u64>,
 
-    /// Enable or disable the HTML fragment cache.
-    #[arg(
-        long = "cache-enable-html-fragment-cache",
-        value_name = "BOOL",
-        value_parser = BoolishValueParser::new()
-    )]
-    pub cache_enable_html_fragment_cache: Option<bool>,
-
-    /// Enable or disable the HTTP response cache.
-    #[arg(
-        long = "cache-enable-response-cache",
-        value_name = "BOOL",
-        value_parser = BoolishValueParser::new()
-    )]
-    pub cache_enable_response_cache: Option<bool>,
-
     /// Override the rate limit window size.
     #[arg(long = "rate-limit-window-seconds", value_name = "SECONDS")]
     pub rate_limit_window_seconds: Option<u64>,
@@ -285,7 +269,6 @@ pub struct Settings {
     pub jobs: JobsSettings,
     pub render: RenderSettings,
     pub uploads: UploadSettings,
-    pub cache: CacheSettings,
     pub rate_limit: RateLimitSettings,
     pub api_rate_limit: ApiRateLimitSettings,
     pub scheduler: SchedulerSettings,
@@ -327,12 +310,6 @@ pub struct RenderSettings {
 pub struct UploadSettings {
     pub directory: PathBuf,
     pub max_request_bytes: NonZeroU64,
-}
-
-#[derive(Debug, Clone)]
-pub struct CacheSettings {
-    pub enable_html_fragment_cache: bool,
-    pub enable_response_cache: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -417,7 +394,6 @@ struct RawSettings {
     jobs: RawJobsSettings,
     render: RawRenderSettings,
     uploads: RawUploadSettings,
-    cache: RawCacheSettings,
     rate_limit: RawRateLimitSettings,
     api_rate_limit: RawApiRateLimitSettings,
     scheduler: RawSchedulerSettings,
@@ -460,12 +436,6 @@ impl RawSettings {
         }
         if let Some(limit) = overrides.uploads_max_request_bytes {
             self.uploads.max_request_bytes = Some(limit);
-        }
-        if let Some(flag) = overrides.cache_enable_html_fragment_cache {
-            self.cache.enable_html_fragment_cache = Some(flag);
-        }
-        if let Some(flag) = overrides.cache_enable_response_cache {
-            self.cache.enable_response_cache = Some(flag);
         }
         if let Some(window) = overrides.rate_limit_window_seconds {
             self.rate_limit.window_seconds = Some(window);
@@ -531,7 +501,6 @@ impl Settings {
             jobs,
             render,
             uploads,
-            cache,
             rate_limit,
             api_rate_limit,
             scheduler,
@@ -543,7 +512,6 @@ impl Settings {
         let jobs = build_jobs_settings(jobs)?;
         let render = build_render_settings(render)?;
         let uploads = build_upload_settings(uploads)?;
-        let cache = build_cache_settings(cache);
         let rate_limit = build_rate_limit_settings(rate_limit)?;
         let api_rate_limit = build_api_rate_limit_settings(api_rate_limit)?;
         let scheduler = build_scheduler_settings(scheduler)?;
@@ -555,7 +523,6 @@ impl Settings {
             jobs,
             render,
             uploads,
-            cache,
             rate_limit,
             api_rate_limit,
             scheduler,
@@ -670,13 +637,6 @@ fn build_upload_settings(uploads: RawUploadSettings) -> Result<UploadSettings, L
         directory,
         max_request_bytes,
     })
-}
-
-fn build_cache_settings(cache: RawCacheSettings) -> CacheSettings {
-    CacheSettings {
-        enable_html_fragment_cache: cache.enable_html_fragment_cache.unwrap_or(false),
-        enable_response_cache: cache.enable_response_cache.unwrap_or(false),
-    }
 }
 
 fn build_jobs_settings(jobs: RawJobsSettings) -> Result<JobsSettings, LoadError> {
@@ -827,13 +787,6 @@ struct RawDatabaseSettings {
 struct RawUploadSettings {
     directory: Option<PathBuf>,
     max_request_bytes: Option<u64>,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-#[serde(default)]
-struct RawCacheSettings {
-    enable_html_fragment_cache: Option<bool>,
-    enable_response_cache: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]

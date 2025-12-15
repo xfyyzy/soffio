@@ -28,7 +28,7 @@ The demo database resets at the top of every hour.
 src/
 ├── domain        # domain entities, invariants, value objects
 ├── application   # use-case services, repo traits, job scheduling
-├── infra         # Postgres repos, HTTP adapters, cache, telemetry
+├── infra         # Postgres repos, HTTP adapters, telemetry
 ├── presentation  # view models, templates, layouts
 ├── util          # supporting utilities (time zones, ids, etc.)
 └── main.rs       # CLI / service entry point
@@ -56,7 +56,6 @@ src/
 
 - **HTTP services** — Axum 0.8 with separate listeners for public and admin traffic (`src/infra/http/public.rs` and `src/infra/http/admin/`).
 - **Database access** — SQLx (Postgres); concrete repos live in `src/infra/db`, while traits are defined in `src/application/repos.rs`.
-- **Caching** — response cache at `src/infra/cache.rs` plus a warmer in `src/infra/cache_warmer.rs`.
 - **Telemetry** — `tracing` + `tracing-subscriber`, bootstrapped via `src/infra/telemetry.rs`.
 
 ## Headless API

@@ -28,7 +28,7 @@ Axum、Askama、SQLx 构成。
 src/
 ├── domain        # 领域模型与业务不变量
 ├── application   # 用例服务、仓库接口、作业调度
-├── infra         # Postgres 仓库、HTTP 适配层、缓存、遥测
+├── infra         # Postgres 仓库、HTTP 适配层、遥测
 ├── presentation  # 视图模型、模板与布局
 ├── util          # 附属工具（时区、标识符等）
 └── main.rs       # CLI/服务入口
@@ -58,7 +58,6 @@ src/
 - **HTTP 服务**：Axum 8，采用双监听地址区分公开与管理面；公共路由在 `src/infra/http/public.rs`，管理路由在
   `src/infra/http/admin/`。
 - **数据库访问**：SQLx Postgres，所有仓库集中在 `src/infra/db`，领域接口定义见 `src/application/repos.rs`。
-- **缓存**：响应缓存由 `src/infra/cache.rs` 提供，预热器在 `src/infra/cache_warmer.rs`。
 - **日志与追踪**：`tracing`, `tracing-subscriber`，统一入口 `src/infra/telemetry.rs`。
 
 ## 无头 API

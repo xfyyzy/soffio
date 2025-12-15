@@ -1,8 +1,6 @@
 //! Infrastructure adapters and runtime bootstrap.
 
 pub mod assets;
-pub mod cache;
-pub mod cache_warmer;
 pub mod db;
 pub mod error;
 pub mod http;

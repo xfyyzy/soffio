@@ -7,10 +7,7 @@ use tracing::{error, info};
 use uuid::Uuid;
 
 use crate::{
-    application::{
-        jobs::invalidate_and_enqueue_warm,
-        repos::{AuditRepo, JobsRepo, RepoError},
-    },
+    application::repos::{AuditRepo, JobsRepo, RepoError},
     domain::entities::AuditLogRecord,
     domain::types::JobType,
     infra::db::PostgresRepositories,
@@ -55,7 +52,6 @@ pub async fn process_publish_post_job(
 ) -> Result<(), ApalisError> {
     let ctx = &*context;
     let repositories = ctx.repositories.clone();
-    let cache = ctx.cache.clone();
 
     let post_row = sqlx::query!(
         r#"
@@ -88,15 +84,6 @@ pub async fn process_publish_post_job(
     )
     .await?;
 
-    // Invalidate and (debounced) warm cache to keep public pages fresh even for scheduled publishes.
-    let _ = invalidate_and_enqueue_warm(
-        cache.as_ref(),
-        &ctx.cache_warm_debouncer,
-        repositories.as_ref(),
-        Some("publish_post".to_string()),
-    )
-    .await;
-
     record_audit_event(
         Arc::clone(&repositories),
         "post.publish",
@@ -121,7 +108,6 @@ pub async fn process_publish_page_job(
 ) -> Result<(), ApalisError> {
     let ctx = &*context;
     let repositories = ctx.repositories.clone();
-    let cache = ctx.cache.clone();
 
     let page_row = sqlx::query!(
         r#"
@@ -153,14 +139,6 @@ pub async fn process_publish_page_job(
         &payload.slug,
     )
     .await?;
-
-    let _ = invalidate_and_enqueue_warm(
-        cache.as_ref(),
-        &ctx.cache_warm_debouncer,
-        repositories.as_ref(),
-        Some("publish_page".to_string()),
-    )
-    .await;
 
     record_audit_event(
         Arc::clone(&repositories),

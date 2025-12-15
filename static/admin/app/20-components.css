@@ -392,11 +392,6 @@ status-badge[data-status="publish_page"] {
   color: #1d4ed8;
 }
 
-status-badge[data-status="warm_cache"] {
-  background-color: rgba(249, 115, 22, 0.16);
-  color: #c2410c;
-}
-
 /* Job detail page styles */
 [data-role="detail-table"] {
   width: 100%;

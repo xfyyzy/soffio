@@ -128,7 +128,6 @@ pub(super) fn job_type_label(job_type: JobType) -> &'static str {
         JobType::RenderSummary => "Render Summary",
         JobType::PublishPost => "Publish Post",
         JobType::PublishPage => "Publish Page",
-        JobType::WarmCache => "Warm Cache",
     }
 }
 
@@ -143,7 +142,6 @@ pub(super) fn job_type_options(
         (JobType::RenderPage, counts.render_page),
         (JobType::PublishPost, counts.publish_post),
         (JobType::PublishPage, counts.publish_page),
-        (JobType::WarmCache, counts.warm_cache),
     ]
     .into_iter()
     .map(|(job_type, count)| admin_views::AdminJobTypeOption {
@@ -165,7 +163,6 @@ mod tests {
             render_page: 2,
             publish_post: 3,
             publish_page: 4,
-            warm_cache: 5,
         };
 
         let options = job_type_options(&counts);
@@ -178,11 +175,10 @@ mod tests {
                 JobType::RenderPage.as_str(),
                 JobType::PublishPost.as_str(),
                 JobType::PublishPage.as_str(),
-                JobType::WarmCache.as_str(),
             ]
         );
 
         let counts: Vec<u64> = options.iter().map(|opt| opt.count).collect();
-        assert_eq!(counts, vec![1, 2, 3, 4, 5]);
+        assert_eq!(counts, vec![1, 2, 3, 4]);
     }
 }

@@ -237,17 +237,12 @@ impl AdminJobService {
             job_type: Some(JobType::PublishPage),
             ..(base_filter.clone())
         };
-        let filter_warm_cache = JobQueryFilter {
-            job_type: Some(JobType::WarmCache),
-            ..(base_filter.clone())
-        };
 
-        let (render_post, render_page, publish_post, publish_page, warm_cache) = tokio::try_join!(
+        let (render_post, render_page, publish_post, publish_page) = tokio::try_join!(
             self.repo.count_jobs(&filter_render_post),
             self.repo.count_jobs(&filter_render_page),
             self.repo.count_jobs(&filter_publish_post),
             self.repo.count_jobs(&filter_publish_page),
-            self.repo.count_jobs(&filter_warm_cache),
         )?;
 
         Ok(AdminJobTypeCounts {
@@ -255,7 +250,6 @@ impl AdminJobService {
             render_page,
             publish_post,
             publish_page,
-            warm_cache,
         })
     }
 }
@@ -278,7 +272,6 @@ pub struct AdminJobTypeCounts {
     pub render_page: u64,
     pub publish_post: u64,
     pub publish_page: u64,
-    pub warm_cache: u64,
 }
 
 #[derive(Debug, Serialize)]

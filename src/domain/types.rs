@@ -64,7 +64,6 @@ pub enum JobType {
     RenderSummary,
     PublishPost,
     PublishPage,
-    WarmCache,
 }
 
 /// Supported snapshot entity types (mirrors Postgres enum `snapshot_entity_type`).
@@ -86,7 +85,6 @@ impl JobType {
             JobType::RenderSummary => "render_summary",
             JobType::PublishPost => "publish_post",
             JobType::PublishPage => "publish_page",
-            JobType::WarmCache => "warm_cache",
         }
     }
 }
@@ -103,7 +101,6 @@ impl TryFrom<&str> for JobType {
             "render_summary" => Ok(JobType::RenderSummary),
             "publish_post" => Ok(JobType::PublishPost),
             "publish_page" => Ok(JobType::PublishPage),
-            "warm_cache" => Ok(JobType::WarmCache),
             _ => Err(()),
         }
     }
