@@ -67,7 +67,7 @@ jobs:
               chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true
             '
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl
           path: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl.tar.gz
@@ -85,12 +85,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Cache prebuilt dir
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: prebuilt/${{ matrix.cpu_level }}
           key: prebuilt-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}
       - name: Download prebuilt binaries
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl
           path: prebuilt/${{ matrix.cpu_level }}
