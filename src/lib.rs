@@ -1,4 +1,5 @@
 pub mod application;
+pub mod cache;
 pub mod config;
 pub mod domain;
 pub mod infra;

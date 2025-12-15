@@ -1,0 +1,29 @@
+//! Soffio Cache System
+//!
+//! Provides two-layer caching for the Soffio blog engine:
+//!
+//! - **L0 (Object Cache)**: Caches domain entities and query results
+//! - **L1 (Response Cache)**: Caches rendered HTTP responses
+//!
+//! ## Configuration
+//!
+//! Cache behavior is controlled via `soffio.toml`:
+//!
+//! ```toml
+//! [cache]
+//! enable_l0_cache = true
+//! enable_l1_cache = true
+//! l0_post_limit = 500
+//! l0_page_limit = 100
+//! # ... see config.rs for all options
+//! ```
+
+mod config;
+mod keys;
+mod registry;
+mod store;
+
+pub use config::CacheConfig;
+pub use keys::{CacheKey, EntityKey, L0Key, L1Key, OutputFormat, hash_query, hash_value};
+pub use registry::CacheRegistry;
+pub use store::{CachedResponse, L0Store, L1Store};

@@ -69,15 +69,50 @@ directory = "uploads"
 max_request_bytes = 10_485_760
 
 [cache]
-# Enable the HTML fragment cache used by presentation-layer partials.
-# Env: SOFFIO__CACHE__ENABLE_HTML_FRAGMENT_CACHE
-# CLI: --cache-enable-html-fragment-cache
-enable_html_fragment_cache = false
+# Enable the L0 object/query cache.
+# Env: SOFFIO__CACHE__ENABLE_L0_CACHE
+# CLI: --cache-enable-l0-cache
+enable_l0_cache = true
 
-# Enable the response cache for HTTP handlers.
-# Env: SOFFIO__CACHE__ENABLE_RESPONSE_CACHE
-# CLI: --cache-enable-response-cache
-enable_response_cache = false
+# Enable the L1 response cache for HTTP handlers.
+# Env: SOFFIO__CACHE__ENABLE_L1_CACHE
+# CLI: --cache-enable-l1-cache
+enable_l1_cache = true
+
+# Maximum cached posts in L0 KV cache.
+# Env: SOFFIO__CACHE__L0_POST_LIMIT
+# CLI: --cache-l0-post-limit
+l0_post_limit = 500
+
+# Maximum cached pages in L0 KV cache.
+# Env: SOFFIO__CACHE__L0_PAGE_LIMIT
+# CLI: --cache-l0-page-limit
+l0_page_limit = 100
+
+# Maximum cached API keys in L0 KV cache.
+# Env: SOFFIO__CACHE__L0_API_KEY_LIMIT
+# CLI: --cache-l0-api-key-limit
+l0_api_key_limit = 100
+
+# Maximum cached post list pages in L0 LRU cache.
+# Env: SOFFIO__CACHE__L0_POST_LIST_LIMIT
+# CLI: --cache-l0-post-list-limit
+l0_post_list_limit = 50
+
+# Maximum cached HTTP responses in L1 cache.
+# Env: SOFFIO__CACHE__L1_RESPONSE_LIMIT
+# CLI: --cache-l1-response-limit
+l1_response_limit = 200
+
+# Auto-consume interval in milliseconds for eventual consistency fallback.
+# Env: SOFFIO__CACHE__AUTO_CONSUME_INTERVAL_MS
+# CLI: --cache-auto-consume-interval-ms
+auto_consume_interval_ms = 5000
+
+# Maximum events per consumption batch.
+# Env: SOFFIO__CACHE__CONSUME_BATCH_LIMIT
+# CLI: --cache-consume-batch-limit
+consume_batch_limit = 100
 
 [rate_limit]
 # Window size for rate limiting in seconds.
