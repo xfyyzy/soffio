@@ -71,6 +71,15 @@ After modifying queries, regenerate compile-time checked query metadata:
 cargo sqlx prepare --workspace --database-url postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev -- --all-targets
 ```
 
+
+**Migrations**
+
+When adding migration scripts, ensure `seed/seed.toml` is aligned with the database version:
+
+```bash
+SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev cargo run --bin soffio migrations reconcile seed/seed.toml
+```
+
 **Static assets**
 
 Static assets are embedded into the binary even in development; restart the service after changing assets (CSS, templates, etc.) to see the effect.
