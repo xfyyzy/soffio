@@ -95,6 +95,11 @@ impl AdminPostService {
 
         self.enqueue_render_jobs(&post).await?;
 
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.post_upserted(post.id, &post.slug).await;
+        }
+
         Ok(post)
     }
 
@@ -138,6 +143,11 @@ impl AdminPostService {
 
         self.enqueue_render_jobs(&post).await?;
 
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.post_upserted(post.id, &post.slug).await;
+        }
+
         Ok(post)
     }
 
@@ -171,6 +181,12 @@ impl AdminPostService {
             }
 
             self.record_status_audit(actor, &post).await?;
+
+            // Trigger cache invalidation
+            if let Some(trigger) = &self.cache_trigger {
+                trigger.post_upserted(post.id, &post.slug).await;
+            }
+
             Ok(post)
         } else {
             let normalized = normalize_status(
@@ -190,11 +206,17 @@ impl AdminPostService {
 
             let post = self.writer.update_post_status(params).await?;
             self.record_status_audit(actor, &post).await?;
+
+            // Trigger cache invalidation
+            if let Some(trigger) = &self.cache_trigger {
+                trigger.post_upserted(post.id, &post.slug).await;
+            }
+
             Ok(post)
         }
     }
 
-    pub async fn delete_post(&self, actor: &str, id: Uuid) -> Result<(), AdminPostError> {
+    pub async fn delete_post(&self, actor: &str, id: Uuid, slug: &str) -> Result<(), AdminPostError> {
         self.writer.delete_post(id).await?;
         self.audit
             .record(
@@ -205,6 +227,11 @@ impl AdminPostService {
                 Option::<&PostSummarySnapshot<'_>>::None,
             )
             .await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.post_deleted(id, slug).await;
+        }
 
         Ok(())
     }
@@ -240,6 +267,11 @@ impl AdminPostService {
                 Some(&snapshot),
             )
             .await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.post_upserted(post.id, &post.slug).await;
+        }
 
         Ok(post)
     }

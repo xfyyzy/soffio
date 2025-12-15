@@ -25,6 +25,7 @@ mod keys;
 mod planner;
 mod registry;
 mod store;
+mod trigger;
 
 pub use config::CacheConfig;
 pub use consumer::CacheConsumer;
@@ -33,3 +34,5 @@ pub use keys::{CacheKey, EntityKey, L0Key, L1Key, OutputFormat, hash_query, hash
 pub use planner::ConsumptionPlan;
 pub use registry::CacheRegistry;
 pub use store::{CachedResponse, L0Store, L1Store};
+pub use trigger::CacheTrigger;
+

@@ -104,7 +104,7 @@ pub(crate) async fn admin_posts_bulk_action(
         };
 
         let result = match action {
-            BulkAction::Delete => state.posts.delete_post(actor, post.id).await.map(|_| ()),
+            BulkAction::Delete => state.posts.delete_post(actor, post.id, &post.slug).await.map(|_| ()),
             BulkAction::Publish => {
                 let command = UpdatePostStatusCommand {
                     id: post.id,

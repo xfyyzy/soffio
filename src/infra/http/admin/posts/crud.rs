@@ -426,7 +426,7 @@ pub(crate) async fn admin_post_delete(
         }
     };
 
-    if let Err(err) = state.posts.delete_post(actor, post.id).await {
+    if let Err(err) = state.posts.delete_post(actor, post.id, &post.slug).await {
         let message = Toast::error(format!("Failed to delete post: {}", err));
         return respond_with_posts_panel_message(
             &state,

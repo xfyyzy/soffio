@@ -43,6 +43,7 @@ use soffio::{
         site,
         snapshot_preview::SnapshotPreviewService,
     },
+    cache::{CacheConfig, CacheConsumer, CacheRegistry, CacheTrigger, EventQueue, L0Store, L1Store},
     config,
     domain::entities::{PageRecord, PostRecord},
     domain::types::JobType,
@@ -306,37 +307,69 @@ fn build_application_context(
             .map_err(|err| AppError::from(InfraError::Io(err)))?,
     );
 
+    // Initialize cache infrastructure
+    let cache_config = CacheConfig::default();
+    let cache_trigger = if cache_config.is_enabled() {
+        let l0 = Arc::new(L0Store::new(&cache_config));
+        let l1 = Arc::new(L1Store::new(&cache_config));
+        let registry = Arc::new(CacheRegistry::new());
+        let queue = Arc::new(EventQueue::new());
+        let consumer = Arc::new(CacheConsumer::new(
+            cache_config.clone(),
+            l0,
+            l1,
+            registry,
+            queue.clone(),
+        ));
+        Some(Arc::new(CacheTrigger::new(
+            cache_config,
+            queue,
+            consumer,
+        )))
+    } else {
+        None
+    };
+
     let audit_service = AdminAuditService::new(audit_repo.clone());
-    let admin_post_service = Arc::new(AdminPostService::new(
-        posts_repo.clone(),
-        posts_write_repo.clone(),
-        sections_repo.clone(),
-        jobs_repo.clone(),
-        tags_repo.clone(),
-        audit_service.clone(),
-    ));
-    let admin_page_service = Arc::new(AdminPageService::new(
-        pages_repo.clone(),
-        pages_write_repo.clone(),
-        jobs_repo.clone(),
-        audit_service.clone(),
-        settings_repo.clone(),
-    ));
+    let admin_post_service = Arc::new(
+        AdminPostService::new(
+            posts_repo.clone(),
+            posts_write_repo.clone(),
+            sections_repo.clone(),
+            jobs_repo.clone(),
+            tags_repo.clone(),
+            audit_service.clone(),
+        )
+        .with_cache_trigger_opt(cache_trigger.clone()),
+    );
+    let admin_page_service = Arc::new(
+        AdminPageService::new(
+            pages_repo.clone(),
+            pages_write_repo.clone(),
+            jobs_repo.clone(),
+            audit_service.clone(),
+            settings_repo.clone(),
+        )
+        .with_cache_trigger_opt(cache_trigger.clone()),
+    );
     let admin_tag_service = Arc::new(AdminTagService::new(
         tags_repo.clone(),
         tags_write_repo.clone(),
         audit_service.clone(),
     ));
-    let admin_navigation_service = Arc::new(AdminNavigationService::new(
-        navigation_repo.clone(),
-        navigation_write_repo.clone(),
-        pages_repo.clone(),
-        audit_service.clone(),
-    ));
-    let admin_settings_service = Arc::new(AdminSettingsService::new(
-        settings_repo.clone(),
-        audit_service.clone(),
-    ));
+    let admin_navigation_service = Arc::new(
+        AdminNavigationService::new(
+            navigation_repo.clone(),
+            navigation_write_repo.clone(),
+            pages_repo.clone(),
+            audit_service.clone(),
+        )
+        .with_cache_trigger_opt(cache_trigger.clone()),
+    );
+    let admin_settings_service = Arc::new(
+        AdminSettingsService::new(settings_repo.clone(), audit_service.clone())
+            .with_cache_trigger_opt(cache_trigger.clone()),
+    );
     let admin_upload_service = Arc::new(AdminUploadService::new(
         uploads_repo.clone(),
         audit_service.clone(),

@@ -19,6 +19,7 @@ use crate::application::repos::{
     CreatePageParams, JobsRepo, PageQueryFilter, PagesRepo, PagesWriteRepo, RepoError,
     RestorePageSnapshotParams, SettingsRepo, UpdatePageParams, UpdatePageStatusParams,
 };
+use crate::cache::CacheTrigger;
 use crate::domain::entities::PageRecord;
 use crate::domain::{
     slug::{SlugAsyncError, SlugError, generate_unique_slug_async},
@@ -78,6 +79,7 @@ pub struct AdminPageService {
     jobs: Arc<dyn JobsRepo>,
     audit: AdminAuditService,
     settings: Arc<dyn SettingsRepo>,
+    cache_trigger: Option<Arc<CacheTrigger>>,
 }
 
 impl AdminPageService {
@@ -94,7 +96,20 @@ impl AdminPageService {
             jobs,
             audit,
             settings,
+            cache_trigger: None,
         }
+    }
+
+    /// Set the cache trigger for this service.
+    pub fn with_cache_trigger(mut self, trigger: Arc<CacheTrigger>) -> Self {
+        self.cache_trigger = Some(trigger);
+        self
+    }
+
+    /// Set the cache trigger for this service (optional).
+    pub fn with_cache_trigger_opt(mut self, trigger: Option<Arc<CacheTrigger>>) -> Self {
+        self.cache_trigger = trigger;
+        self
     }
 
     pub async fn snapshot_source(&self, id: Uuid) -> Result<PageSnapshotSource, AdminPageError> {
@@ -283,6 +298,12 @@ impl AdminPageService {
             )
             .await?;
         self.enqueue_render_job(&page).await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.page_upserted(page.id, &page.slug).await;
+        }
+
         Ok(page)
     }
 
@@ -331,6 +352,12 @@ impl AdminPageService {
             )
             .await?;
         self.enqueue_render_job(&page).await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.page_upserted(page.id, &page.slug).await;
+        }
+
         Ok(page)
     }
 
@@ -364,6 +391,12 @@ impl AdminPageService {
             }
 
             self.record_status_audit(actor, &page).await?;
+
+            // Trigger cache invalidation
+            if let Some(trigger) = &self.cache_trigger {
+                trigger.page_upserted(page.id, &page.slug).await;
+            }
+
             Ok(page)
         } else {
             let normalized = normalize_status(
@@ -383,11 +416,17 @@ impl AdminPageService {
 
             let page = self.writer.update_page_status(params).await?;
             self.record_status_audit(actor, &page).await?;
+
+            // Trigger cache invalidation
+            if let Some(trigger) = &self.cache_trigger {
+                trigger.page_upserted(page.id, &page.slug).await;
+            }
+
             Ok(page)
         }
     }
 
-    pub async fn delete_page(&self, actor: &str, id: Uuid) -> Result<(), AdminPageError> {
+    pub async fn delete_page(&self, actor: &str, id: Uuid, slug: &str) -> Result<(), AdminPageError> {
         self.writer.delete_page(id).await?;
         self.audit
             .record(
@@ -398,6 +437,12 @@ impl AdminPageService {
                 Option::<&PageSummarySnapshot<'_>>::None,
             )
             .await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.page_deleted(id, slug).await;
+        }
+
         Ok(())
     }
 

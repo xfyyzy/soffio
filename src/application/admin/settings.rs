@@ -7,6 +7,7 @@ use time::OffsetDateTime;
 
 use crate::application::admin::audit::AdminAuditService;
 use crate::application::repos::{RepoError, SettingsRepo};
+use crate::cache::CacheTrigger;
 use crate::domain::entities::SiteSettingsRecord;
 
 #[derive(Debug, Error)]
@@ -42,11 +43,28 @@ pub struct UpdateSettingsCommand {
 pub struct AdminSettingsService {
     repo: Arc<dyn SettingsRepo>,
     audit: AdminAuditService,
+    cache_trigger: Option<Arc<CacheTrigger>>,
 }
 
 impl AdminSettingsService {
     pub fn new(repo: Arc<dyn SettingsRepo>, audit: AdminAuditService) -> Self {
-        Self { repo, audit }
+        Self {
+            repo,
+            audit,
+            cache_trigger: None,
+        }
+    }
+
+    /// Set the cache trigger for this service.
+    pub fn with_cache_trigger(mut self, trigger: Arc<CacheTrigger>) -> Self {
+        self.cache_trigger = Some(trigger);
+        self
+    }
+
+    /// Set the cache trigger for this service (optional).
+    pub fn with_cache_trigger_opt(mut self, trigger: Option<Arc<CacheTrigger>>) -> Self {
+        self.cache_trigger = trigger;
+        self
     }
 
     pub async fn load(&self) -> Result<SiteSettingsRecord, AdminSettingsError> {
@@ -97,6 +115,11 @@ impl AdminSettingsService {
         self.audit
             .record(actor, "settings.update", "settings", None, Some(&snapshot))
             .await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.site_settings_updated().await;
+        }
 
         Ok(latest)
     }
