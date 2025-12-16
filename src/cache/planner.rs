@@ -200,6 +200,19 @@ impl ConsumptionPlan {
             && !self.warm_feed
             && !self.warm_sitemap
     }
+
+    /// Check if the plan has any warm actions to execute.
+    pub fn has_warm_actions(&self) -> bool {
+        self.warm_site_settings
+            || self.warm_navigation
+            || self.warm_navigation_pages
+            || self.warm_aggregations
+            || !self.warm_posts.is_empty()
+            || !self.warm_pages.is_empty()
+            || self.warm_homepage
+            || self.warm_feed
+            || self.warm_sitemap
+    }
 }
 
 #[cfg(test)]

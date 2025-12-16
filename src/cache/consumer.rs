@@ -99,15 +99,20 @@ impl CacheConsumer {
             "Cache consumption starting"
         );
 
-        // Phase 1: Invalidate L0
-        self.invalidate_l0(&plan);
+        // Phase 1: Invalidate L0 (skip if no entities to invalidate)
+        if !plan.invalidate_entities.is_empty() {
+            self.invalidate_l0(&plan);
+        }
 
-        // Phase 2: Invalidate L1 using registry
-        self.invalidate_l1(&plan);
+        // Phase 2: Invalidate L1 using registry (skip if no entities to invalidate)
+        if !plan.invalidate_entities.is_empty() {
+            self.invalidate_l1(&plan);
+        }
 
-        // Phase 3: Warm (placeholder for Phase 3 integration)
-        // Note: Warming requires repository access which will be added in Phase 3
-        self.warm(&plan).await;
+        // Phase 3: Warm cache from repositories (skip if no warm actions)
+        if plan.has_warm_actions() {
+            self.warm(&plan).await;
+        }
 
         // Observable: log consumption complete
         info!(

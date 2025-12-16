@@ -138,8 +138,11 @@ impl CacheTrigger {
     }
 
     /// Trigger a warmup event on application startup.
+    ///
+    /// The event is queued and will be consumed by the background auto-consume
+    /// timer, allowing the server to start accepting requests immediately.
     pub async fn warmup_on_startup(&self) {
-        self.trigger(EventKind::WarmupOnStartup, true).await;
+        self.trigger(EventKind::WarmupOnStartup, false).await;
     }
 
     /// Get the underlying config.
@@ -248,9 +251,12 @@ mod tests {
         trigger.site_settings_updated().await;
         trigger.api_key_upserted("sof_").await;
         trigger.api_key_revoked("sof_").await;
-        trigger.warmup_on_startup().await;
 
-        // All events should have been consumed
+        // All above events should have been consumed immediately
         assert!(trigger.queue.is_empty());
+
+        // warmup_on_startup queues event for async consumption (not immediate)
+        trigger.warmup_on_startup().await;
+        assert_eq!(trigger.queue.len(), 1); // Event is queued, not consumed
     }
 }
