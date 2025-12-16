@@ -1146,19 +1146,28 @@ All write operations must trigger cache events. **Cache triggers are placed in t
 
 ## 12. Startup Warmup
 
-```rust
-// In src/main.rs during server initialization
+Startup warmup is asynchronous - the server starts accepting requests immediately,
+and cache warming happens on the next auto-consume cycle (default: 5 seconds).
 
-async fn warmup_cache(cache: Arc<CacheState>) {
-    if !cache.config.is_enabled() {
-        return;
-    }
-    
-    cache.queue.publish(EventKind::WarmupOnStartup);
-    cache.consumer.consume().await;
-    
-    info!("Cache warmup complete");
+```rust
+// In src/cache/trigger.rs
+
+/// Trigger a warmup event on application startup.
+///
+/// The event is queued and will be consumed by the background auto-consume
+/// timer, allowing the server to start accepting requests immediately.
+pub async fn warmup_on_startup(&self) {
+    self.trigger(EventKind::WarmupOnStartup, false).await;  // consume_now=false
 }
+
+// In src/main.rs during server initialization
+if let Some(trigger) = &app.cache_trigger {
+    trigger.warmup_on_startup().await;  // Non-blocking, queues event only
+}
+
+// serve_http() starts immediately
+// ... 5 seconds later ...
+// Auto-consume timer processes WarmupOnStartup event
 ```
 
 Priority warmup items:
@@ -1467,3 +1476,32 @@ When `warm_homepage = true`, the warm phase loads the first page of posts (up to
 - `new_without_repos(...)` - Test-only constructor (warming skipped)
 
 This allows unit tests to run without database connections.
+
+### C.5 Async Startup Warmup
+
+`warmup_on_startup()` uses `consume_now=false`, meaning:
+
+- The `WarmupOnStartup` event is queued but not immediately consumed
+- Server starts accepting requests without waiting for warmup
+- Warmup runs on the next auto-consume timer cycle (default: 5 seconds)
+
+This trades off "pre-warmed first request" for faster server startup.
+
+### C.6 Conditional Phase Execution
+
+The `consume()` method skips phases when there's nothing to do:
+
+```rust
+// Skip invalidation if plan has no entities to invalidate
+if !plan.invalidate_entities.is_empty() {
+    self.invalidate_l0(&plan);
+    self.invalidate_l1(&plan);
+}
+
+// Skip warming if plan has no warm actions
+if plan.has_warm_actions() {
+    self.warm(&plan).await;
+}
+```
+
+This avoids unnecessary empty iterations during warmup-only consumption.
