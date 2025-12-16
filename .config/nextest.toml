@@ -21,6 +21,15 @@ final-status-level = "flaky"
 # Generate JUnit XML report for CI integration
 path = "target/nextest/junit.xml"
 
+[[profile.default.overrides]]
+# API tests use sqlx::test which creates a database per test.
+# Limit concurrency to avoid overwhelming Postgres with create/migrate ops.
+filter = 'test(api_)'
+test-group = 'db-heavy'
+
+[test-groups]
+db-heavy = { max-threads = 4 }
+
 [profile.ci]
 # CI-specific profile with more verbose output
 test-threads = "num-cpus"
