@@ -7,6 +7,13 @@ use std::sync::Arc;
 use tracing::{info, instrument};
 use uuid::Uuid;
 
+use crate::application::pagination::PageRequest;
+use crate::application::repos::{
+    NavigationQueryFilter, NavigationRepo, PagesRepo, PostListScope, PostQueryFilter, PostsRepo,
+    SettingsRepo, TagsRepo,
+};
+use crate::infra::db::PostgresRepositories;
+
 use super::config::CacheConfig;
 use super::events::EventQueue;
 use super::keys::{CacheKey, EntityKey};
@@ -26,11 +33,34 @@ pub struct CacheConsumer {
     l1: Arc<L1Store>,
     registry: Arc<CacheRegistry>,
     queue: Arc<EventQueue>,
+    repos: Option<Arc<PostgresRepositories>>,
 }
 
 impl CacheConsumer {
-    /// Create a new cache consumer.
+    /// Create a new cache consumer with repository access for warming.
     pub fn new(
+        config: CacheConfig,
+        l0: Arc<L0Store>,
+        l1: Arc<L1Store>,
+        registry: Arc<CacheRegistry>,
+        queue: Arc<EventQueue>,
+        repos: Arc<PostgresRepositories>,
+    ) -> Self {
+        Self {
+            config,
+            l0,
+            l1,
+            registry,
+            queue,
+            repos: Some(repos),
+        }
+    }
+
+    /// Create a cache consumer without repository access (warming disabled).
+    ///
+    /// This is primarily for testing purposes.
+    #[cfg(test)]
+    pub fn new_without_repos(
         config: CacheConfig,
         l0: Arc<L0Store>,
         l1: Arc<L1Store>,
@@ -43,6 +73,7 @@ impl CacheConsumer {
             l1,
             registry,
             queue,
+            repos: None,
         }
     }
 
@@ -143,40 +174,119 @@ impl CacheConsumer {
 
     /// Warm the cache based on the plan.
     ///
-    /// Note: This is a placeholder that will be implemented in Phase 3
-    /// when repository access is integrated.
+    /// Loads data from repositories and populates the L0 cache.
+    /// Skipped if repository access is not available.
     async fn warm(&self, plan: &ConsumptionPlan) {
-        // Phase 3 will implement actual warming by:
-        // 1. Loading data from repositories
-        // 2. Populating L0 cache
+        let Some(repos) = &self.repos else {
+            tracing::debug!("Warming skipped: no repository access");
+            return;
+        };
 
-        // Log what would be warmed for observability
-        if plan.warm_site_settings {
-            tracing::debug!("Would warm: site settings");
+        // Warm site settings
+        if plan.warm_site_settings
+            && let Ok(settings) = SettingsRepo::load_site_settings(repos.as_ref()).await
+        {
+            self.l0.set_site_settings(settings);
+            tracing::debug!("Warmed: site settings");
         }
+
+        // Warm navigation and optionally linked pages
         if plan.warm_navigation {
-            tracing::debug!("Would warm: navigation");
+            let filter = NavigationQueryFilter::default();
+            let page_req = PageRequest::new(100, None);
+            if let Ok(page) = NavigationRepo::list_navigation(
+                repos.as_ref(),
+                Some(true), // visible only
+                &filter,
+                page_req,
+            )
+            .await
+            {
+                self.l0.set_navigation(page.items.clone());
+                tracing::debug!(count = page.items.len(), "Warmed: navigation");
+
+                // Warm pages linked from visible navigation
+                if plan.warm_navigation_pages {
+                    for item in &page.items {
+                        if let Some(page_id) = item.destination_page_id
+                            && let Ok(Some(page_record)) =
+                                PagesRepo::find_by_id(repos.as_ref(), page_id).await
+                        {
+                            self.l0.set_page(page_record);
+                        }
+                    }
+                    tracing::debug!("Warmed: navigation pages");
+                }
+            }
         }
-        if plan.warm_navigation_pages {
-            tracing::debug!("Would warm: navigation pages");
-        }
+
+        // Warm aggregations (tag counts, month counts)
         if plan.warm_aggregations {
-            tracing::debug!("Would warm: aggregations");
+            if let Ok(tags) = TagsRepo::list_with_counts(repos.as_ref()).await {
+                let post_tag_counts = tags
+                    .into_iter()
+                    .map(|t| crate::application::repos::PostTagCount {
+                        slug: t.slug,
+                        name: t.name,
+                        count: t.count as u64,
+                    })
+                    .collect();
+                self.l0.set_tag_counts(post_tag_counts);
+                tracing::debug!("Warmed: tag counts");
+            }
+
+            let filter = PostQueryFilter::default();
+            if let Ok(months) =
+                PostsRepo::list_month_counts(repos.as_ref(), PostListScope::Public, &filter).await
+            {
+                self.l0.set_month_counts(months);
+                tracing::debug!("Warmed: month counts");
+            }
+        }
+
+        // Warm individual posts
+        for post_id in &plan.warm_posts {
+            if let Ok(Some(post)) = PostsRepo::find_by_id(repos.as_ref(), *post_id).await {
+                self.l0.set_post(post);
+            }
         }
         if !plan.warm_posts.is_empty() {
-            tracing::debug!(count = plan.warm_posts.len(), "Would warm: posts");
+            tracing::debug!(count = plan.warm_posts.len(), "Warmed: posts");
+        }
+
+        // Warm individual pages
+        for page_id in &plan.warm_pages {
+            if let Ok(Some(page)) = PagesRepo::find_by_id(repos.as_ref(), *page_id).await {
+                self.l0.set_page(page);
+            }
         }
         if !plan.warm_pages.is_empty() {
-            tracing::debug!(count = plan.warm_pages.len(), "Would warm: pages");
+            tracing::debug!(count = plan.warm_pages.len(), "Warmed: pages");
         }
+
+        // Warm homepage first page of posts
         if plan.warm_homepage {
-            tracing::debug!("Would warm: homepage");
+            let filter = PostQueryFilter::default();
+            let page_req = PageRequest::new(20, None); // First page
+            if let Ok(page) =
+                PostsRepo::list_posts(repos.as_ref(), PostListScope::Public, &filter, page_req)
+                    .await
+            {
+                // Cache each post from the homepage
+                for post in page.items {
+                    self.l0.set_post(post);
+                }
+                tracing::debug!("Warmed: homepage posts");
+            }
         }
+
+        // Note: warm_feed and warm_sitemap are L1-only (HTTP response cache)
+        // They will be populated on first request via read-through
         if plan.warm_feed {
-            tracing::debug!("Would warm: feed");
+            tracing::debug!("Feed warming deferred to first request (L1 only)");
         }
         if plan.warm_sitemap {
-            tracing::debug!("Would warm: sitemap");
+            tracing::debug!("Sitemap warming deferred to first request (L1 only)");
         }
     }
 
@@ -213,7 +323,7 @@ mod tests {
         let registry = Arc::new(CacheRegistry::new());
         let queue = Arc::new(EventQueue::new());
 
-        CacheConsumer::new(config, l0, l1, registry, queue)
+        CacheConsumer::new_without_repos(config, l0, l1, registry, queue)
     }
 
     #[tokio::test]
@@ -245,7 +355,7 @@ mod tests {
         let registry = Arc::new(CacheRegistry::new());
         let queue = Arc::new(EventQueue::new());
 
-        let consumer = CacheConsumer::new(config, l0, l1, registry, queue);
+        let consumer = CacheConsumer::new_without_repos(config, l0, l1, registry, queue);
 
         // Add 5 events
         for _ in 0..5 {

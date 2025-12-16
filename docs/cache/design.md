@@ -20,6 +20,7 @@ src/cache/
 ├── events.rs        # CacheEvent enum, in-memory queue
 ├── planner.rs       # Event → ConsumptionPlan (merge, dedupe)
 ├── consumer.rs      # Execute plan: invalidate + warm
+├── trigger.rs       # High-level API for publishing cache events
 └── middleware.rs    # L1 response cache middleware (axum layer)
 ```
 
@@ -399,13 +400,12 @@ impl L0Store {
 
 ```rust
 use bytes::Bytes;
-use axum::http::HeaderMap;
 
 /// Cached HTTP response.
 #[derive(Clone)]
 pub struct CachedResponse {
     pub status: u16,
-    pub headers: HeaderMap,
+    pub headers: Vec<(String, String)>,  // Simplified for serialization
     pub body: Bytes,
 }
 
@@ -623,7 +623,7 @@ pub enum EventKind {
 impl CacheEvent {
     pub fn new(kind: EventKind, epoch: Epoch) -> Self {
         Self {
-            id: Uuid::now_v7(),
+            id: Uuid::new_v4(),  // V4 is sufficient since epoch provides ordering
             epoch,
             kind,
             timestamp: OffsetDateTime::now_utc(),
@@ -1001,7 +1001,7 @@ impl CacheConsumer {
 Cache consumption is triggered from service layer, not middleware, ensuring all write sources (Admin UI, API, Jobs) follow the same path.
 
 ```rust
-// In application/repos.rs or a new application/cache_trigger.rs
+// In src/cache/trigger.rs
 
 pub struct CacheTrigger {
     config: CacheConfig,
@@ -1431,3 +1431,39 @@ read = "sof_read_XXXXXXXX"
 | `ApiKeyUpserted` | `ApiKey(prefix)` | None |
 | `ApiKeyRevoked` | `ApiKey(prefix)` | None |
 | `WarmupOnStartup` | None | All singletons, navigation-linked pages, aggregations, homepage, feed, sitemap |
+
+---
+
+## Appendix C: Implementation Notes
+
+### C.1 Deviations from Original Design
+
+| Item | Original Design | Implementation | Rationale |
+|------|-----------------|----------------|-----------|
+| UUID version | `Uuid::now_v7()` | `Uuid::new_v4()` | V4 is sufficient since `epoch` field provides event ordering |
+| CachedResponse.headers | `HeaderMap` | `Vec<(String, String)>` | Simpler serialization, avoids HeaderMap cloning complexity |
+| CacheTrigger location | `application/cache_trigger.rs` | `src/cache/trigger.rs` | Keeps all cache logic in one module |
+
+### C.2 Feed/Sitemap Warming
+
+`warm_feed` and `warm_sitemap` flags trigger logging only, not actual cache population. These are L1-only (HTTP response cache) and are populated via read-through on first request. This is intentional:
+
+- Feed/Sitemap rendering is CPU-intensive (generates XML)
+- They're only accessed by search engines, not high-traffic user requests
+- Read-through ensures the cache is populated lazily when actually needed
+
+### C.3 Homepage Warming
+
+When `warm_homepage = true`, the warm phase loads the first page of posts (up to 20) from DB and caches them in L0. This ensures that:
+
+- The first homepage request doesn't hit the database
+- Individual post records are available for `/posts/{slug}` requests
+
+### C.4 Test Constructors
+
+`CacheConsumer` provides two constructors:
+
+- `new(...)` - Production constructor with repository access for warming
+- `new_without_repos(...)` - Test-only constructor (warming skipped)
+
+This allows unit tests to run without database connections.

@@ -170,7 +170,7 @@ mod tests {
         let l1 = Arc::new(L1Store::new(&config));
         let registry = Arc::new(CacheRegistry::new());
         let queue = Arc::new(EventQueue::new());
-        let consumer = Arc::new(CacheConsumer::new(
+        let consumer = Arc::new(CacheConsumer::new_without_repos(
             config.clone(),
             l0,
             l1,
@@ -191,7 +191,7 @@ mod tests {
         let l1 = Arc::new(L1Store::new(&config));
         let registry = Arc::new(CacheRegistry::new());
         let queue = Arc::new(EventQueue::new());
-        let consumer = Arc::new(CacheConsumer::new(
+        let consumer = Arc::new(CacheConsumer::new_without_repos(
             config.clone(),
             l0,
             l1,

@@ -329,6 +329,7 @@ fn build_application_context(
             l1.clone(),
             registry.clone(),
             queue.clone(),
+            http_repositories.clone(),
         ));
         let trigger = Some(Arc::new(CacheTrigger::new(
             cache_config.clone(),
