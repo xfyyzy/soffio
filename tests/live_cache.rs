@@ -11,7 +11,6 @@
 //! cargo test --test live_cache -- --ignored
 //! ```
 
-
 use chrono::Utc;
 use reqwest::{Client, Method, StatusCode};
 use serde::Deserialize;

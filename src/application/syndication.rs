@@ -9,7 +9,9 @@ use thiserror::Error;
 use time::format_description::well_known::{Rfc2822, Rfc3339};
 
 use crate::application::pagination::PageRequest;
-use crate::application::repos::{PostListScope, PostQueryFilter, PostsRepo, RepoError, SettingsRepo};
+use crate::application::repos::{
+    PostListScope, PostQueryFilter, PostsRepo, RepoError, SettingsRepo,
+};
 use crate::domain::types::PostStatus;
 
 /// Service for generating RSS and Atom feeds.

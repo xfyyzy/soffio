@@ -100,8 +100,7 @@ impl SitemapService {
 
             post_cursor = match page.next_cursor {
                 Some(next) => Some(
-                    PostCursor::decode(&next)
-                        .map_err(|e| SitemapError::Cursor(e.to_string()))?,
+                    PostCursor::decode(&next).map_err(|e| SitemapError::Cursor(e.to_string()))?,
                 ),
                 None => break,
             };
@@ -135,8 +134,7 @@ impl SitemapService {
 
             page_cursor = match page.next_cursor {
                 Some(next) => Some(
-                    PageCursor::decode(&next)
-                        .map_err(|e| SitemapError::Cursor(e.to_string()))?,
+                    PageCursor::decode(&next).map_err(|e| SitemapError::Cursor(e.to_string()))?,
                 ),
                 None => break,
             };
