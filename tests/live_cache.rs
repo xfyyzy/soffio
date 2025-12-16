@@ -776,6 +776,191 @@ async fn live_cache_precision_unrelated_post_unaffected() -> TestResult<()> {
     Ok(())
 }
 
+/// Tests that updating a post title immediately reflects in the Atom feed.
+#[tokio::test]
+#[ignore]
+async fn live_cache_consistency_atom_feed() -> TestResult<()> {
+    let config = load_config()?;
+    let client = Client::builder().build()?;
+    let base = config.base_url.trim_end_matches('/').to_string();
+
+    let suf = current_suffix();
+    let original_title = format!("Atom Test Original {suf}");
+    let updated_title = format!("Atom Test Updated {suf}");
+
+    // 1. Create and publish a post
+    let (post_id, _) = post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        "/api/v1/posts",
+        &[StatusCode::CREATED],
+        json!({
+            "title": &original_title,
+            "excerpt": "Testing atom feed cache consistency",
+            "body_markdown": "# Atom Test\n\nContent for Atom feed.",
+        }),
+    )
+    .await?;
+
+    post_json(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}/status"),
+        &[StatusCode::OK],
+        json!({"status": "published"}),
+    )
+    .await?;
+
+    tokio::time::sleep(Duration::from_millis(800)).await;
+
+    // 2. Verify Atom feed contains original title
+    let atom = get_public_page(&client, &base, "/atom.xml").await?;
+    assert!(
+        atom.contains(&original_title),
+        "Atom feed should contain post title '{original_title}'"
+    );
+
+    // 3. Update the post title
+    request(
+        &client,
+        &base,
+        Method::POST,
+        &format!("/api/v1/posts/{post_id}/title"),
+        &config.keys.write,
+        &[StatusCode::OK],
+        |r| r.json(&json!({"title": &updated_title})),
+    )
+    .await?;
+
+    tokio::time::sleep(Duration::from_millis(800)).await;
+
+    // 4. CRITICAL: Atom feed should immediately show updated title
+    let atom_after = get_public_page(&client, &base, "/atom.xml").await?;
+    assert!(
+        atom_after.contains(&updated_title),
+        "CACHE INCONSISTENCY: After title update, Atom feed should show '{updated_title}'. \
+         This indicates atom feed cache was not invalidated. \
+         Got: {}...",
+        &atom_after[..atom_after.len().min(2000)]
+    );
+
+    // Cleanup
+    delete(
+        &client,
+        &base,
+        &config.keys.write,
+        &format!("/api/v1/posts/{post_id}"),
+        &[StatusCode::NO_CONTENT],
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Tests that updating a page immediately reflects on its detail page.
+#[tokio::test]
+#[ignore]
+async fn live_cache_consistency_page_update() -> TestResult<()> {
+    let config = load_config()?;
+    let client = Client::builder().build()?;
+    let base = config.base_url.trim_end_matches('/').to_string();
+
+    let suf = current_suffix();
+    let original_content = format!("PAGE_ORIGINAL_CONTENT_{suf}");
+    let updated_content = format!("PAGE_UPDATED_CONTENT_{suf}");
+    let page_slug = format!("cache-test-page-{suf}");
+
+    // 1. Create and publish a page
+    let (page_id, _) = post_json(
+        &client,
+        &base,
+        &config.keys.all,
+        "/api/v1/pages",
+        &[StatusCode::CREATED],
+        json!({
+            "title": format!("Cache Test Page {suf}"),
+            "body_markdown": format!("# Test Page\n\n{original_content}"),
+        }),
+    )
+    .await?;
+
+    // Update slug to predictable value
+    patch_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/pages/{page_id}"),
+        &[StatusCode::OK],
+        json!({
+            "slug": &page_slug,
+            "title": format!("Cache Test Page {suf}"),
+            "body_markdown": format!("# Test Page\n\n{original_content}")
+        }),
+    )
+    .await?;
+
+    // Publish
+    post_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/pages/{page_id}/status"),
+        &[StatusCode::OK],
+        json!({"status": "published"}),
+    )
+    .await?;
+
+    tokio::time::sleep(Duration::from_millis(800)).await;
+
+    // 2. Verify page shows original content
+    let page = get_public_page(&client, &base, &format!("/{page_slug}")).await?;
+    assert!(
+        page.contains(&original_content),
+        "Page should show original content '{original_content}'"
+    );
+
+    // 3. Update page content
+    patch_json(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/pages/{page_id}"),
+        &[StatusCode::OK],
+        json!({
+            "slug": &page_slug,
+            "title": format!("Cache Test Page {suf}"),
+            "body_markdown": format!("# Test Page Updated\n\n{updated_content}")
+        }),
+    )
+    .await?;
+
+    tokio::time::sleep(Duration::from_millis(800)).await;
+
+    // 4. CRITICAL: Page should immediately show updated content
+    let page_after = get_public_page(&client, &base, &format!("/{page_slug}")).await?;
+    assert!(
+        page_after.contains(&updated_content),
+        "CACHE INCONSISTENCY: After update, page should show '{updated_content}'. \
+         This indicates page cache was not invalidated. \
+         Got: {}...",
+        &page_after[..page_after.len().min(2000)]
+    );
+
+    // Cleanup
+    delete(
+        &client,
+        &base,
+        &config.keys.all,
+        &format!("/api/v1/pages/{page_id}"),
+        &[StatusCode::NO_CONTENT],
+    )
+    .await?;
+
+    Ok(())
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================

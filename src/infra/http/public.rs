@@ -861,6 +861,11 @@ async fn build_rss_xml(state: &HttpState) -> Result<String, HttpError> {
 async fn build_atom_xml(state: &HttpState) -> Result<String, HttpError> {
     const SOURCE: &str = "infra::http::public::atom";
 
+    // Record dependencies for L1 cache invalidation (same as RSS)
+    crate::cache::deps::record(crate::cache::EntityKey::Feed);
+    crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
+    crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
+
     let settings = state.db.load_site_settings().await.map_err(|err| {
         HttpError::new(
             SOURCE,
