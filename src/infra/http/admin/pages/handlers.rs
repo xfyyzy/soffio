@@ -373,7 +373,7 @@ pub(crate) async fn admin_page_delete(
         }
     };
 
-    if let Err(err) = state.pages.delete_page(actor, page.id).await {
+    if let Err(err) = state.pages.delete_page(actor, page.id, &page.slug).await {
         let message = Toast::error(format!("Failed to delete page: {}", err));
         return respond_with_pages_panel_message(
             &state,

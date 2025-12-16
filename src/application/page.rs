@@ -21,6 +21,10 @@ impl PageService {
     }
 
     pub async fn page_view(&self, slug: &str) -> Result<Option<PageView>, HttpError> {
+        // Record dependencies for L1 cache invalidation
+        crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
+        crate::cache::deps::record(crate::cache::EntityKey::PageSlug(slug.to_string()));
+
         let record = self
             .pages
             .find_by_slug(slug)

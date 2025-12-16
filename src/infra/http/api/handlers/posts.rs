@@ -410,9 +410,17 @@ pub async fn delete_post(
         .map_err(|_| ApiError::forbidden())?;
     let actor = ApiState::actor_label(&principal);
 
+    let post = state
+        .posts
+        .reader
+        .find_by_id(id)
+        .await
+        .map_err(repo_to_api)?
+        .ok_or_else(|| ApiError::not_found("post not found"))?;
+
     state
         .posts
-        .delete_post(&actor, id)
+        .delete_post(&actor, id, &post.slug)
         .await
         .map_err(post_to_api)?;
 

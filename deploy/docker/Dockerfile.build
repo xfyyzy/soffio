@@ -23,6 +23,8 @@ RUN set -eux; \
       pkgconf \
       python3; \
     rustup component add rustfmt clippy; \
+    # Install cargo-nextest for parallel test execution
+    curl -LsSf https://get.nexte.st/latest/linux-musl | tar zxf - -C /usr/local/bin; \
     npm install --global --unsafe-perm typescript@latest; \
     if [ "${INSTALL_REDOC}" = "true" ]; then \
       npm install --global --unsafe-perm @redocly/cli; \

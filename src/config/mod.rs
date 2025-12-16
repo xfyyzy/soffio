@@ -206,6 +206,50 @@ pub struct ServeOverrides {
     /// Override the background scheduler cadence.
     #[arg(long = "scheduler-cadence-seconds", value_name = "SECONDS")]
     pub scheduler_cadence_seconds: Option<u64>,
+
+    /// Enable L0 object cache.
+    #[arg(
+        long = "cache-enable-l0-cache",
+        value_name = "BOOL",
+        value_parser = BoolishValueParser::new()
+    )]
+    pub cache_enable_l0_cache: Option<bool>,
+
+    /// Enable L1 response cache.
+    #[arg(
+        long = "cache-enable-l1-cache",
+        value_name = "BOOL",
+        value_parser = BoolishValueParser::new()
+    )]
+    pub cache_enable_l1_cache: Option<bool>,
+
+    /// Override the L0 post limit.
+    #[arg(long = "cache-l0-post-limit", value_name = "COUNT")]
+    pub cache_l0_post_limit: Option<usize>,
+
+    /// Override the L0 page limit.
+    #[arg(long = "cache-l0-page-limit", value_name = "COUNT")]
+    pub cache_l0_page_limit: Option<usize>,
+
+    /// Override the L0 API key limit.
+    #[arg(long = "cache-l0-api-key-limit", value_name = "COUNT")]
+    pub cache_l0_api_key_limit: Option<usize>,
+
+    /// Override the L0 post list limit.
+    #[arg(long = "cache-l0-post-list-limit", value_name = "COUNT")]
+    pub cache_l0_post_list_limit: Option<usize>,
+
+    /// Override the L1 response limit.
+    #[arg(long = "cache-l1-response-limit", value_name = "COUNT")]
+    pub cache_l1_response_limit: Option<usize>,
+
+    /// Override the cache auto-consume interval in milliseconds.
+    #[arg(long = "cache-auto-consume-interval-ms", value_name = "MS")]
+    pub cache_auto_consume_interval_ms: Option<u64>,
+
+    /// Override the cache consume batch limit.
+    #[arg(long = "cache-consume-batch-limit", value_name = "COUNT")]
+    pub cache_consume_batch_limit: Option<usize>,
 }
 
 #[derive(Debug, Args, Default, Clone)]
@@ -272,6 +316,7 @@ pub struct Settings {
     pub rate_limit: RateLimitSettings,
     pub api_rate_limit: ApiRateLimitSettings,
     pub scheduler: SchedulerSettings,
+    pub cache: CacheSettings,
 }
 
 #[derive(Debug, Clone)]
@@ -338,6 +383,29 @@ pub struct SchedulerSettings {
     pub cadence: Duration,
 }
 
+/// Fully-resolved cache settings.
+#[derive(Debug, Clone)]
+pub struct CacheSettings {
+    /// Enable L0 object/query cache.
+    pub enable_l0_cache: bool,
+    /// Enable L1 response cache.
+    pub enable_l1_cache: bool,
+    /// Maximum posts in L0 KV cache.
+    pub l0_post_limit: usize,
+    /// Maximum pages in L0 KV cache.
+    pub l0_page_limit: usize,
+    /// Maximum API keys in L0 KV cache.
+    pub l0_api_key_limit: usize,
+    /// Maximum post list pages in L0 LRU cache.
+    pub l0_post_list_limit: usize,
+    /// Maximum HTTP responses in L1 cache.
+    pub l1_response_limit: usize,
+    /// Auto-consume interval (ms) for eventual consistency.
+    pub auto_consume_interval_ms: u64,
+    /// Maximum events per consumption batch.
+    pub consume_batch_limit: usize,
+}
+
 #[derive(Debug, Error)]
 pub enum LoadError {
     #[error("failed to build configuration: {0}")]
@@ -397,6 +465,7 @@ struct RawSettings {
     rate_limit: RawRateLimitSettings,
     api_rate_limit: RawApiRateLimitSettings,
     scheduler: RawSchedulerSettings,
+    cache: RawCacheSettings,
 }
 
 impl RawSettings {
@@ -469,6 +538,37 @@ impl RawSettings {
         }
 
         self.apply_render_overrides(&overrides.render);
+        self.apply_cache_overrides(overrides);
+    }
+
+    fn apply_cache_overrides(&mut self, overrides: &ServeOverrides) {
+        if let Some(v) = overrides.cache_enable_l0_cache {
+            self.cache.enable_l0_cache = Some(v);
+        }
+        if let Some(v) = overrides.cache_enable_l1_cache {
+            self.cache.enable_l1_cache = Some(v);
+        }
+        if let Some(v) = overrides.cache_l0_post_limit {
+            self.cache.l0_post_limit = Some(v);
+        }
+        if let Some(v) = overrides.cache_l0_page_limit {
+            self.cache.l0_page_limit = Some(v);
+        }
+        if let Some(v) = overrides.cache_l0_api_key_limit {
+            self.cache.l0_api_key_limit = Some(v);
+        }
+        if let Some(v) = overrides.cache_l0_post_list_limit {
+            self.cache.l0_post_list_limit = Some(v);
+        }
+        if let Some(v) = overrides.cache_l1_response_limit {
+            self.cache.l1_response_limit = Some(v);
+        }
+        if let Some(v) = overrides.cache_auto_consume_interval_ms {
+            self.cache.auto_consume_interval_ms = Some(v);
+        }
+        if let Some(v) = overrides.cache_consume_batch_limit {
+            self.cache.consume_batch_limit = Some(v);
+        }
     }
 
     fn apply_renderall_overrides(&mut self, overrides: &RenderAllOverrides) {
@@ -504,6 +604,7 @@ impl Settings {
             rate_limit,
             api_rate_limit,
             scheduler,
+            cache,
         } = raw;
 
         let server = build_server_settings(server)?;
@@ -515,6 +616,7 @@ impl Settings {
         let rate_limit = build_rate_limit_settings(rate_limit)?;
         let api_rate_limit = build_api_rate_limit_settings(api_rate_limit)?;
         let scheduler = build_scheduler_settings(scheduler)?;
+        let cache = build_cache_settings(cache)?;
 
         Ok(Self {
             server,
@@ -526,6 +628,7 @@ impl Settings {
             rate_limit,
             api_rate_limit,
             scheduler,
+            cache,
         })
     }
 }
@@ -826,6 +929,53 @@ struct RawSchedulerSettings {
     cadence_seconds: Option<u64>,
 }
 
+// Default values for cache configuration
+const DEFAULT_CACHE_L0_POST_LIMIT: usize = 500;
+const DEFAULT_CACHE_L0_PAGE_LIMIT: usize = 100;
+const DEFAULT_CACHE_L0_API_KEY_LIMIT: usize = 100;
+const DEFAULT_CACHE_L0_POST_LIST_LIMIT: usize = 50;
+const DEFAULT_CACHE_L1_RESPONSE_LIMIT: usize = 200;
+const DEFAULT_CACHE_AUTO_CONSUME_INTERVAL_MS: u64 = 5000;
+const DEFAULT_CACHE_CONSUME_BATCH_LIMIT: usize = 100;
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
+struct RawCacheSettings {
+    enable_l0_cache: Option<bool>,
+    enable_l1_cache: Option<bool>,
+    l0_post_limit: Option<usize>,
+    l0_page_limit: Option<usize>,
+    l0_api_key_limit: Option<usize>,
+    l0_post_list_limit: Option<usize>,
+    l1_response_limit: Option<usize>,
+    auto_consume_interval_ms: Option<u64>,
+    consume_batch_limit: Option<usize>,
+}
+
+fn build_cache_settings(cache: RawCacheSettings) -> Result<CacheSettings, LoadError> {
+    Ok(CacheSettings {
+        enable_l0_cache: cache.enable_l0_cache.unwrap_or(true),
+        enable_l1_cache: cache.enable_l1_cache.unwrap_or(true),
+        l0_post_limit: cache.l0_post_limit.unwrap_or(DEFAULT_CACHE_L0_POST_LIMIT),
+        l0_page_limit: cache.l0_page_limit.unwrap_or(DEFAULT_CACHE_L0_PAGE_LIMIT),
+        l0_api_key_limit: cache
+            .l0_api_key_limit
+            .unwrap_or(DEFAULT_CACHE_L0_API_KEY_LIMIT),
+        l0_post_list_limit: cache
+            .l0_post_list_limit
+            .unwrap_or(DEFAULT_CACHE_L0_POST_LIST_LIMIT),
+        l1_response_limit: cache
+            .l1_response_limit
+            .unwrap_or(DEFAULT_CACHE_L1_RESPONSE_LIMIT),
+        auto_consume_interval_ms: cache
+            .auto_consume_interval_ms
+            .unwrap_or(DEFAULT_CACHE_AUTO_CONSUME_INTERVAL_MS),
+        consume_batch_limit: cache
+            .consume_batch_limit
+            .unwrap_or(DEFAULT_CACHE_CONSUME_BATCH_LIMIT),
+    })
+}
+
 fn parse_socket_addr(host: &str, port: u16) -> Result<SocketAddr, String> {
     let candidate = format!("{host}:{port}");
     candidate
@@ -1032,6 +1182,63 @@ mod tests {
                     serve.overrides.database_url.as_deref(),
                     Some("postgres://override")
                 );
+            }
+            _ => panic!("wrong command parsed"),
+        }
+    }
+
+    #[test]
+    fn cache_settings_use_correct_defaults() {
+        let raw = RawSettings::default();
+        let settings = Settings::from_raw(raw).expect("valid settings");
+
+        assert!(settings.cache.enable_l0_cache);
+        assert!(settings.cache.enable_l1_cache);
+        assert_eq!(settings.cache.l0_post_limit, 500);
+        assert_eq!(settings.cache.l0_page_limit, 100);
+        assert_eq!(settings.cache.l0_api_key_limit, 100);
+        assert_eq!(settings.cache.l0_post_list_limit, 50);
+        assert_eq!(settings.cache.l1_response_limit, 200);
+        assert_eq!(settings.cache.auto_consume_interval_ms, 5000);
+        assert_eq!(settings.cache.consume_batch_limit, 100);
+    }
+
+    #[test]
+    fn cache_settings_can_be_overridden_via_cli() {
+        let mut raw = RawSettings::default();
+        let overrides = ServeOverrides {
+            cache_enable_l0_cache: Some(false),
+            cache_enable_l1_cache: Some(false),
+            cache_l0_post_limit: Some(1000),
+            cache_l1_response_limit: Some(500),
+            ..Default::default()
+        };
+
+        raw.apply_serve_overrides(&overrides);
+        let settings = Settings::from_raw(raw).expect("valid settings");
+
+        assert!(!settings.cache.enable_l0_cache);
+        assert!(!settings.cache.enable_l1_cache);
+        assert_eq!(settings.cache.l0_post_limit, 1000);
+        assert_eq!(settings.cache.l1_response_limit, 500);
+        // Other fields should still use defaults
+        assert_eq!(settings.cache.l0_page_limit, 100);
+    }
+
+    #[test]
+    fn parse_cache_cli_arguments() {
+        let args = CliArgs::parse_from([
+            "soffio",
+            "serve",
+            "--cache-enable-l0-cache=false",
+            "--cache-l0-post-limit",
+            "1000",
+        ]);
+
+        match args.command.expect("serve command") {
+            Command::Serve(serve) => {
+                assert_eq!(serve.overrides.cache_enable_l0_cache, Some(false));
+                assert_eq!(serve.overrides.cache_l0_post_limit, Some(1000));
             }
             _ => panic!("wrong command parsed"),
         }

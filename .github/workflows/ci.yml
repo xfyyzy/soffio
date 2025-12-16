@@ -80,7 +80,7 @@ jobs:
                 GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff HEAD -- docs/cli.md docs/cli.zh.md; \
                 exit 1; \
               fi; \
-              cargo test --workspace --all-targets --target x86_64-unknown-linux-musl -- --nocapture; \
+              cargo nextest run --workspace --all-targets --target x86_64-unknown-linux-musl --profile ci --no-fail-fast; \
               cargo run --target x86_64-unknown-linux-musl --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml; \
               LOG_PATH=/tmp/soffio.log; \
               cp soffio.toml.example /tmp/soffio.toml; \
@@ -98,7 +98,25 @@ jobs:
               done; \
               if [ "$ready" -ne 1 ]; then echo "soffio server not ready"; [ -f "$LOG_PATH" ] && cat "$LOG_PATH"; ps -ef | grep soffio || true; kill $srv || true; exit 1; fi; \
               cargo test --target x86_64-unknown-linux-musl --test live_api -- --ignored --nocapture; \
+              cargo test --target x86_64-unknown-linux-musl --test live_cache -- --ignored --nocapture; \
               kill $srv; \
+              echo "=== Verifying cache observability logs ==="; \
+              if ! grep -q "Cache event enqueued" "$LOG_PATH"; then \
+                echo "ERROR: Missing 'Cache event enqueued' log entries"; \
+                cat "$LOG_PATH"; \
+                exit 1; \
+              fi; \
+              if ! grep -q "Cache consumption starting" "$LOG_PATH"; then \
+                echo "ERROR: Missing 'Cache consumption starting' log entries"; \
+                cat "$LOG_PATH"; \
+                exit 1; \
+              fi; \
+              if ! grep -q "Cache consumption complete" "$LOG_PATH"; then \
+                echo "ERROR: Missing 'Cache consumption complete' log entries"; \
+                cat "$LOG_PATH"; \
+                exit 1; \
+              fi; \
+              echo "Cache observability logs verified successfully"; \
               HOST_UID=$(stat -c '%u' /work); HOST_GID=$(stat -c '%g' /work); \
               chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true
             '

@@ -257,9 +257,16 @@ pub async fn delete_page(
         .map_err(|_| ApiError::forbidden())?;
     let actor = ApiState::actor_label(&principal);
 
+    let page = state
+        .pages
+        .find_by_id(id)
+        .await
+        .map_err(page_to_api)?
+        .ok_or_else(|| ApiError::not_found("page not found"))?;
+
     state
         .pages
-        .delete_page(&actor, id)
+        .delete_page(&actor, id, &page.slug)
         .await
         .map_err(page_to_api)?;
 

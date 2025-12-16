@@ -7,6 +7,7 @@ use crate::application::admin::{
 use crate::application::repos::{
     JobsRepo, PostsRepo, PostsWriteRepo, RestorePostSnapshotParams, SectionsRepo, TagsRepo,
 };
+use crate::cache::CacheTrigger;
 use crate::domain::entities::PostRecord;
 
 #[derive(Clone)]
@@ -17,6 +18,7 @@ pub struct AdminPostService {
     pub(crate) jobs: Arc<dyn JobsRepo>,
     pub(crate) tags: Arc<dyn TagsRepo>,
     pub(crate) audit: AdminAuditService,
+    pub(crate) cache_trigger: Option<Arc<CacheTrigger>>,
 }
 
 impl AdminPostService {
@@ -35,7 +37,20 @@ impl AdminPostService {
             jobs,
             tags,
             audit,
+            cache_trigger: None,
         }
+    }
+
+    /// Set the cache trigger for this service.
+    pub fn with_cache_trigger(mut self, trigger: Arc<CacheTrigger>) -> Self {
+        self.cache_trigger = Some(trigger);
+        self
+    }
+
+    /// Set the cache trigger for this service (optional).
+    pub fn with_cache_trigger_opt(mut self, trigger: Option<Arc<CacheTrigger>>) -> Self {
+        self.cache_trigger = trigger;
+        self
     }
 
     pub async fn snapshot_source(
@@ -87,6 +102,12 @@ impl AdminPostService {
         };
 
         let post = self.writer.restore_post_snapshot(params).await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.post_upserted(post.id, &post.slug).await;
+        }
+
         Ok(post)
     }
 }

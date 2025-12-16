@@ -28,6 +28,10 @@ impl ChromeService {
     }
 
     pub async fn load(&self) -> Result<LayoutChrome, HttpError> {
+        // Record dependencies for L1 cache invalidation
+        crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
+        crate::cache::deps::record(crate::cache::EntityKey::Navigation);
+
         let settings = self
             .settings
             .load_site_settings()

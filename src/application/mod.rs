@@ -12,5 +12,7 @@ pub mod pagination;
 pub mod render;
 pub mod repos;
 pub mod site;
+pub mod sitemap;
 pub mod snapshot_preview;
 pub mod stream;
+pub mod syndication;

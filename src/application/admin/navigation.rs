@@ -12,6 +12,7 @@ use crate::application::{
         PageQueryFilter, PagesRepo, RepoError, UpdateNavigationItemParams,
     },
 };
+use crate::cache::CacheTrigger;
 use crate::domain::entities::NavigationItemRecord;
 use crate::domain::types::{NavigationDestinationType, PageStatus};
 
@@ -59,6 +60,7 @@ pub struct AdminNavigationService {
     writer: Arc<dyn NavigationWriteRepo>,
     pages: Arc<dyn PagesRepo>,
     audit: AdminAuditService,
+    cache_trigger: Option<Arc<CacheTrigger>>,
 }
 
 impl AdminNavigationService {
@@ -73,7 +75,20 @@ impl AdminNavigationService {
             writer,
             pages,
             audit,
+            cache_trigger: None,
         }
+    }
+
+    /// Set the cache trigger for this service.
+    pub fn with_cache_trigger(mut self, trigger: Arc<CacheTrigger>) -> Self {
+        self.cache_trigger = Some(trigger);
+        self
+    }
+
+    /// Set the cache trigger for this service (optional).
+    pub fn with_cache_trigger_opt(mut self, trigger: Option<Arc<CacheTrigger>>) -> Self {
+        self.cache_trigger = trigger;
+        self
     }
 
     pub async fn list(
@@ -164,6 +179,12 @@ impl AdminNavigationService {
                 Some(&snapshot),
             )
             .await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.navigation_updated().await;
+        }
+
         Ok(item)
     }
 
@@ -224,6 +245,12 @@ impl AdminNavigationService {
                 Some(&snapshot),
             )
             .await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.navigation_updated().await;
+        }
+
         Ok(item)
     }
 
@@ -238,6 +265,12 @@ impl AdminNavigationService {
                 Option::<&NavigationSnapshot>::None,
             )
             .await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.navigation_updated().await;
+        }
+
         Ok(())
     }
 }
