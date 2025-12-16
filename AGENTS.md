@@ -130,7 +130,8 @@ run the sequence below:
 2) **Build & Clippy** —  
    `cargo check --workspace --all-targets`  
    `cargo clippy --workspace --all-targets -- -D warnings`
-3) **Tests** — `cargo test --workspace --all-targets -- --nocapture`  
+3) **Tests** — `cargo nextest run --workspace --all-targets`  
+   Live tests (require running server): `cargo test --test live_api --test live_cache -- --ignored --test-threads=1`  
    If features exist: `cargo hack test --workspace --feature-powerset --depth 1`
 4) **Deps & Risk** —  
    `cargo +nightly udeps --all-targets --workspace` (unused deps)

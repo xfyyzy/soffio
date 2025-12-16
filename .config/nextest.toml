@@ -1,0 +1,38 @@
+# cargo-nextest configuration
+# See: https://nexte.st/book/configuration.html
+
+[store]
+# Directory for storing test artifacts
+dir = "target/nextest"
+
+[profile.default]
+# Run tests in parallel by default (one thread per CPU core)
+test-threads = "num-cpus"
+# Fail fast - stop on first failure
+fail-fast = true
+# Retry flaky tests up to 2 times
+retries = 0
+# Status level for output
+status-level = "pass"
+# Final status level
+final-status-level = "flaky"
+
+[profile.default.junit]
+# Generate JUnit XML report for CI integration
+path = "target/nextest/junit.xml"
+
+[profile.ci]
+# CI-specific profile with more verbose output
+test-threads = "num-cpus"
+fail-fast = true
+retries = 0
+status-level = "all"
+final-status-level = "all"
+
+[profile.ci.junit]
+path = "target/nextest/junit.xml"
+report-name = "soffio-tests"
+
+# Note: Live tests (live_api, live_cache) are marked with #[ignore] and use
+# #[serial] from serial_test crate, so they are excluded from parallel runs.
+# Run them separately with: cargo test --test live_api -- --ignored --test-threads=1
