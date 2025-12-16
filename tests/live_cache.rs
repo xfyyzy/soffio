@@ -352,7 +352,10 @@ async fn live_cache_consistency_post_delete() -> TestResult<()> {
     // 2. Verify post detail page is accessible and shows content
     let public_path = format!("/posts/{post_slug}");
     let (status, body) = get_public_page_with_status(&client, &base, &public_path).await?;
-    assert_eq!(status, 200, "Post detail page should return 200 after publishing");
+    assert_eq!(
+        status, 200,
+        "Post detail page should return 200 after publishing"
+    );
     assert!(
         body.contains(&unique_content),
         "Post detail page should show the post content"
@@ -448,7 +451,8 @@ async fn live_cache_consistency_aggregations() -> TestResult<()> {
     let (status, body) =
         get_public_page_with_status(&client, &base, &format!("/tags/{tag_slug}")).await?;
     assert_eq!(
-        status, 200,
+        status,
+        200,
         "CACHE INCONSISTENCY: After publishing post with tag, tag page /tags/{tag_slug} should return 200. \
          Got status {} with body: {}...",
         status,

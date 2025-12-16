@@ -657,6 +657,12 @@ fn plain_response(body: String) -> Response {
 async fn build_sitemap_xml(state: &HttpState) -> Result<String, HttpError> {
     const SOURCE: &str = "infra::http::public::sitemap";
 
+    // Record dependencies for L1 cache invalidation
+    // Note: Individual page slugs are recorded as they're iterated below
+    crate::cache::deps::record(crate::cache::EntityKey::Sitemap);
+    crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
+    crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
+
     let settings = state.db.load_site_settings().await.map_err(|err| {
         HttpError::new(
             SOURCE,
@@ -787,6 +793,11 @@ fn sitemap_entry(base: &str, path: &str, lastmod: Option<time::OffsetDateTime>) 
 
 async fn build_rss_xml(state: &HttpState) -> Result<String, HttpError> {
     const SOURCE: &str = "infra::http::public::rss";
+
+    // Record dependencies for L1 cache invalidation
+    crate::cache::deps::record(crate::cache::EntityKey::Feed);
+    crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
+    crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
 
     let settings = state.db.load_site_settings().await.map_err(|err| {
         HttpError::new(
