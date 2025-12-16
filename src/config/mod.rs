@@ -958,9 +958,15 @@ fn build_cache_settings(cache: RawCacheSettings) -> Result<CacheSettings, LoadEr
         enable_l1_cache: cache.enable_l1_cache.unwrap_or(true),
         l0_post_limit: cache.l0_post_limit.unwrap_or(DEFAULT_CACHE_L0_POST_LIMIT),
         l0_page_limit: cache.l0_page_limit.unwrap_or(DEFAULT_CACHE_L0_PAGE_LIMIT),
-        l0_api_key_limit: cache.l0_api_key_limit.unwrap_or(DEFAULT_CACHE_L0_API_KEY_LIMIT),
-        l0_post_list_limit: cache.l0_post_list_limit.unwrap_or(DEFAULT_CACHE_L0_POST_LIST_LIMIT),
-        l1_response_limit: cache.l1_response_limit.unwrap_or(DEFAULT_CACHE_L1_RESPONSE_LIMIT),
+        l0_api_key_limit: cache
+            .l0_api_key_limit
+            .unwrap_or(DEFAULT_CACHE_L0_API_KEY_LIMIT),
+        l0_post_list_limit: cache
+            .l0_post_list_limit
+            .unwrap_or(DEFAULT_CACHE_L0_POST_LIST_LIMIT),
+        l1_response_limit: cache
+            .l1_response_limit
+            .unwrap_or(DEFAULT_CACHE_L1_RESPONSE_LIMIT),
         auto_consume_interval_ms: cache
             .auto_consume_interval_ms
             .unwrap_or(DEFAULT_CACHE_AUTO_CONSUME_INTERVAL_MS),
