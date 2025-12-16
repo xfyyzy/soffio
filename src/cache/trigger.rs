@@ -31,11 +31,7 @@ pub struct CacheTrigger {
 
 impl CacheTrigger {
     /// Create a new cache trigger.
-    pub fn new(
-        config: CacheConfig,
-        queue: Arc<EventQueue>,
-        consumer: Arc<CacheConsumer>,
-    ) -> Self {
+    pub fn new(config: CacheConfig, queue: Arc<EventQueue>, consumer: Arc<CacheConsumer>) -> Self {
         Self {
             config,
             queue,

@@ -216,7 +216,12 @@ impl AdminPostService {
         }
     }
 
-    pub async fn delete_post(&self, actor: &str, id: Uuid, slug: &str) -> Result<(), AdminPostError> {
+    pub async fn delete_post(
+        &self,
+        actor: &str,
+        id: Uuid,
+        slug: &str,
+    ) -> Result<(), AdminPostError> {
         self.writer.delete_post(id).await?;
         self.audit
             .record(

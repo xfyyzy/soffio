@@ -43,7 +43,9 @@ use soffio::{
         site,
         snapshot_preview::SnapshotPreviewService,
     },
-    cache::{CacheConfig, CacheConsumer, CacheRegistry, CacheTrigger, EventQueue, L0Store, L1Store},
+    cache::{
+        CacheConfig, CacheConsumer, CacheRegistry, CacheTrigger, EventQueue, L0Store, L1Store,
+    },
     config,
     domain::entities::{PageRecord, PostRecord},
     domain::types::JobType,
@@ -327,11 +329,7 @@ fn build_application_context(
             registry,
             queue.clone(),
         ));
-        Some(Arc::new(CacheTrigger::new(
-            cache_config,
-            queue,
-            consumer,
-        )))
+        Some(Arc::new(CacheTrigger::new(cache_config, queue, consumer)))
     } else {
         None
     };

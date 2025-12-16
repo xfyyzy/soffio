@@ -432,7 +432,12 @@ impl AdminPageService {
         }
     }
 
-    pub async fn delete_page(&self, actor: &str, id: Uuid, slug: &str) -> Result<(), AdminPageError> {
+    pub async fn delete_page(
+        &self,
+        actor: &str,
+        id: Uuid,
+        slug: &str,
+    ) -> Result<(), AdminPageError> {
         self.writer.delete_page(id).await?;
         self.audit
             .record(

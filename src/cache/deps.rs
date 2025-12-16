@@ -68,7 +68,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::Uuid;
 
     #[tokio::test]
     async fn record_without_collector_is_no_op() {
