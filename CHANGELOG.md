@@ -7,6 +7,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Comprehensive caching system**: Re-implemented caching with a robust event-driven architecture (Phases 1-5). Features include:
+    - **L1 Response Cache**: Middleware that caches HTTP responses, respecting HTMX headers and content negotiation.
+    - **Event-driven Invalidation**: `ConsumptionPlan` coordinator orders invalidations to ensure consistency.
+    - **Dependency Tracking**: Automatic tracking of cache dependencies during read operations via thread-local collectors.
+    - **In-memory Store**: Zero-dependency LRU cache implementation.
+- **Migration Guide**: Added instructions for reconciling migration versions in `AGENTS.md`.
+
+### Fixed
+- **CI workflow**: Fixed syntax error in cache verification steps and suppressed noisy `redocly lint` warnings in CI logs.
+
 ## [0.1.15-alpha.1] - 2025-12-15
 
 ### Removed
