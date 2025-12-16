@@ -57,12 +57,14 @@ pub async fn with_collector<F, R>(f: F) -> (R, HashSet<EntityKey>)
 where
     F: std::future::Future<Output = R>,
 {
-    let deps = RefCell::new(HashSet::new());
-    // Note: DEPS.scope doesn't return the RefCell, we need to use Rc
-    // to share the RefCell between scope and result extraction
-    let result = DEPS.scope(deps, f).await;
-    let collected = DEPS.try_with(|d| d.borrow().clone()).unwrap_or_default();
-    (result, collected)
+    // We must collect dependencies INSIDE the scope, before it ends.
+    // Once DEPS.scope() completes, the task-local is no longer accessible.
+    DEPS.scope(RefCell::new(HashSet::new()), async {
+        let result = f.await;
+        let deps = collect(); // Collect while still in scope
+        (result, deps)
+    })
+    .await
 }
 
 #[cfg(test)]
@@ -86,10 +88,11 @@ mod tests {
         })
         .await;
 
-        // Note: Due to how task_local scope works, we need to collect inside
-        // This test may need adjustment based on actual tokio::task_local behavior
-        // For now, test the basic API structure
-        assert!(deps.is_empty() || deps.len() == 3); // Depends on scope semantics
+        // Should capture all 3 dependencies
+        assert_eq!(deps.len(), 3);
+        assert!(deps.contains(&EntityKey::SiteSettings));
+        assert!(deps.contains(&EntityKey::Navigation));
+        assert!(deps.contains(&EntityKey::PostSlug("test-post".to_string())));
     }
 
     #[tokio::test]
@@ -102,6 +105,32 @@ mod tests {
         .await;
 
         // HashSet should deduplicate
-        assert!(deps.is_empty() || deps.len() == 1);
+        assert_eq!(deps.len(), 1);
+        assert!(deps.contains(&EntityKey::SiteSettings));
+    }
+
+    #[tokio::test]
+    async fn nested_collectors_are_isolated() {
+        let (inner_result, outer_deps) = with_collector(async {
+            record(EntityKey::SiteSettings);
+
+            // Inner collector should have its own scope
+            let (_, inner_deps) = with_collector(async {
+                record(EntityKey::Navigation);
+            })
+            .await;
+
+            // Inner recorded Navigation, not SiteSettings
+            assert_eq!(inner_deps.len(), 1);
+            assert!(inner_deps.contains(&EntityKey::Navigation));
+
+            inner_deps.len()
+        })
+        .await;
+
+        // Outer should only have SiteSettings (inner has separate scope)
+        assert_eq!(outer_deps.len(), 1);
+        assert!(outer_deps.contains(&EntityKey::SiteSettings));
+        assert_eq!(inner_result, 1);
     }
 }
