@@ -26,6 +26,7 @@ use crate::{
         page::PageService,
         snapshot_preview::SnapshotPreviewService,
     },
+    cache::{CacheState, response_cache_layer},
     infra::{
         db::PostgresRepositories,
         uploads::{UploadStorage, UploadStorageError},
@@ -55,29 +56,43 @@ pub struct HttpState {
     pub db: Arc<PostgresRepositories>,
     pub upload_storage: Arc<UploadStorage>,
     pub snapshot_preview: Arc<SnapshotPreviewService>,
+    pub cache: Option<CacheState>,
 }
 
 pub fn build_router(state: RouterState) -> Router<RouterState> {
+    // Routes that should be cached (public content)
+    // Middleware skips datastar-request headers, so streaming requests are not cached
     let cached_routes = Router::new()
         .route("/", get(index))
         .route("/tags/{tag}", get(tag_index))
         .route("/months/{month}", get(month_index))
         .route("/posts/{slug}", get(post_detail))
         .route("/ui/posts", get(posts_partial))
+        .route("/sitemap.xml", get(sitemap))
+        .route("/rss.xml", get(rss_feed))
+        .route("/atom.xml", get(atom_feed))
+        .route("/favicon.ico", get(favicon))
         .fallback(fallback_router);
 
+    // Apply L1 cache layer conditionally
+    let cached_routes = if let Some(cache_state) = state.http.cache.clone() {
+        cached_routes.layer(middleware::from_fn_with_state(
+            cache_state,
+            response_cache_layer,
+        ))
+    } else {
+        cached_routes
+    };
+
+    // Routes that should NOT be cached (previews, health, static assets)
     let static_routes = Router::new()
         .route("/posts/_preview/{id}", get(post_preview))
         .route("/pages/_preview/{id}", get(page_preview))
         .route("/posts/_preview/snapshot/{id}", get(post_snapshot_preview))
         .route("/pages/_preview/snapshot/{id}", get(page_snapshot_preview))
         .route("/_health/db", get(public_health))
-        .route("/sitemap.xml", get(sitemap))
-        .route("/rss.xml", get(rss_feed))
-        .route("/atom.xml", get(atom_feed))
         .route("/robots.txt", get(robots_txt))
         .route("/uploads/{*path}", get(serve_upload))
-        .route("/favicon.ico", get(favicon))
         .route(
             "/static/public/{*path}",
             get(crate::infra::assets::serve_public),

@@ -55,6 +55,22 @@ impl Default for CacheConfig {
     }
 }
 
+impl From<&crate::config::CacheSettings> for CacheConfig {
+    fn from(settings: &crate::config::CacheSettings) -> Self {
+        Self {
+            enable_l0_cache: settings.enable_l0_cache,
+            enable_l1_cache: settings.enable_l1_cache,
+            l0_post_limit: settings.l0_post_limit,
+            l0_page_limit: settings.l0_page_limit,
+            l0_api_key_limit: settings.l0_api_key_limit,
+            l0_post_list_limit: settings.l0_post_list_limit,
+            l1_response_limit: settings.l1_response_limit,
+            auto_consume_interval_ms: settings.auto_consume_interval_ms,
+            consume_batch_limit: settings.consume_batch_limit,
+        }
+    }
+}
+
 impl CacheConfig {
     /// Returns true if any cache layer is enabled.
     pub fn is_enabled(&self) -> bool {

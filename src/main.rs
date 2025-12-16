@@ -44,7 +44,8 @@ use soffio::{
         snapshot_preview::SnapshotPreviewService,
     },
     cache::{
-        CacheConfig, CacheConsumer, CacheRegistry, CacheTrigger, EventQueue, L0Store, L1Store,
+        CacheConfig, CacheConsumer, CacheRegistry, CacheState, CacheTrigger, EventQueue, L0Store,
+        L1Store,
     },
     config,
     domain::entities::{PageRecord, PostRecord},
@@ -316,8 +317,8 @@ fn build_application_context(
     );
 
     // Initialize cache infrastructure
-    let cache_config = CacheConfig::default();
-    let cache_trigger = if cache_config.is_enabled() {
+    let cache_config = CacheConfig::from(&settings.cache);
+    let (cache_trigger, cache_state) = if cache_config.is_enabled() {
         let l0 = Arc::new(L0Store::new(&cache_config));
         let l1 = Arc::new(L1Store::new(&cache_config));
         let registry = Arc::new(CacheRegistry::new());
@@ -325,13 +326,23 @@ fn build_application_context(
         let consumer = Arc::new(CacheConsumer::new(
             cache_config.clone(),
             l0,
-            l1,
-            registry,
+            l1.clone(),
+            registry.clone(),
             queue.clone(),
         ));
-        Some(Arc::new(CacheTrigger::new(cache_config, queue, consumer)))
+        let trigger = Some(Arc::new(CacheTrigger::new(
+            cache_config.clone(),
+            queue,
+            consumer,
+        )));
+        let state = Some(CacheState {
+            config: cache_config,
+            l1,
+            registry,
+        });
+        (trigger, state)
     } else {
-        None
+        (None, None)
     };
 
     let audit_service = AdminAuditService::new(audit_repo.clone());
@@ -398,6 +409,7 @@ fn build_application_context(
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
         snapshot_preview: snapshot_preview_service.clone(),
+        cache: cache_state,
     };
 
     let admin_state = AdminState {
