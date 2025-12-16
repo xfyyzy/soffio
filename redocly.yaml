@@ -1,0 +1,7 @@
+extends:
+  - recommended
+
+rules:
+  no-ambiguous-paths: off
+  operation-4xx-response: off
+  operation-operationId: off

@@ -102,22 +102,22 @@ jobs:
               kill $srv; \
               echo "=== Verifying cache observability logs ==="; \
               if ! grep -q "Cache event enqueued" "$LOG_PATH"; then \
-                echo "ERROR: Missing 'Cache event enqueued' log entries"; \
+                echo "ERROR: Missing [Cache event enqueued] log entries"; \
                 cat "$LOG_PATH"; \
                 exit 1; \
               fi; \
               if ! grep -q "Cache consumption starting" "$LOG_PATH"; then \
-                echo "ERROR: Missing 'Cache consumption starting' log entries"; \
+                echo "ERROR: Missing [Cache consumption starting] log entries"; \
                 cat "$LOG_PATH"; \
                 exit 1; \
               fi; \
               if ! grep -q "Cache consumption complete" "$LOG_PATH"; then \
-                echo "ERROR: Missing 'Cache consumption complete' log entries"; \
+                echo "ERROR: Missing [Cache consumption complete] log entries"; \
                 cat "$LOG_PATH"; \
                 exit 1; \
               fi; \
               echo "Cache observability logs verified successfully"; \
-              HOST_UID=$(stat -c '%u' /work); HOST_GID=$(stat -c '%g' /work); \
+              HOST_UID=$(stat -c "%u" /work); HOST_GID=$(stat -c "%g" /work); \
               chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true
             '
 
