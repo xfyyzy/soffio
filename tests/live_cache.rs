@@ -4,11 +4,11 @@
 //! - Marked `#[ignore]` so it only runs after seeding data and starting server.
 //! - Reads demo API keys from `tests/api_keys.seed.toml`.
 //!
-//! **IMPORTANT**: These tests share a live server instance and L1 cache.
-//! They MUST be run with `--test-threads=1` to avoid race conditions:
+//! **Note**: These tests share a live server instance and L1 cache.
+//! They use `#[serial]` to automatically run sequentially.
 //!
 //! ```sh
-//! cargo test --test live_cache -- --ignored --test-threads=1
+//! cargo test --test live_cache -- --ignored
 //! ```
 
 
@@ -16,6 +16,7 @@ use chrono::Utc;
 use reqwest::{Client, Method, StatusCode};
 use serde::Deserialize;
 use serde_json::{Value, json};
+use serial_test::serial;
 use std::{collections::HashSet, fs, path::Path, time::Duration};
 
 type TestResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -45,6 +46,8 @@ struct Keys {
 /// the public-facing page must show the new content without delay.
 #[tokio::test]
 #[ignore]
+#[serial]
+#[serial]
 async fn live_cache_consistency_post_update() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -139,6 +142,7 @@ async fn live_cache_consistency_post_update() -> TestResult<()> {
 /// Tests that creating and publishing a new post immediately appears on the homepage.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_post_create() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -201,6 +205,7 @@ async fn live_cache_consistency_post_create() -> TestResult<()> {
 /// Tests that updating site settings immediately reflects in responses.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_settings_update() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -263,6 +268,7 @@ async fn live_cache_consistency_settings_update() -> TestResult<()> {
 /// Tests that updating navigation immediately reflects on the homepage.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_navigation_update() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -321,6 +327,7 @@ async fn live_cache_consistency_navigation_update() -> TestResult<()> {
 /// Tests that deleting a published post returns 404 on detail.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_post_delete() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -397,6 +404,7 @@ async fn live_cache_consistency_post_delete() -> TestResult<()> {
 /// because the page layout may vary and post titles might be rendered differently.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_aggregations() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -491,6 +499,7 @@ async fn live_cache_consistency_aggregations() -> TestResult<()> {
 /// Tests that updating a post title immediately reflects in the RSS feed.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_feed() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -574,6 +583,7 @@ async fn live_cache_consistency_feed() -> TestResult<()> {
 /// Tests that creating/deleting a page immediately reflects in the sitemap.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_sitemap() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -656,6 +666,7 @@ async fn live_cache_consistency_sitemap() -> TestResult<()> {
 /// This verifies the "minimal cost" requirement: only affected caches are invalidated.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_precision_unrelated_post_unaffected() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -787,6 +798,7 @@ async fn live_cache_precision_unrelated_post_unaffected() -> TestResult<()> {
 /// Tests that updating a post title immediately reflects in the Atom feed.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_atom_feed() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
@@ -870,6 +882,7 @@ async fn live_cache_consistency_atom_feed() -> TestResult<()> {
 /// Tests that updating a page immediately reflects on its detail page.
 #[tokio::test]
 #[ignore]
+#[serial]
 async fn live_cache_consistency_page_update() -> TestResult<()> {
     let config = load_config()?;
     let client = Client::builder().build()?;
