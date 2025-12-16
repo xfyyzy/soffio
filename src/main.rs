@@ -114,10 +114,25 @@ async fn run_serve(settings: config::Settings) -> Result<(), AppError> {
         &settings,
     )?;
 
-    // Perform startup cache warmup
+    // Perform startup cache warmup (queues event for async consumption)
     if let Some(trigger) = &app.cache_trigger {
         trigger.warmup_on_startup().await;
     }
+
+    // Spawn cache auto-consume timer
+    let cache_handle = if let Some(trigger) = app.cache_trigger.clone() {
+        let interval_ms = trigger.config().auto_consume_interval_ms;
+        Some(tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_millis(interval_ms));
+            interval.tick().await; // Skip the first immediate tick
+            loop {
+                interval.tick().await;
+                trigger.consumer().consume().await;
+            }
+        }))
+    } else {
+        None
+    };
 
     let monitor_handle = spawn_job_monitor(
         job_repositories,
@@ -130,6 +145,11 @@ async fn run_serve(settings: config::Settings) -> Result<(), AppError> {
 
     monitor_handle.abort();
     let _ = monitor_handle.await;
+
+    if let Some(h) = cache_handle {
+        h.abort();
+        let _ = h.await;
+    }
 
     result
 }
