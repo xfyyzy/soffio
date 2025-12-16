@@ -1121,23 +1121,26 @@ fn detect_format(request: &Request<Body>) -> OutputFormat {
 
 ## 11. Write Source Matrix
 
-All write operations must trigger cache events. Coverage:
+All write operations must trigger cache events. **Cache triggers are placed in the service layer** (e.g., `AdminPostService`, `AdminPageService`) to ensure all entry points (Admin UI, API, Jobs) follow a single code path.
 
-| Write Source | Location | Events Published |
-|--------------|----------|------------------|
-| Admin UI: Update Settings | `src/infra/http/admin/settings/handlers.rs` | `SiteSettingsUpdated` |
-| Admin UI: Update Navigation | `src/infra/http/admin/navigation/handlers.rs` | `NavigationUpdated` |
-| Admin UI: Create/Update Post | `src/infra/http/admin/posts/crud.rs` | `PostUpserted` |
-| Admin UI: Delete Post | `src/infra/http/admin/posts/crud.rs` | `PostDeleted` |
-| Admin UI: Create/Update Page | `src/infra/http/admin/pages/handlers.rs` | `PageUpserted` |
-| Admin UI: Delete Page | `src/infra/http/admin/pages/handlers.rs` | `PageDeleted` |
-| Public API: CRUD Posts | `src/infra/http/api/handlers/posts.rs` | `PostUpserted/PostDeleted` |
-| Public API: CRUD Pages | `src/infra/http/api/handlers/pages.rs` | `PageUpserted/PageDeleted` |
-| Public API: CRUD Navigation | `src/infra/http/api/handlers/navigation.rs` | `NavigationUpdated` |
-| Public API: Settings | `src/infra/http/api/handlers/settings.rs` | `SiteSettingsUpdated` |
-| Jobs: Render Post | `src/application/jobs/` | `PostUpserted` (after render) |
-| Jobs: Render Page | `src/application/jobs/` | `PageUpserted` (after render) |
-| Snapshot Rollback | `src/application/snapshot_preview.rs` | `PostUpserted/PageUpserted` |
+> [!IMPORTANT]
+> The "Entry Point" column below shows where write requests originate, not where trigger code lives. All triggers are in `src/application/admin/` services.
+
+| Write Source | Entry Point | Service Layer | Events Published |
+|--------------|-------------|---------------|------------------|
+| Admin UI: Update Settings | `infra/http/admin/settings/` | `AdminSettingsService` | `SiteSettingsUpdated` |
+| Admin UI: Update Navigation | `infra/http/admin/navigation/` | `AdminNavigationService` | `NavigationUpdated` |
+| Admin UI: Create/Update Post | `infra/http/admin/posts/` | `AdminPostService` | `PostUpserted` |
+| Admin UI: Delete Post | `infra/http/admin/posts/` | `AdminPostService` | `PostDeleted` |
+| Admin UI: Create/Update Page | `infra/http/admin/pages/` | `AdminPageService` | `PageUpserted` |
+| Admin UI: Delete Page | `infra/http/admin/pages/` | `AdminPageService` | `PageDeleted` |
+| Public API: CRUD Posts | `infra/http/api/handlers/posts.rs` | `AdminPostService` | `PostUpserted/PostDeleted` |
+| Public API: CRUD Pages | `infra/http/api/handlers/pages.rs` | `AdminPageService` | `PageUpserted/PageDeleted` |
+| Public API: CRUD Navigation | `infra/http/api/handlers/navigation.rs` | `AdminNavigationService` | `NavigationUpdated` |
+| Public API: Settings | `infra/http/api/handlers/settings.rs` | `AdminSettingsService` | `SiteSettingsUpdated` |
+| Jobs: Render Post | `application/jobs/` | via job handler | `PostUpserted` (after render) |
+| Jobs: Render Page | `application/jobs/` | via job handler | `PageUpserted` (after render) |
+| Snapshot Rollback | `application/snapshot_preview.rs` | `AdminPostService` / `AdminPageService` | `PostUpserted/PageUpserted` |
 
 ---
 
