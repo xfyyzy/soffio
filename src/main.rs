@@ -41,7 +41,9 @@ use soffio::{
             TagsRepo, TagsWriteRepo, UploadsRepo,
         },
         site,
+        sitemap::SitemapService,
         snapshot_preview::SnapshotPreviewService,
+        syndication::SyndicationService,
     },
     cache::{
         CacheConfig, CacheConsumer, CacheRegistry, CacheState, CacheTrigger, EventQueue, L0Store,
@@ -423,10 +425,22 @@ fn build_application_context(
     let admin_audit_service = Arc::new(audit_service);
     let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
 
+    let syndication_service = Arc::new(SyndicationService::new(
+        posts_repo.clone(),
+        settings_repo.clone(),
+    ));
+    let sitemap_service = Arc::new(SitemapService::new(
+        posts_repo.clone(),
+        pages_repo.clone(),
+        settings_repo.clone(),
+    ));
+
     let http_state = HttpState {
         feed: feed_service_http.clone(),
         pages: page_service_http.clone(),
         chrome: chrome_service_http.clone(),
+        syndication: syndication_service,
+        sitemap: sitemap_service,
         db: http_repositories.clone(),
         upload_storage: upload_storage.clone(),
         snapshot_preview: snapshot_preview_service.clone(),

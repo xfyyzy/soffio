@@ -14,7 +14,6 @@ use axum::{
 };
 use bytes::Bytes;
 use serde::Deserialize;
-use time::format_description::well_known::{Rfc2822, Rfc3339};
 use tracing::error;
 use uuid::Uuid;
 
@@ -24,7 +23,9 @@ use crate::{
         error::HttpError,
         feed::{self, FeedError, FeedFilter, FeedService},
         page::PageService,
+        sitemap::SitemapService,
         snapshot_preview::SnapshotPreviewService,
+        syndication::SyndicationService,
     },
     cache::{CacheState, response_cache_layer},
     infra::{
@@ -42,17 +43,15 @@ use super::{
     DATASTAR_REQUEST_HEADER, RouterState, db_health_response,
     middleware::{log_responses, set_request_context},
 };
-use crate::application::pagination::{PageCursor, PageRequest, PostCursor};
-use crate::application::repos::{
-    PageQueryFilter, PagesRepo, PostListScope, PostQueryFilter, PostsRepo, SettingsRepo,
-};
-use crate::domain::types::{PageStatus, PostStatus};
+use crate::application::repos::SettingsRepo;
 
 #[derive(Clone)]
 pub struct HttpState {
     pub feed: Arc<FeedService>,
     pub pages: Arc<PageService>,
     pub chrome: Arc<ChromeService>,
+    pub syndication: Arc<SyndicationService>,
+    pub sitemap: Arc<SitemapService>,
     pub db: Arc<PostgresRepositories>,
     pub upload_storage: Arc<UploadStorage>,
     pub snapshot_preview: Arc<SnapshotPreviewService>,
@@ -511,45 +510,55 @@ fn build_upload_response(path: &str, bytes: Bytes) -> Response {
 }
 
 async fn sitemap(State(state): State<HttpState>) -> Response {
-    match build_sitemap_xml(&state).await {
+    match state.sitemap.sitemap_xml().await {
         Ok(body) => xml_response(body, "application/xml"),
-        Err(err) => err.into_response(),
+        Err(err) => HttpError::new(
+            "infra::http::public::sitemap",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to generate sitemap",
+            err.to_string(),
+        )
+        .into_response(),
     }
 }
 
 async fn rss_feed(State(state): State<HttpState>) -> Response {
-    match build_rss_xml(&state).await {
+    match state.syndication.rss_feed().await {
         Ok(body) => xml_response(body, "application/rss+xml"),
-        Err(err) => err.into_response(),
+        Err(err) => HttpError::new(
+            "infra::http::public::rss",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to generate RSS feed",
+            err.to_string(),
+        )
+        .into_response(),
     }
 }
 
 async fn atom_feed(State(state): State<HttpState>) -> Response {
-    match build_atom_xml(&state).await {
+    match state.syndication.atom_feed().await {
         Ok(body) => xml_response(body, "application/atom+xml"),
-        Err(err) => err.into_response(),
+        Err(err) => HttpError::new(
+            "infra::http::public::atom",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to generate Atom feed",
+            err.to_string(),
+        )
+        .into_response(),
     }
 }
 
 async fn robots_txt(State(state): State<HttpState>) -> Response {
-    let settings = match state.db.load_site_settings().await {
-        Ok(s) => s,
-        Err(err) => {
-            return HttpError::new(
-                "infra::http::public::robots",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to load settings",
-                err.to_string(),
-            )
-            .into_response();
-        }
-    };
-
-    let base = normalize_public_site_url(&settings.public_site_url);
-    let sitemap_url = format!("{base}sitemap.xml");
-    let body = format!("User-agent: *\nAllow: /\nSitemap: {sitemap_url}\n");
-
-    plain_response(body)
+    match state.sitemap.robots_txt().await {
+        Ok(body) => plain_response(body),
+        Err(err) => HttpError::new(
+            "infra::http::public::robots",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to generate robots.txt",
+            err.to_string(),
+        )
+        .into_response(),
+    }
 }
 
 pub(crate) fn post_meta(
@@ -652,290 +661,4 @@ fn plain_response(body: String) -> Response {
         .header(CONTENT_TYPE, "text/plain; charset=utf-8")
         .body(Body::from(body))
         .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response())
-}
-
-async fn build_sitemap_xml(state: &HttpState) -> Result<String, HttpError> {
-    const SOURCE: &str = "infra::http::public::sitemap";
-
-    // Record dependencies for L1 cache invalidation
-    // Note: Individual page slugs are recorded as they're iterated below
-    crate::cache::deps::record(crate::cache::EntityKey::Sitemap);
-    crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
-    crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
-
-    let settings = state.db.load_site_settings().await.map_err(|err| {
-        HttpError::new(
-            SOURCE,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to load settings",
-            err.to_string(),
-        )
-    })?;
-
-    let base = normalize_public_site_url(&settings.public_site_url);
-    let posts_repo: Arc<dyn PostsRepo> = state.db.clone();
-    let pages_repo: Arc<dyn PagesRepo> = state.db.clone();
-
-    let mut entries = Vec::new();
-
-    entries.push(sitemap_entry(&base, "/", Some(settings.updated_at)));
-
-    // Posts
-    let mut post_cursor: Option<PostCursor> = None;
-    loop {
-        let page = posts_repo
-            .list_posts(
-                PostListScope::Public,
-                &PostQueryFilter::default(),
-                PageRequest::new(200, post_cursor),
-            )
-            .await
-            .map_err(|err| {
-                HttpError::new(
-                    SOURCE,
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to list posts",
-                    err.to_string(),
-                )
-            })?;
-
-        for post in page.items.into_iter() {
-            if post.status != PostStatus::Published {
-                continue;
-            }
-            let lastmod = post.published_at.unwrap_or(post.updated_at);
-            entries.push(sitemap_entry(
-                &base,
-                &format!("/posts/{}", post.slug),
-                Some(lastmod),
-            ));
-        }
-
-        post_cursor = match page.next_cursor {
-            Some(next) => Some(PostCursor::decode(&next).map_err(|err| {
-                HttpError::new(
-                    SOURCE,
-                    StatusCode::BAD_REQUEST,
-                    "Failed to decode post cursor",
-                    err.to_string(),
-                )
-            })?),
-            None => break,
-        };
-    }
-
-    // Pages
-    let mut page_cursor: Option<PageCursor> = None;
-    loop {
-        let page = pages_repo
-            .list_pages(
-                Some(PageStatus::Published),
-                200,
-                page_cursor,
-                &PageQueryFilter::default(),
-            )
-            .await
-            .map_err(|err| {
-                HttpError::new(
-                    SOURCE,
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to list pages",
-                    err.to_string(),
-                )
-            })?;
-
-        for record in page.items.into_iter() {
-            if record.published_at.is_none() {
-                continue;
-            }
-            let lastmod = record.published_at.unwrap_or(record.updated_at);
-            entries.push(sitemap_entry(
-                &base,
-                &format!("/{}", record.slug),
-                Some(lastmod),
-            ));
-        }
-
-        page_cursor = match page.next_cursor {
-            Some(next) => Some(PageCursor::decode(&next).map_err(|err| {
-                HttpError::new(
-                    SOURCE,
-                    StatusCode::BAD_REQUEST,
-                    "Failed to decode page cursor",
-                    err.to_string(),
-                )
-            })?),
-            None => break,
-        };
-    }
-
-    let mut xml = String::from(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n",
-    );
-    for entry in entries {
-        xml.push_str(&entry);
-    }
-    xml.push_str("</urlset>\n");
-    Ok(xml)
-}
-
-fn sitemap_entry(base: &str, path: &str, lastmod: Option<time::OffsetDateTime>) -> String {
-    let loc = canonical_url(base, path);
-    let lastmod_str = lastmod
-        .and_then(|dt| dt.format(&Rfc3339).ok())
-        .unwrap_or_default();
-    if lastmod_str.is_empty() {
-        format!("  <url><loc>{loc}</loc></url>\n")
-    } else {
-        format!("  <url><loc>{loc}</loc><lastmod>{lastmod_str}</lastmod></url>\n")
-    }
-}
-
-async fn build_rss_xml(state: &HttpState) -> Result<String, HttpError> {
-    const SOURCE: &str = "infra::http::public::rss";
-
-    // Record dependencies for L1 cache invalidation
-    crate::cache::deps::record(crate::cache::EntityKey::Feed);
-    crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
-    crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
-
-    let settings = state.db.load_site_settings().await.map_err(|err| {
-        HttpError::new(
-            SOURCE,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to load settings",
-            err.to_string(),
-        )
-    })?;
-    let base = normalize_public_site_url(&settings.public_site_url);
-
-    let posts_repo: Arc<dyn PostsRepo> = state.db.clone();
-    let page = posts_repo
-        .list_posts(
-            PostListScope::Public,
-            &PostQueryFilter::default(),
-            PageRequest::new(100, None),
-        )
-        .await
-        .map_err(|err| {
-            HttpError::new(
-                SOURCE,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to list posts",
-                err.to_string(),
-            )
-        })?;
-
-    let mut items = String::new();
-    for post in page
-        .items
-        .into_iter()
-        .filter(|p| p.status == PostStatus::Published)
-    {
-        let published = post.published_at.unwrap_or(post.updated_at);
-        let pub_date = published
-            .format(&Rfc2822)
-            .unwrap_or_else(|_| published.to_string());
-        let link = format!("{base}posts/{}", post.slug);
-        items.push_str(&format!(
-            "    <item>\n      <title>{}</title>\n      <link>{}</link>\n      <guid>{}</guid>\n      <pubDate>{}</pubDate>\n      <description><![CDATA[{}]]></description>\n    </item>\n",
-            xml_escape(&post.title),
-            link,
-            link,
-            pub_date,
-            xml_escape(&post.excerpt),
-        ));
-    }
-
-    let channel = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>{}</title>\n    <link>{}</link>\n    <description>{}</description>\n{}  </channel>\n</rss>\n",
-        xml_escape(&settings.meta_title),
-        base,
-        xml_escape(&settings.meta_description),
-        items
-    );
-
-    Ok(channel)
-}
-
-async fn build_atom_xml(state: &HttpState) -> Result<String, HttpError> {
-    const SOURCE: &str = "infra::http::public::atom";
-
-    // Record dependencies for L1 cache invalidation (same as RSS)
-    crate::cache::deps::record(crate::cache::EntityKey::Feed);
-    crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
-    crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
-
-    let settings = state.db.load_site_settings().await.map_err(|err| {
-        HttpError::new(
-            SOURCE,
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to load settings",
-            err.to_string(),
-        )
-    })?;
-    let base = normalize_public_site_url(&settings.public_site_url);
-
-    let posts_repo: Arc<dyn PostsRepo> = state.db.clone();
-    let page = posts_repo
-        .list_posts(
-            PostListScope::Public,
-            &PostQueryFilter::default(),
-            PageRequest::new(100, None),
-        )
-        .await
-        .map_err(|err| {
-            HttpError::new(
-                SOURCE,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to list posts",
-                err.to_string(),
-            )
-        })?;
-
-    let updated = settings
-        .updated_at
-        .format(&Rfc3339)
-        .unwrap_or_else(|_| settings.updated_at.to_string());
-
-    let mut entries = String::new();
-    for post in page
-        .items
-        .into_iter()
-        .filter(|p| p.status == PostStatus::Published)
-    {
-        let published = post.published_at.unwrap_or(post.updated_at);
-        let published_str = published
-            .format(&Rfc3339)
-            .unwrap_or_else(|_| published.to_string());
-        let link = format!("{base}posts/{}", post.slug);
-        entries.push_str(&format!(
-            "  <entry>\n    <title>{}</title>\n    <link href=\"{}\"/>\n    <id>{}</id>\n    <updated>{}</updated>\n    <summary><![CDATA[{}]]></summary>\n  </entry>\n",
-            xml_escape(&post.title),
-            link,
-            link,
-            published_str,
-            xml_escape(&post.excerpt),
-        ));
-    }
-
-    let feed = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<feed xmlns=\"http://www.w3.org/2005/Atom\">\n  <title>{}</title>\n  <id>{}</id>\n  <updated>{}</updated>\n  <link href=\"{}atom.xml\" rel=\"self\"/>\n{}\n</feed>\n",
-        xml_escape(&settings.meta_title),
-        base,
-        updated,
-        base,
-        entries
-    );
-
-    Ok(feed)
-}
-
-fn xml_escape(input: &str) -> String {
-    input
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
 }

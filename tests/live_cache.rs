@@ -3,6 +3,14 @@
 //! - Tests cache invalidation and consistency after write operations.
 //! - Marked `#[ignore]` so it only runs after seeding data and starting server.
 //! - Reads demo API keys from `tests/api_keys.seed.toml`.
+//!
+//! **IMPORTANT**: These tests share a live server instance and L1 cache.
+//! They MUST be run with `--test-threads=1` to avoid race conditions:
+//!
+//! ```sh
+//! cargo test --test live_cache -- --ignored --test-threads=1
+//! ```
+
 
 use chrono::Utc;
 use reqwest::{Client, Method, StatusCode};
