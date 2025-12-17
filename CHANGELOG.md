@@ -7,17 +7,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.1.15-alpha.3] - 2025-12-17
-
 ### Added
 - `cache.l1_response_body_limit_bytes` configuration to cap the maximum cached response body size in L1.
 
 ### Fixed
 - Scheduled publish jobs now publish through admin services so cache invalidation and audit logging stay consistent with HTTP writes.
 - L1 response cache now caches tag/month 404 pages and unregisters evicted entries to avoid stale invalidation mappings.
+- Snapshot rollback no longer deadlocks with concurrent render job section writes.
 
 ### Changed
 - Public services now use L0 read-through caching for site settings, navigation, post/page lookups, and post lists to reduce repeated database reads.
+
+## [0.1.15-alpha.3] - 2025-12-17
 
 ## [0.1.15-alpha.2] - 2025-12-17
 

@@ -10,6 +10,27 @@ use super::types::{PersistedPostSection, PersistedPostSectionOwned, PostSectionR
 use crate::infra::db::map_sqlx_error;
 
 impl PostgresRepositories {
+    pub async fn lock_post_for_update(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+        post_id: Uuid,
+    ) -> Result<(), RepoError> {
+        sqlx::query!(
+            r#"
+            SELECT id
+            FROM posts
+            WHERE id = $1
+            FOR UPDATE
+            "#,
+            post_id
+        )
+        .fetch_one(tx.as_mut())
+        .await
+        .map_err(map_sqlx_error)?;
+
+        Ok(())
+    }
+
     pub async fn find_post_id_by_slug_immediate(
         &self,
         slug: &str,

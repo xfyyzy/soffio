@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO post_sections (\n                id, post_id, parent_id, position, level,\n                heading_html, heading_text, body_html,\n                contains_code, contains_math, contains_mermaid, anchor_slug\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Int2",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a21f1bb7af953a3c64a0bf6320a94aad748a1fc11ea39c0c5ad102a13d19e0de"
+}

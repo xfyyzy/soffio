@@ -14,7 +14,7 @@ use crate::{
         repos::{JobsRepo, RepoError, SettingsRepo},
     },
     domain::types::JobType,
-    infra::db::PersistedPostSectionOwned,
+    infra::db::{PersistedPostSectionOwned, PostgresRepositories},
 };
 
 use super::types::{RenderRequest, RenderService, RenderTarget, RenderedSection};
@@ -239,7 +239,13 @@ pub async fn process_render_post_job(
         None
     };
 
-    persist_sections_and_summary(ctx, post_id, &sections, summary_html.as_deref()).await?;
+    persist_sections_and_summary(
+        ctx.repositories.as_ref(),
+        post_id,
+        &sections,
+        summary_html.as_deref(),
+    )
+    .await?;
 
     drop(guard);
 
@@ -258,26 +264,32 @@ pub async fn process_render_post_job(
 }
 
 async fn persist_sections_and_summary(
-    ctx: &JobWorkerContext,
+    repos: &PostgresRepositories,
     post_id: Uuid,
     sections: &[PersistedPostSectionOwned],
     summary_html: Option<&str>,
 ) -> Result<(), ApalisError> {
-    let mut tx = ctx.repositories.begin().await.map_err(job_failed)?;
+    let mut tx = repos.begin().await.map_err(job_failed)?;
 
-    ctx.repositories
+    // Lock posts row first to align lock order with snapshot rollbacks.
+    repos
+        .lock_post_for_update(&mut tx, post_id)
+        .await
+        .map_err(job_failed)?;
+
+    repos
         .replace_post_sections_bulk(&mut tx, post_id, sections)
         .await
         .map_err(job_failed)?;
 
     if let Some(summary_html) = summary_html {
-        ctx.repositories
+        repos
             .update_post_summary_html(&mut tx, post_id, summary_html)
             .await
             .map_err(job_failed)?;
     }
 
-    ctx.repositories
+    repos
         .update_post_updated_at(&mut tx, post_id)
         .await
         .map_err(job_failed)?;
@@ -537,6 +549,11 @@ fn normalize_public_site_url(url: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sqlx::PgPool;
+    use tokio::time::{Duration, timeout};
+
+    use crate::application::repos::{CreatePostParams, PostsWriteRepo};
+    use crate::domain::types::PostStatus;
 
     /// Verifies that RenderPostJobPayload correctly serializes and deserializes
     /// body_markdown and summary_markdown fields. This is critical for the race
@@ -593,5 +610,116 @@ mod tests {
         let deserialized: RenderPostJobPayload = serde_json::from_str(&json).unwrap();
 
         assert_eq!(deserialized.body_markdown, large_body);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn persist_sections_locks_posts_before_sections(pool: PgPool) {
+        let repos = PostgresRepositories::new(pool.clone());
+
+        let post = repos
+            .create_post(CreatePostParams {
+                slug: "lock-order-test".to_string(),
+                title: "Lock Order Test".to_string(),
+                excerpt: "excerpt".to_string(),
+                body_markdown: "body".to_string(),
+                status: PostStatus::Draft,
+                pinned: false,
+                scheduled_at: None,
+                published_at: None,
+                archived_at: None,
+                summary_markdown: None,
+                summary_html: None,
+            })
+            .await
+            .expect("create post");
+
+        let initial_section_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO post_sections (
+                id, post_id, parent_id, position, level,
+                heading_html, heading_text, body_html,
+                contains_code, contains_math, contains_mermaid, anchor_slug
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#,
+            initial_section_id,
+            post.id,
+            Option::<Uuid>::None,
+            0i32,
+            1i16,
+            "<h2>Heading</h2>",
+            "Heading",
+            "<p>Body</p>",
+            false,
+            false,
+            false,
+            "heading"
+        )
+        .execute(&pool)
+        .await
+        .expect("insert section");
+
+        let mut lock_tx = pool.begin().await.expect("begin lock tx");
+        sqlx::query!(
+            r#"
+            SELECT id
+            FROM posts
+            WHERE id = $1
+            FOR UPDATE
+            "#,
+            post.id
+        )
+        .fetch_one(&mut *lock_tx)
+        .await
+        .expect("lock post");
+
+        let new_section_id = Uuid::new_v4();
+        let sections = vec![PersistedPostSectionOwned {
+            id: new_section_id,
+            parent_id: None,
+            position: 0,
+            level: 1,
+            heading_html: "<h2>Updated</h2>".to_string(),
+            heading_text: "Updated".to_string(),
+            body_html: "<p>Updated</p>".to_string(),
+            contains_code: false,
+            contains_math: false,
+            contains_mermaid: false,
+            anchor_slug: "updated".to_string(),
+        }];
+
+        let mut handle = tokio::spawn({
+            let repos = repos.clone();
+            let post_id = post.id;
+            async move { persist_sections_and_summary(&repos, post_id, &sections, None).await }
+        });
+
+        tokio::task::yield_now().await;
+
+        let blocked = timeout(Duration::from_millis(200), &mut handle).await;
+        assert!(blocked.is_err(), "persist should wait on post lock");
+
+        lock_tx.commit().await.expect("release lock");
+
+        let result = timeout(Duration::from_secs(2), &mut handle)
+            .await
+            .expect("persist completes after lock release")
+            .expect("task join ok");
+        assert!(result.is_ok(), "persist failed: {result:?}");
+
+        let row = sqlx::query!(
+            r#"
+            SELECT id
+            FROM post_sections
+            WHERE post_id = $1
+            "#,
+            post.id
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("fetch section");
+
+        assert_eq!(row.id, new_section_id);
     }
 }
