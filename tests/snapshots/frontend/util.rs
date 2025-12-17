@@ -28,17 +28,17 @@ use soffio::presentation::views::LayoutContext;
 
 pub fn feed_service() -> FeedService {
     let repo = Arc::new(StaticContentRepo::new());
-    FeedService::new(repo.clone(), repo.clone(), repo.clone(), repo)
+    FeedService::new(repo.clone(), repo.clone(), repo.clone(), repo, None)
 }
 
 pub fn chrome_service() -> ChromeService {
     let repo = Arc::new(StaticContentRepo::new());
-    ChromeService::new(repo.clone(), repo)
+    ChromeService::new(repo.clone(), repo, None)
 }
 
 pub fn page_service() -> PageService {
     let repo = Arc::new(StaticContentRepo::new());
-    PageService::new(repo)
+    PageService::new(repo, None)
 }
 
 pub async fn apply_layout<T>(content: T) -> LayoutContext<T> {

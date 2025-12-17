@@ -20,7 +20,7 @@ pub type Epoch = u64;
 /// Cache event with idempotency and ordering support.
 #[derive(Debug, Clone)]
 pub struct CacheEvent {
-    /// Unique identifier for idempotency (using UUIDv7 for time-ordering).
+    /// Unique identifier for idempotency (UUIDv4).
     pub id: Uuid,
     /// Monotonic epoch for ordering within this process.
     pub epoch: Epoch,

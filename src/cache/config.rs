@@ -12,6 +12,7 @@ const DEFAULT_L0_PAGE_LIMIT: usize = 100;
 const DEFAULT_L0_API_KEY_LIMIT: usize = 100;
 const DEFAULT_L0_POST_LIST_LIMIT: usize = 50;
 const DEFAULT_L1_RESPONSE_LIMIT: usize = 200;
+const DEFAULT_L1_RESPONSE_BODY_LIMIT_BYTES: usize = 1_048_576;
 const DEFAULT_AUTO_CONSUME_INTERVAL_MS: u64 = 5000;
 const DEFAULT_CONSUME_BATCH_LIMIT: usize = 100;
 
@@ -33,6 +34,8 @@ pub struct CacheConfig {
     pub l0_post_list_limit: usize,
     /// Maximum HTTP responses in L1 cache.
     pub l1_response_limit: usize,
+    /// Maximum HTTP response body size in bytes for L1 cache.
+    pub l1_response_body_limit_bytes: usize,
     /// Auto-consume interval (ms) for eventual consistency.
     pub auto_consume_interval_ms: u64,
     /// Maximum events per consumption batch.
@@ -49,6 +52,7 @@ impl Default for CacheConfig {
             l0_api_key_limit: DEFAULT_L0_API_KEY_LIMIT,
             l0_post_list_limit: DEFAULT_L0_POST_LIST_LIMIT,
             l1_response_limit: DEFAULT_L1_RESPONSE_LIMIT,
+            l1_response_body_limit_bytes: DEFAULT_L1_RESPONSE_BODY_LIMIT_BYTES,
             auto_consume_interval_ms: DEFAULT_AUTO_CONSUME_INTERVAL_MS,
             consume_batch_limit: DEFAULT_CONSUME_BATCH_LIMIT,
         }
@@ -65,6 +69,7 @@ impl From<&crate::config::CacheSettings> for CacheConfig {
             l0_api_key_limit: settings.l0_api_key_limit,
             l0_post_list_limit: settings.l0_post_list_limit,
             l1_response_limit: settings.l1_response_limit,
+            l1_response_body_limit_bytes: settings.l1_response_body_limit_bytes,
             auto_consume_interval_ms: settings.auto_consume_interval_ms,
             consume_batch_limit: settings.consume_batch_limit,
         }
@@ -117,6 +122,7 @@ mod tests {
         assert_eq!(config.l0_api_key_limit, 100);
         assert_eq!(config.l0_post_list_limit, 50);
         assert_eq!(config.l1_response_limit, 200);
+        assert_eq!(config.l1_response_body_limit_bytes, 1_048_576);
         assert_eq!(config.auto_consume_interval_ms, 5000);
         assert_eq!(config.consume_batch_limit, 100);
     }

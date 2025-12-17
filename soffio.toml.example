@@ -104,6 +104,11 @@ l0_post_list_limit = 50
 # CLI: --cache-l1-response-limit
 l1_response_limit = 200
 
+# Maximum cached HTTP response body size in bytes for L1 cache.
+# Env: SOFFIO__CACHE__L1_RESPONSE_BODY_LIMIT_BYTES
+# CLI: --cache-l1-response-body-limit-bytes
+l1_response_body_limit_bytes = 1048576
+
 # Auto-consume interval in milliseconds for eventual consistency fallback.
 # Env: SOFFIO__CACHE__AUTO_CONSUME_INTERVAL_MS
 # CLI: --cache-auto-consume-interval-ms

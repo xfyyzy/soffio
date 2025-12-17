@@ -468,6 +468,8 @@ async fn public_health(State(state): State<HttpState>) -> Response {
 }
 
 async fn favicon(State(state): State<HttpState>) -> Response {
+    crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
+
     match state.db.load_site_settings().await {
         Ok(settings) => Response::builder()
             .status(StatusCode::OK)

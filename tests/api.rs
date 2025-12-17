@@ -159,11 +159,13 @@ async fn build_state(pool: PgPool) -> (ApiState, String) {
         sections_repo.clone(),
         tags_repo.clone(),
         settings_repo.clone(),
+        None,
     ));
-    let _page_service = Arc::new(PageService::new(pages_repo.clone()));
+    let _page_service = Arc::new(PageService::new(pages_repo.clone(), None));
     let _chrome_service = Arc::new(ChromeService::new(
         navigation_repo.clone(),
         settings_repo.clone(),
+        None,
     ));
 
     let audit_service = AdminAuditService::new(audit_repo.clone());

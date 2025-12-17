@@ -10,7 +10,7 @@ use lru::LruCache;
 use uuid::Uuid;
 
 use crate::application::pagination::CursorPage;
-use crate::application::repos::PostTagCount;
+use crate::application::repos::TagWithCount;
 use crate::domain::api_keys::ApiKeyRecord;
 use crate::domain::entities::{NavigationItemRecord, PageRecord, PostRecord, SiteSettingsRecord};
 use crate::domain::posts::MonthCount;
@@ -30,7 +30,7 @@ pub struct L0Store {
     // Singletons (no eviction needed)
     site_settings: RwLock<Option<SiteSettingsRecord>>,
     navigation: RwLock<Option<Vec<NavigationItemRecord>>>,
-    tag_counts: RwLock<Option<Vec<PostTagCount>>>,
+    tag_counts: RwLock<Option<Vec<TagWithCount>>>,
     month_counts: RwLock<Option<Vec<MonthCount>>>,
 
     // KV caches (with LRU eviction)
@@ -90,11 +90,11 @@ impl L0Store {
         *self.navigation.write().unwrap() = None;
     }
 
-    pub fn get_tag_counts(&self) -> Option<Vec<PostTagCount>> {
+    pub fn get_tag_counts(&self) -> Option<Vec<TagWithCount>> {
         self.tag_counts.read().unwrap().clone()
     }
 
-    pub fn set_tag_counts(&self, value: Vec<PostTagCount>) {
+    pub fn set_tag_counts(&self, value: Vec<TagWithCount>) {
         *self.tag_counts.write().unwrap() = Some(value);
     }
 
@@ -262,8 +262,12 @@ impl L1Store {
         self.responses.write().unwrap().get(key).cloned()
     }
 
-    pub fn set(&self, key: L1Key, response: CachedResponse) {
-        self.responses.write().unwrap().put(key, response);
+    pub fn set(&self, key: L1Key, response: CachedResponse) -> Option<L1Key> {
+        self.responses
+            .write()
+            .unwrap()
+            .push(key, response)
+            .map(|(evicted_key, _)| evicted_key)
     }
 
     pub fn invalidate(&self, key: &L1Key) {
@@ -393,7 +397,8 @@ mod tests {
             body: Bytes::from("Hello"),
         };
 
-        store.set(key.clone(), response);
+        let evicted = store.set(key.clone(), response);
+        assert!(evicted.is_none());
 
         let cached = store.get(&key).expect("cached response");
         assert_eq!(cached.status, 200);

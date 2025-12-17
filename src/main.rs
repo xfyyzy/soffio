@@ -257,6 +257,7 @@ struct ApplicationContext {
 
 fn build_site_services(
     repositories: &Arc<PostgresRepositories>,
+    cache: Option<Arc<L0Store>>,
 ) -> (Arc<FeedService>, Arc<PageService>, Arc<ChromeService>) {
     let posts_repo: Arc<dyn PostsRepo> = repositories.clone();
     let sections_repo: Arc<dyn SectionsRepo> = repositories.clone();
@@ -270,9 +271,10 @@ fn build_site_services(
         sections_repo,
         tags_repo,
         settings_repo.clone(),
+        cache.clone(),
     ));
-    let page = Arc::new(PageService::new(pages_repo));
-    let chrome = Arc::new(ChromeService::new(navigation_repo, settings_repo));
+    let page = Arc::new(PageService::new(pages_repo, cache.clone()));
+    let chrome = Arc::new(ChromeService::new(navigation_repo, settings_repo, cache));
 
     (feed, page, chrome)
 }
@@ -328,10 +330,14 @@ fn build_application_context(
     let jobs_repo: Arc<dyn JobsRepo> = http_repositories.clone();
     let snapshots_repo: Arc<dyn SnapshotsRepo> = http_repositories.clone();
 
-    let (feed_service_http, page_service_http, chrome_service_http) =
-        build_site_services(&http_repositories);
-    let (feed_service_jobs, page_service_jobs, chrome_service_jobs) =
-        build_site_services(&job_repositories);
+    let job_posts_repo: Arc<dyn PostsRepo> = job_repositories.clone();
+    let job_posts_write_repo: Arc<dyn PostsWriteRepo> = job_repositories.clone();
+    let job_sections_repo: Arc<dyn SectionsRepo> = job_repositories.clone();
+    let job_tags_repo: Arc<dyn TagsRepo> = job_repositories.clone();
+    let job_settings_repo: Arc<dyn SettingsRepo> = job_repositories.clone();
+    let job_pages_repo: Arc<dyn PagesRepo> = job_repositories.clone();
+    let job_pages_write_repo: Arc<dyn PagesWriteRepo> = job_repositories.clone();
+    let job_jobs_repo: Arc<dyn JobsRepo> = job_repositories.clone();
 
     let upload_storage = Arc::new(
         UploadStorage::new(settings.uploads.directory.clone())
@@ -340,7 +346,7 @@ fn build_application_context(
 
     // Initialize cache infrastructure
     let cache_config = CacheConfig::from(&settings.cache);
-    let (cache_trigger, cache_state) = if cache_config.is_enabled() {
+    let (cache_trigger, cache_state, l0_cache) = if cache_config.is_enabled() {
         let l0 = Arc::new(L0Store::new(&cache_config));
         let l1 = Arc::new(L1Store::new(&cache_config));
         let registry = Arc::new(CacheRegistry::new());
@@ -353,20 +359,30 @@ fn build_application_context(
             queue.clone(),
             http_repositories.clone(),
         ));
+        let l0_cache = if cache_config.enable_l0_cache {
+            Some(consumer.l0().clone())
+        } else {
+            None
+        };
         let trigger = Some(Arc::new(CacheTrigger::new(
             cache_config.clone(),
             queue,
-            consumer,
+            consumer.clone(),
         )));
         let state = Some(CacheState {
-            config: cache_config,
+            config: cache_config.clone(),
             l1,
             registry,
         });
-        (trigger, state)
+        (trigger, state, l0_cache)
     } else {
-        (None, None)
+        (None, None, None)
     };
+
+    let (feed_service_http, page_service_http, chrome_service_http) =
+        build_site_services(&http_repositories, l0_cache.clone());
+    let (feed_service_jobs, page_service_jobs, chrome_service_jobs) =
+        build_site_services(&job_repositories, None);
 
     let audit_service = AdminAuditService::new(audit_repo.clone());
     let admin_post_service = Arc::new(
@@ -425,14 +441,39 @@ fn build_application_context(
     let admin_audit_service = Arc::new(audit_service);
     let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
 
+    let job_audit_service = AdminAuditService::new(job_repositories.clone());
+    let job_admin_post_service = Arc::new(
+        AdminPostService::new(
+            job_posts_repo.clone(),
+            job_posts_write_repo.clone(),
+            job_sections_repo.clone(),
+            job_jobs_repo.clone(),
+            job_tags_repo.clone(),
+            job_audit_service.clone(),
+        )
+        .with_cache_trigger_opt(cache_trigger.clone()),
+    );
+    let job_admin_page_service = Arc::new(
+        AdminPageService::new(
+            job_pages_repo.clone(),
+            job_pages_write_repo.clone(),
+            job_jobs_repo.clone(),
+            job_audit_service.clone(),
+            job_settings_repo.clone(),
+        )
+        .with_cache_trigger_opt(cache_trigger.clone()),
+    );
+
     let syndication_service = Arc::new(SyndicationService::new(
         posts_repo.clone(),
         settings_repo.clone(),
+        l0_cache.clone(),
     ));
     let sitemap_service = Arc::new(SitemapService::new(
         posts_repo.clone(),
         pages_repo.clone(),
         settings_repo.clone(),
+        l0_cache.clone(),
     ));
 
     let http_state = HttpState {
@@ -506,6 +547,8 @@ fn build_application_context(
         upload_storage,
         render_mailbox,
         inflight_renders,
+        admin_posts: job_admin_post_service,
+        admin_pages: job_admin_page_service,
     };
 
     Ok(ApplicationContext {

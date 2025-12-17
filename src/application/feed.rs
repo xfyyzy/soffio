@@ -13,6 +13,7 @@ use crate::application::repos::{
     TagsRepo,
 };
 use crate::application::stream::StreamBuilder;
+use crate::cache::{L0Store, hash_cursor_str, hash_post_list_key};
 use crate::domain::entities::{PostRecord, SiteSettingsRecord, TagRecord};
 use crate::domain::posts;
 use crate::domain::sections::{PostSectionNode, SectionTreeError, build_section_tree};
@@ -89,6 +90,7 @@ pub struct FeedService {
     sections: Arc<dyn SectionsRepo>,
     tags: Arc<dyn TagsRepo>,
     settings: Arc<dyn SettingsRepo>,
+    cache: Option<Arc<L0Store>>,
 }
 
 #[derive(Debug, Error)]
@@ -111,12 +113,14 @@ impl FeedService {
         sections: Arc<dyn SectionsRepo>,
         tags: Arc<dyn TagsRepo>,
         settings: Arc<dyn SettingsRepo>,
+        cache: Option<Arc<L0Store>>,
     ) -> Self {
         Self {
             posts,
             sections,
             tags,
             settings,
+            cache,
         }
     }
 
@@ -142,14 +146,33 @@ impl FeedService {
         let settings = self.load_site_settings().await?;
         let page_limit = homepage_page_limit(&settings);
 
-        let page = self
-            .posts
-            .list_posts(
-                PostListScope::Public,
-                &query_filter,
-                PageRequest::new(page_limit, decoded_cursor),
-            )
-            .await?;
+        let filter_hash = hash_post_list_key(&query_filter, page_limit);
+        let cursor_hash = hash_cursor_str(cursor);
+
+        let page = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_post_list(filter_hash, cursor_hash) {
+                cached
+            } else {
+                let page = self
+                    .posts
+                    .list_posts(
+                        PostListScope::Public,
+                        &query_filter,
+                        PageRequest::new(page_limit, decoded_cursor),
+                    )
+                    .await?;
+                cache.set_post_list(filter_hash, cursor_hash, page.clone());
+                page
+            }
+        } else {
+            self.posts
+                .list_posts(
+                    PostListScope::Public,
+                    &query_filter,
+                    PageRequest::new(page_limit, decoded_cursor),
+                )
+                .await?
+        };
 
         let total_filtered = self
             .posts
@@ -161,11 +184,33 @@ impl FeedService {
             .count_posts(PostListScope::Public, &PostQueryFilter::default())
             .await?;
 
-        let tag_counts = self.tags.list_with_counts().await?;
-        let month_counts = self
-            .posts
-            .list_month_counts(PostListScope::Public, &PostQueryFilter::default())
-            .await?;
+        let tag_counts = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_tag_counts() {
+                cached
+            } else {
+                let tags = self.tags.list_with_counts().await?;
+                cache.set_tag_counts(tags.clone());
+                tags
+            }
+        } else {
+            self.tags.list_with_counts().await?
+        };
+        let month_counts = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_month_counts() {
+                cached
+            } else {
+                let months = self
+                    .posts
+                    .list_month_counts(PostListScope::Public, &PostQueryFilter::default())
+                    .await?;
+                cache.set_month_counts(months.clone());
+                months
+            }
+        } else {
+            self.posts
+                .list_month_counts(PostListScope::Public, &PostQueryFilter::default())
+                .await?
+        };
 
         let tag_summaries = if settings.show_tag_aggregations {
             build_tag_summaries(&tag_counts, filter.tag(), total_all, &settings)
@@ -222,15 +267,33 @@ impl FeedService {
         let query_filter = filter.to_query_filter();
         let settings = self.load_site_settings().await?;
         let page_limit = homepage_page_limit(&settings);
+        let filter_hash = hash_post_list_key(&query_filter, page_limit);
+        let cursor_hash = hash_cursor_str(cursor);
 
-        let page = self
-            .posts
-            .list_posts(
-                PostListScope::Public,
-                &query_filter,
-                PageRequest::new(page_limit, decoded_cursor),
-            )
-            .await?;
+        let page = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_post_list(filter_hash, cursor_hash) {
+                cached
+            } else {
+                let page = self
+                    .posts
+                    .list_posts(
+                        PostListScope::Public,
+                        &query_filter,
+                        PageRequest::new(page_limit, decoded_cursor),
+                    )
+                    .await?;
+                cache.set_post_list(filter_hash, cursor_hash, page.clone());
+                page
+            }
+        } else {
+            self.posts
+                .list_posts(
+                    PostListScope::Public,
+                    &query_filter,
+                    PageRequest::new(page_limit, decoded_cursor),
+                )
+                .await?
+        };
 
         let mut cards = Vec::with_capacity(page.items.len());
         for record in &page.items {
@@ -261,7 +324,21 @@ impl FeedService {
         // Record post slug dependency for cache invalidation
         crate::cache::deps::record(crate::cache::EntityKey::PostSlug(slug.to_string()));
 
-        let Some(post) = self.posts.find_by_slug(slug).await? else {
+        let post = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_post_by_slug(slug) {
+                Some(cached)
+            } else {
+                let fetched = self.posts.find_by_slug(slug).await?;
+                if let Some(post) = fetched.clone() {
+                    cache.set_post(post);
+                }
+                fetched
+            }
+        } else {
+            self.posts.find_by_slug(slug).await?
+        };
+
+        let Some(post) = post else {
             return Ok(None);
         };
 
@@ -321,15 +398,41 @@ impl FeedService {
     }
 
     pub async fn is_known_tag(&self, tag: &str) -> Result<bool, FeedError> {
-        let tags = self.tags.list_all().await?;
+        crate::cache::deps::record(crate::cache::EntityKey::PostAggTags);
+
+        let tags = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_tag_counts() {
+                cached
+            } else {
+                let tags = self.tags.list_with_counts().await?;
+                cache.set_tag_counts(tags.clone());
+                tags
+            }
+        } else {
+            self.tags.list_with_counts().await?
+        };
         Ok(tags.iter().any(|record| record.slug == tag))
     }
 
     pub async fn is_known_month(&self, month: &str) -> Result<bool, FeedError> {
-        let months = self
-            .posts
-            .list_month_counts(PostListScope::Public, &PostQueryFilter::default())
-            .await?;
+        crate::cache::deps::record(crate::cache::EntityKey::PostAggMonths);
+
+        let months = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_month_counts() {
+                cached
+            } else {
+                let months = self
+                    .posts
+                    .list_month_counts(PostListScope::Public, &PostQueryFilter::default())
+                    .await?;
+                cache.set_month_counts(months.clone());
+                months
+            }
+        } else {
+            self.posts
+                .list_month_counts(PostListScope::Public, &PostQueryFilter::default())
+                .await?
+        };
         Ok(months.iter().any(|entry| entry.key == month))
     }
 
@@ -337,10 +440,25 @@ impl FeedService {
         // Record site settings dependency for cache invalidation
         crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
 
-        self.settings
+        if let Some(settings) = self
+            .cache
+            .as_ref()
+            .and_then(|cache| cache.get_site_settings())
+        {
+            return Ok(settings);
+        }
+
+        let settings = self
+            .settings
             .load_site_settings()
             .await
-            .map_err(FeedError::from)
+            .map_err(FeedError::from)?;
+
+        if let Some(cache) = &self.cache {
+            cache.set_site_settings(settings.clone());
+        }
+
+        Ok(settings)
     }
 }
 

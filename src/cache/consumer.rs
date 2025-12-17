@@ -99,8 +99,8 @@ impl CacheConsumer {
             "Cache consumption starting"
         );
 
-        // Phase 1: Invalidate L0 (skip if no entities to invalidate)
-        if !plan.invalidate_entities.is_empty() {
+        // Phase 1: Invalidate L0 (skip if disabled or no entities to invalidate)
+        if self.config.enable_l0_cache && !plan.invalidate_entities.is_empty() {
             self.invalidate_l0(&plan);
         }
 
@@ -109,8 +109,8 @@ impl CacheConsumer {
             self.invalidate_l1(&plan);
         }
 
-        // Phase 3: Warm cache from repositories (skip if no warm actions)
-        if plan.has_warm_actions() {
+        // Phase 3: Warm cache from repositories (skip if L0 disabled or no warm actions)
+        if self.config.enable_l0_cache && plan.has_warm_actions() {
             self.warm(&plan).await;
         }
 
@@ -228,15 +228,7 @@ impl CacheConsumer {
         // Warm aggregations (tag counts, month counts)
         if plan.warm_aggregations {
             if let Ok(tags) = TagsRepo::list_with_counts(repos.as_ref()).await {
-                let post_tag_counts = tags
-                    .into_iter()
-                    .map(|t| crate::application::repos::PostTagCount {
-                        slug: t.slug,
-                        name: t.name,
-                        count: t.count as u64,
-                    })
-                    .collect();
-                self.l0.set_tag_counts(post_tag_counts);
+                self.l0.set_tag_counts(tags);
                 tracing::debug!("Warmed: tag counts");
             }
 

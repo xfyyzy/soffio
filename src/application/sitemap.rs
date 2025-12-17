@@ -12,6 +12,7 @@ use crate::application::pagination::{PageCursor, PageRequest, PostCursor};
 use crate::application::repos::{
     PageQueryFilter, PagesRepo, PostListScope, PostQueryFilter, PostsRepo, RepoError, SettingsRepo,
 };
+use crate::cache::L0Store;
 use crate::domain::types::{PageStatus, PostStatus};
 
 /// Service for generating sitemap.xml and robots.txt.
@@ -20,6 +21,7 @@ pub struct SitemapService {
     posts: Arc<dyn PostsRepo>,
     pages: Arc<dyn PagesRepo>,
     settings: Arc<dyn SettingsRepo>,
+    cache: Option<Arc<L0Store>>,
 }
 
 #[derive(Debug, Error)]
@@ -45,11 +47,13 @@ impl SitemapService {
         posts: Arc<dyn PostsRepo>,
         pages: Arc<dyn PagesRepo>,
         settings: Arc<dyn SettingsRepo>,
+        cache: Option<Arc<L0Store>>,
     ) -> Self {
         Self {
             posts,
             pages,
             settings,
+            cache,
         }
     }
 
@@ -62,11 +66,24 @@ impl SitemapService {
         crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
         crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
 
-        let settings = self
-            .settings
-            .load_site_settings()
-            .await
-            .map_err(|e| SitemapError::Settings(e.to_string()))?;
+        let settings = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_site_settings() {
+                cached
+            } else {
+                let settings = self
+                    .settings
+                    .load_site_settings()
+                    .await
+                    .map_err(|e| SitemapError::Settings(e.to_string()))?;
+                cache.set_site_settings(settings.clone());
+                settings
+            }
+        } else {
+            self.settings
+                .load_site_settings()
+                .await
+                .map_err(|e| SitemapError::Settings(e.to_string()))?
+        };
 
         let base = normalize_public_site_url(&settings.public_site_url);
         let mut entries = Vec::new();
@@ -157,11 +174,24 @@ impl SitemapService {
         // Record dependencies for L1 cache invalidation
         crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
 
-        let settings = self
-            .settings
-            .load_site_settings()
-            .await
-            .map_err(|e| SitemapError::Settings(e.to_string()))?;
+        let settings = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_site_settings() {
+                cached
+            } else {
+                let settings = self
+                    .settings
+                    .load_site_settings()
+                    .await
+                    .map_err(|e| SitemapError::Settings(e.to_string()))?;
+                cache.set_site_settings(settings.clone());
+                settings
+            }
+        } else {
+            self.settings
+                .load_site_settings()
+                .await
+                .map_err(|e| SitemapError::Settings(e.to_string()))?
+        };
 
         let base = normalize_public_site_url(&settings.public_site_url);
         let sitemap_url = format!("{base}sitemap.xml");

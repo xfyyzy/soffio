@@ -32,7 +32,10 @@ mod trigger;
 pub use config::CacheConfig;
 pub use consumer::CacheConsumer;
 pub use events::{CacheEvent, Epoch, EventKind, EventQueue};
-pub use keys::{CacheKey, EntityKey, L0Key, L1Key, OutputFormat, hash_query, hash_value};
+pub use keys::{
+    CacheKey, EntityKey, L0Key, L1Key, OutputFormat, hash_cursor_str, hash_post_list_key,
+    hash_query, hash_value,
+};
 pub use middleware::{CacheState, response_cache_layer};
 pub use planner::ConsumptionPlan;
 pub use registry::CacheRegistry;

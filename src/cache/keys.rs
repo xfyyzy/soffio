@@ -7,6 +7,8 @@ use std::hash::{Hash, Hasher};
 
 use uuid::Uuid;
 
+use crate::application::repos::PostQueryFilter;
+
 /// Identifies a domain entity or derived collection for cache invalidation.
 ///
 /// When an entity changes, all cache entries that depend on it must be invalidated.
@@ -107,6 +109,21 @@ pub fn hash_value<T: Hash>(value: &T) -> u64 {
 /// Hash a query string for L1 cache key generation.
 pub fn hash_query(query: &str) -> u64 {
     hash_value(&query)
+}
+
+/// Hash a post list filter with page limit for L0 list cache keys.
+pub fn hash_post_list_key(filter: &PostQueryFilter, page_limit: u32) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    filter.tag.hash(&mut hasher);
+    filter.month.hash(&mut hasher);
+    filter.search.hash(&mut hasher);
+    page_limit.hash(&mut hasher);
+    hasher.finish()
+}
+
+/// Hash an optional cursor string for L0 list cache keys.
+pub fn hash_cursor_str(cursor: Option<&str>) -> u64 {
+    hash_value(&cursor)
 }
 
 #[cfg(test)]

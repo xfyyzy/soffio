@@ -12,6 +12,7 @@ use crate::application::pagination::PageRequest;
 use crate::application::repos::{
     PostListScope, PostQueryFilter, PostsRepo, RepoError, SettingsRepo,
 };
+use crate::cache::{L0Store, hash_cursor_str, hash_post_list_key};
 use crate::domain::types::PostStatus;
 
 /// Service for generating RSS and Atom feeds.
@@ -19,6 +20,7 @@ use crate::domain::types::PostStatus;
 pub struct SyndicationService {
     posts: Arc<dyn PostsRepo>,
     settings: Arc<dyn SettingsRepo>,
+    cache: Option<Arc<L0Store>>,
 }
 
 #[derive(Debug, Error)]
@@ -36,8 +38,16 @@ impl From<RepoError> for SyndicationError {
 }
 
 impl SyndicationService {
-    pub fn new(posts: Arc<dyn PostsRepo>, settings: Arc<dyn SettingsRepo>) -> Self {
-        Self { posts, settings }
+    pub fn new(
+        posts: Arc<dyn PostsRepo>,
+        settings: Arc<dyn SettingsRepo>,
+        cache: Option<Arc<L0Store>>,
+    ) -> Self {
+        Self {
+            posts,
+            settings,
+            cache,
+        }
     }
 
     /// Generate RSS 2.0 feed XML.
@@ -49,22 +59,55 @@ impl SyndicationService {
         crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
         crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
 
-        let settings = self
-            .settings
-            .load_site_settings()
-            .await
-            .map_err(|e| SyndicationError::Settings(e.to_string()))?;
+        let settings = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_site_settings() {
+                cached
+            } else {
+                let settings = self
+                    .settings
+                    .load_site_settings()
+                    .await
+                    .map_err(|e| SyndicationError::Settings(e.to_string()))?;
+                cache.set_site_settings(settings.clone());
+                settings
+            }
+        } else {
+            self.settings
+                .load_site_settings()
+                .await
+                .map_err(|e| SyndicationError::Settings(e.to_string()))?
+        };
 
         let base = normalize_public_site_url(&settings.public_site_url);
 
-        let page = self
-            .posts
-            .list_posts(
-                PostListScope::Public,
-                &PostQueryFilter::default(),
-                PageRequest::new(100, None),
-            )
-            .await?;
+        let filter = PostQueryFilter::default();
+        let page_limit = 100u32;
+        let filter_hash = hash_post_list_key(&filter, page_limit);
+        let cursor_hash = hash_cursor_str(None);
+        let page = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_post_list(filter_hash, cursor_hash) {
+                cached
+            } else {
+                let page = self
+                    .posts
+                    .list_posts(
+                        PostListScope::Public,
+                        &filter,
+                        PageRequest::new(page_limit, None),
+                    )
+                    .await?;
+                cache.set_post_list(filter_hash, cursor_hash, page.clone());
+                page
+            }
+        } else {
+            self.posts
+                .list_posts(
+                    PostListScope::Public,
+                    &filter,
+                    PageRequest::new(page_limit, None),
+                )
+                .await?
+        };
 
         let mut items = String::new();
         for post in page
@@ -107,22 +150,55 @@ impl SyndicationService {
         crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
         crate::cache::deps::record(crate::cache::EntityKey::PostsIndex);
 
-        let settings = self
-            .settings
-            .load_site_settings()
-            .await
-            .map_err(|e| SyndicationError::Settings(e.to_string()))?;
+        let settings = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_site_settings() {
+                cached
+            } else {
+                let settings = self
+                    .settings
+                    .load_site_settings()
+                    .await
+                    .map_err(|e| SyndicationError::Settings(e.to_string()))?;
+                cache.set_site_settings(settings.clone());
+                settings
+            }
+        } else {
+            self.settings
+                .load_site_settings()
+                .await
+                .map_err(|e| SyndicationError::Settings(e.to_string()))?
+        };
 
         let base = normalize_public_site_url(&settings.public_site_url);
 
-        let page = self
-            .posts
-            .list_posts(
-                PostListScope::Public,
-                &PostQueryFilter::default(),
-                PageRequest::new(100, None),
-            )
-            .await?;
+        let filter = PostQueryFilter::default();
+        let page_limit = 100u32;
+        let filter_hash = hash_post_list_key(&filter, page_limit);
+        let cursor_hash = hash_cursor_str(None);
+        let page = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_post_list(filter_hash, cursor_hash) {
+                cached
+            } else {
+                let page = self
+                    .posts
+                    .list_posts(
+                        PostListScope::Public,
+                        &filter,
+                        PageRequest::new(page_limit, None),
+                    )
+                    .await?;
+                cache.set_post_list(filter_hash, cursor_hash, page.clone());
+                page
+            }
+        } else {
+            self.posts
+                .list_posts(
+                    PostListScope::Public,
+                    &filter,
+                    PageRequest::new(page_limit, None),
+                )
+                .await?
+        };
 
         let updated = settings
             .updated_at

@@ -216,6 +216,34 @@ impl AdminPostService {
         }
     }
 
+    pub async fn publish_scheduled_by_slug(
+        &self,
+        slug: &str,
+    ) -> Result<PostRecord, AdminPostError> {
+        let Some(post) = self.reader.find_by_slug(slug).await? else {
+            return Err(AdminPostError::Repo(RepoError::NotFound));
+        };
+
+        let publish_at = post.scheduled_at.unwrap_or_else(OffsetDateTime::now_utc);
+        let params = UpdatePostStatusParams {
+            id: post.id,
+            status: PostStatus::Published,
+            scheduled_at: None,
+            published_at: Some(publish_at),
+            archived_at: None,
+        };
+
+        let post = self.writer.update_post_status(params).await?;
+        self.record_status_audit("system", &post).await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.post_upserted(post.id, &post.slug).await;
+        }
+
+        Ok(post)
+    }
+
     pub async fn delete_post(
         &self,
         actor: &str,

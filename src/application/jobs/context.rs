@@ -3,6 +3,7 @@ use std::{sync::Arc, time::Duration};
 use apalis::prelude::Error as ApalisError;
 
 use crate::{
+    application::admin::{pages::AdminPageService, posts::AdminPostService},
     application::render::{InFlightRenders, RenderMailbox},
     application::{
         chrome::ChromeService, feed::FeedService, page::PageService, render::ComrakRenderService,
@@ -25,6 +26,8 @@ pub struct JobWorkerContext {
     pub upload_storage: Arc<UploadStorage>,
     pub render_mailbox: RenderMailbox,
     pub inflight_renders: InFlightRenders,
+    pub admin_posts: Arc<AdminPostService>,
+    pub admin_pages: Arc<AdminPageService>,
 }
 
 type BoxError = Box<dyn std::error::Error + Send + Sync + 'static>;

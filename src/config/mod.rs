@@ -243,6 +243,10 @@ pub struct ServeOverrides {
     #[arg(long = "cache-l1-response-limit", value_name = "COUNT")]
     pub cache_l1_response_limit: Option<usize>,
 
+    /// Override the L1 response body limit in bytes.
+    #[arg(long = "cache-l1-response-body-limit-bytes", value_name = "BYTES")]
+    pub cache_l1_response_body_limit_bytes: Option<usize>,
+
     /// Override the cache auto-consume interval in milliseconds.
     #[arg(long = "cache-auto-consume-interval-ms", value_name = "MS")]
     pub cache_auto_consume_interval_ms: Option<u64>,
@@ -400,6 +404,8 @@ pub struct CacheSettings {
     pub l0_post_list_limit: usize,
     /// Maximum HTTP responses in L1 cache.
     pub l1_response_limit: usize,
+    /// Maximum HTTP response body size in bytes for L1 cache.
+    pub l1_response_body_limit_bytes: usize,
     /// Auto-consume interval (ms) for eventual consistency.
     pub auto_consume_interval_ms: u64,
     /// Maximum events per consumption batch.
@@ -562,6 +568,9 @@ impl RawSettings {
         }
         if let Some(v) = overrides.cache_l1_response_limit {
             self.cache.l1_response_limit = Some(v);
+        }
+        if let Some(v) = overrides.cache_l1_response_body_limit_bytes {
+            self.cache.l1_response_body_limit_bytes = Some(v);
         }
         if let Some(v) = overrides.cache_auto_consume_interval_ms {
             self.cache.auto_consume_interval_ms = Some(v);
@@ -935,6 +944,7 @@ const DEFAULT_CACHE_L0_PAGE_LIMIT: usize = 100;
 const DEFAULT_CACHE_L0_API_KEY_LIMIT: usize = 100;
 const DEFAULT_CACHE_L0_POST_LIST_LIMIT: usize = 50;
 const DEFAULT_CACHE_L1_RESPONSE_LIMIT: usize = 200;
+const DEFAULT_CACHE_L1_RESPONSE_BODY_LIMIT_BYTES: usize = 1_048_576;
 const DEFAULT_CACHE_AUTO_CONSUME_INTERVAL_MS: u64 = 5000;
 const DEFAULT_CACHE_CONSUME_BATCH_LIMIT: usize = 100;
 
@@ -948,6 +958,7 @@ struct RawCacheSettings {
     l0_api_key_limit: Option<usize>,
     l0_post_list_limit: Option<usize>,
     l1_response_limit: Option<usize>,
+    l1_response_body_limit_bytes: Option<usize>,
     auto_consume_interval_ms: Option<u64>,
     consume_batch_limit: Option<usize>,
 }
@@ -967,6 +978,9 @@ fn build_cache_settings(cache: RawCacheSettings) -> Result<CacheSettings, LoadEr
         l1_response_limit: cache
             .l1_response_limit
             .unwrap_or(DEFAULT_CACHE_L1_RESPONSE_LIMIT),
+        l1_response_body_limit_bytes: cache
+            .l1_response_body_limit_bytes
+            .unwrap_or(DEFAULT_CACHE_L1_RESPONSE_BODY_LIMIT_BYTES),
         auto_consume_interval_ms: cache
             .auto_consume_interval_ms
             .unwrap_or(DEFAULT_CACHE_AUTO_CONSUME_INTERVAL_MS),
@@ -1199,6 +1213,7 @@ mod tests {
         assert_eq!(settings.cache.l0_api_key_limit, 100);
         assert_eq!(settings.cache.l0_post_list_limit, 50);
         assert_eq!(settings.cache.l1_response_limit, 200);
+        assert_eq!(settings.cache.l1_response_body_limit_bytes, 1_048_576);
         assert_eq!(settings.cache.auto_consume_interval_ms, 5000);
         assert_eq!(settings.cache.consume_batch_limit, 100);
     }
@@ -1211,6 +1226,7 @@ mod tests {
             cache_enable_l1_cache: Some(false),
             cache_l0_post_limit: Some(1000),
             cache_l1_response_limit: Some(500),
+            cache_l1_response_body_limit_bytes: Some(2_000_000),
             ..Default::default()
         };
 
@@ -1221,6 +1237,7 @@ mod tests {
         assert!(!settings.cache.enable_l1_cache);
         assert_eq!(settings.cache.l0_post_limit, 1000);
         assert_eq!(settings.cache.l1_response_limit, 500);
+        assert_eq!(settings.cache.l1_response_body_limit_bytes, 2_000_000);
         // Other fields should still use defaults
         assert_eq!(settings.cache.l0_page_limit, 100);
     }
@@ -1233,12 +1250,18 @@ mod tests {
             "--cache-enable-l0-cache=false",
             "--cache-l0-post-limit",
             "1000",
+            "--cache-l1-response-body-limit-bytes",
+            "2048",
         ]);
 
         match args.command.expect("serve command") {
             Command::Serve(serve) => {
                 assert_eq!(serve.overrides.cache_enable_l0_cache, Some(false));
                 assert_eq!(serve.overrides.cache_l0_post_limit, Some(1000));
+                assert_eq!(
+                    serve.overrides.cache_l1_response_body_limit_bytes,
+                    Some(2048)
+                );
             }
             _ => panic!("wrong command parsed"),
         }

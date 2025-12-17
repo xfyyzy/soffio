@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 use crate::application::error::HttpError;
 use crate::application::repos::{PagesRepo, RepoError};
+use crate::cache::L0Store;
 use crate::domain::types::PageStatus;
 use crate::presentation::views::PageView;
 
@@ -13,11 +14,12 @@ const SOURCE: &str = "application::page::PageService";
 #[derive(Clone)]
 pub struct PageService {
     pages: Arc<dyn PagesRepo>,
+    cache: Option<Arc<L0Store>>,
 }
 
 impl PageService {
-    pub fn new(pages: Arc<dyn PagesRepo>) -> Self {
-        Self { pages }
+    pub fn new(pages: Arc<dyn PagesRepo>, cache: Option<Arc<L0Store>>) -> Self {
+        Self { pages, cache }
     }
 
     pub async fn page_view(&self, slug: &str) -> Result<Option<PageView>, HttpError> {
@@ -25,11 +27,26 @@ impl PageService {
         crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
         crate::cache::deps::record(crate::cache::EntityKey::PageSlug(slug.to_string()));
 
-        let record = self
-            .pages
-            .find_by_slug(slug)
-            .await
-            .map_err(|err| repo_failure("find_by_slug", err))?;
+        let record = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_page_by_slug(slug) {
+                Some(cached)
+            } else {
+                let fetched = self
+                    .pages
+                    .find_by_slug(slug)
+                    .await
+                    .map_err(|err| repo_failure("find_by_slug", err))?;
+                if let Some(page) = fetched.clone() {
+                    cache.set_page(page);
+                }
+                fetched
+            }
+        } else {
+            self.pages
+                .find_by_slug(slug)
+                .await
+                .map_err(|err| repo_failure("find_by_slug", err))?
+        };
 
         let Some(record) = record else {
             return Ok(None);
@@ -86,4 +103,107 @@ fn render_feature_flags(html: &str) -> (bool, bool, bool) {
     let contains_math = html.contains("data-math-style");
     let contains_mermaid = html.contains("data-role=\"diagram-mermaid\"");
     (contains_code, contains_math, contains_mermaid)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+
+    use async_trait::async_trait;
+    use time::OffsetDateTime;
+
+    use crate::application::pagination::{CursorPage, PageCursor};
+    use crate::application::repos::{PageQueryFilter, RepoError};
+    use crate::cache::CacheConfig;
+    use crate::domain::entities::PageRecord;
+    use crate::domain::posts::MonthCount;
+
+    struct StubPagesRepo {
+        calls: Arc<AtomicUsize>,
+        page: PageRecord,
+    }
+
+    #[async_trait]
+    impl PagesRepo for StubPagesRepo {
+        async fn list_pages(
+            &self,
+            _status: Option<PageStatus>,
+            _limit: u32,
+            _cursor: Option<PageCursor>,
+            _filter: &PageQueryFilter,
+        ) -> Result<CursorPage<PageRecord>, RepoError> {
+            Ok(CursorPage::empty())
+        }
+
+        async fn find_by_slug(&self, slug: &str) -> Result<Option<PageRecord>, RepoError> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            if slug == self.page.slug {
+                Ok(Some(self.page.clone()))
+            } else {
+                Ok(None)
+            }
+        }
+
+        async fn find_by_id(&self, _id: Uuid) -> Result<Option<PageRecord>, RepoError> {
+            Ok(None)
+        }
+
+        async fn count_pages(
+            &self,
+            _status: Option<PageStatus>,
+            _filter: &PageQueryFilter,
+        ) -> Result<u64, RepoError> {
+            Ok(0)
+        }
+
+        async fn list_month_counts(
+            &self,
+            _status: Option<PageStatus>,
+            _filter: &PageQueryFilter,
+        ) -> Result<Vec<MonthCount>, RepoError> {
+            Ok(Vec::new())
+        }
+    }
+
+    fn sample_page(slug: &str) -> PageRecord {
+        let now = OffsetDateTime::now_utc();
+        PageRecord {
+            id: Uuid::new_v4(),
+            slug: slug.to_string(),
+            title: "Sample".to_string(),
+            body_markdown: "body".to_string(),
+            rendered_html: "<p>Hello</p>".to_string(),
+            status: PageStatus::Published,
+            scheduled_at: None,
+            published_at: Some(now),
+            archived_at: None,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+
+    #[tokio::test]
+    async fn page_view_uses_l0_cache() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let repo = Arc::new(StubPagesRepo {
+            calls: calls.clone(),
+            page: sample_page("about"),
+        });
+
+        let config = CacheConfig::default();
+        let cache = Arc::new(L0Store::new(&config));
+        let service = PageService::new(repo, Some(cache));
+
+        let first = service.page_view("about").await.expect("first view");
+        assert!(first.is_some());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+        let second = service.page_view("about").await.expect("second view");
+        assert!(second.is_some());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
 }

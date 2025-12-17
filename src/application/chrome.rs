@@ -5,6 +5,7 @@ use axum::http::StatusCode;
 use crate::application::error::HttpError;
 use crate::application::pagination::{NavigationCursor, PageRequest};
 use crate::application::repos::{NavigationQueryFilter, NavigationRepo, RepoError, SettingsRepo};
+use crate::cache::L0Store;
 use crate::domain::entities::NavigationItemRecord;
 use crate::domain::types::NavigationDestinationType;
 use crate::presentation::views::{
@@ -17,13 +18,19 @@ const SOURCE: &str = "application::chrome::ChromeService";
 pub struct ChromeService {
     navigation: Arc<dyn NavigationRepo>,
     settings: Arc<dyn SettingsRepo>,
+    cache: Option<Arc<L0Store>>,
 }
 
 impl ChromeService {
-    pub fn new(navigation: Arc<dyn NavigationRepo>, settings: Arc<dyn SettingsRepo>) -> Self {
+    pub fn new(
+        navigation: Arc<dyn NavigationRepo>,
+        settings: Arc<dyn SettingsRepo>,
+        cache: Option<Arc<L0Store>>,
+    ) -> Self {
         Self {
             navigation,
             settings,
+            cache,
         }
     }
 
@@ -32,33 +39,36 @@ impl ChromeService {
         crate::cache::deps::record(crate::cache::EntityKey::SiteSettings);
         crate::cache::deps::record(crate::cache::EntityKey::Navigation);
 
-        let settings = self
-            .settings
-            .load_site_settings()
-            .await
-            .map_err(|err| repo_failure("load_site_settings", err))?;
-
-        let mut cursor = None;
-        let filter = NavigationQueryFilter::default();
-        let mut navigation_items = Vec::new();
-
-        loop {
-            let page = self
-                .navigation
-                .list_navigation(None, &filter, PageRequest::new(100, cursor))
+        let settings = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_site_settings() {
+                cached
+            } else {
+                let settings = self
+                    .settings
+                    .load_site_settings()
+                    .await
+                    .map_err(|err| repo_failure("load_site_settings", err))?;
+                cache.set_site_settings(settings.clone());
+                settings
+            }
+        } else {
+            self.settings
+                .load_site_settings()
                 .await
-                .map_err(|err| repo_failure("list_navigation", err))?;
-            navigation_items.extend(page.items);
+                .map_err(|err| repo_failure("load_site_settings", err))?
+        };
 
-            cursor = match page.next_cursor {
-                Some(token) => {
-                    let decoded = NavigationCursor::decode(&token)
-                        .map_err(|err| repo_failure("decode_navigation_cursor", err.into()))?;
-                    Some(decoded)
-                }
-                None => break,
-            };
-        }
+        let navigation_items = if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get_navigation() {
+                cached
+            } else {
+                let items = load_navigation_items(self.navigation.as_ref()).await?;
+                cache.set_navigation(items.clone());
+                items
+            }
+        } else {
+            load_navigation_items(self.navigation.as_ref()).await?
+        };
 
         let mut entries = Vec::new();
         for item in navigation_items.into_iter().filter(|item| item.visible) {
@@ -96,6 +106,33 @@ fn repo_failure(operation: &'static str, err: RepoError) -> HttpError {
         "Failed to load site chrome",
         format!("{operation} failed: {err}"),
     )
+}
+
+async fn load_navigation_items(
+    repo: &dyn NavigationRepo,
+) -> Result<Vec<NavigationItemRecord>, HttpError> {
+    let mut cursor = None;
+    let filter = NavigationQueryFilter::default();
+    let mut navigation_items = Vec::new();
+
+    loop {
+        let page = repo
+            .list_navigation(None, &filter, PageRequest::new(100, cursor))
+            .await
+            .map_err(|err| repo_failure("list_navigation", err))?;
+        navigation_items.extend(page.items);
+
+        cursor = match page.next_cursor {
+            Some(token) => {
+                let decoded = NavigationCursor::decode(&token)
+                    .map_err(|err| repo_failure("decode_navigation_cursor", err.into()))?;
+                Some(decoded)
+            }
+            None => break,
+        };
+    }
+
+    Ok(navigation_items)
 }
 
 fn map_navigation_item(item: &NavigationItemRecord) -> Result<NavigationLinkView, HttpError> {

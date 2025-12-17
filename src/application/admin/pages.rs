@@ -432,6 +432,34 @@ impl AdminPageService {
         }
     }
 
+    pub async fn publish_scheduled_by_slug(
+        &self,
+        slug: &str,
+    ) -> Result<PageRecord, AdminPageError> {
+        let Some(page) = self.reader.find_by_slug(slug).await? else {
+            return Err(AdminPageError::Repo(RepoError::NotFound));
+        };
+
+        let publish_at = page.scheduled_at.unwrap_or_else(OffsetDateTime::now_utc);
+        let params = UpdatePageStatusParams {
+            id: page.id,
+            status: PageStatus::Published,
+            scheduled_at: None,
+            published_at: Some(publish_at),
+            archived_at: None,
+        };
+
+        let page = self.writer.update_page_status(params).await?;
+        self.record_status_audit("system", &page).await?;
+
+        // Trigger cache invalidation
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.page_upserted(page.id, &page.slug).await;
+        }
+
+        Ok(page)
+    }
+
     pub async fn delete_page(
         &self,
         actor: &str,
