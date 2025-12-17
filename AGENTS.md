@@ -151,7 +151,7 @@ Use a single atomic commit when possible. Use the template in §9.
 - Changelog entries must describe user-visible experience or behavior changes, not internal technical details.
 - Release flow (run **only when the user explicitly asks to publish**):
   1) Bump version in `Cargo.toml` to the user-specified value.
-  2) Run the full gate (fmt, clippy, tests, etc.) with the env vars in §0.8; accept snapshot diffs caused by the version bump.
+  2) Run the full gate (fmt, clippy, tests, etc.) with the env vars in §0.8. For snapshot tests during version bumps, use `cargo insta test --accept` to run tests and auto-accept expected version diffs in a single pass.
   3) Update `CHANGELOG.md`: add the new version section, move Unreleased contents there, and fill in any missing release notes.
   4) Commit all changes (version bump, snapshots, changelog) and **push to origin before creating the release**. This ensures the tag will be placed on the correct commit containing the new version.
   5) After user reconfirms, create the release via `gh`: tag `vX.Y.Z`, title `vX.Y.Z - <brief title>`, release notes based on that version’s changelog entry. Use `--prerelease` for alpha/beta versions.
