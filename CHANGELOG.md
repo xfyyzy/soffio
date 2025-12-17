@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.15-alpha.3] - 2025-12-17
+
 ### Added
 - `cache.l1_response_body_limit_bytes` configuration to cap the maximum cached response body size in L1.
 
