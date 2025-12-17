@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.15-alpha.2] - 2025-12-17
+
 ### Added
 - **Comprehensive caching system**: Re-implemented caching with a robust event-driven architecture (Phases 1-5). Features include:
     - **L1 Response Cache**: Middleware that caches HTTP responses, respecting HTMX headers and content negotiation.
