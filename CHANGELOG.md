@@ -7,27 +7,31 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.15-alpha.4] - 2025-12-17
+
+### Fixed
+- Snapshot rollback no longer deadlocks with concurrent render job section writes.
+
+## [0.1.15-alpha.3] - 2025-12-17
+
 ### Added
 - `cache.l1_response_body_limit_bytes` configuration to cap the maximum cached response body size in L1.
 
 ### Fixed
 - Scheduled publish jobs now publish through admin services so cache invalidation and audit logging stay consistent with HTTP writes.
 - L1 response cache now caches tag/month 404 pages and unregisters evicted entries to avoid stale invalidation mappings.
-- Snapshot rollback no longer deadlocks with concurrent render job section writes.
 
 ### Changed
 - Public services now use L0 read-through caching for site settings, navigation, post/page lookups, and post lists to reduce repeated database reads.
-
-## [0.1.15-alpha.3] - 2025-12-17
 
 ## [0.1.15-alpha.2] - 2025-12-17
 
 ### Added
 - **Comprehensive caching system**: Re-implemented caching with a robust event-driven architecture (Phases 1-5). Features include:
-    - **L1 Response Cache**: Middleware that caches HTTP responses, respecting HTMX headers and content negotiation.
-    - **Event-driven Invalidation**: `ConsumptionPlan` coordinator orders invalidations to ensure consistency.
-    - **Dependency Tracking**: Automatic tracking of cache dependencies during read operations via thread-local collectors.
-    - **In-memory Store**: Zero-dependency LRU cache implementation.
+  - **L1 Response Cache**: Middleware that caches HTTP responses, respecting HTMX headers and content negotiation.
+  - **Event-driven Invalidation**: `ConsumptionPlan` coordinator orders invalidations to ensure consistency.
+  - **Dependency Tracking**: Automatic tracking of cache dependencies during read operations via thread-local collectors.
+  - **In-memory Store**: Zero-dependency LRU cache implementation.
 - **Migration Guide**: Added instructions for reconciling migration versions in `AGENTS.md`.
 
 ### Fixed
