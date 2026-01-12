@@ -55,7 +55,7 @@ dashmap = "6.1"
 tempfile = "3.23"
 subtle = "2.6"
 reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
-lru = "0.16.2"
+lru = "0.16.3"
 
 [dev-dependencies]
 insta = { version = "1.45", features = ["glob"] }
