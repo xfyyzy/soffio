@@ -24,7 +24,7 @@ tracing = "0.1.44"
 tracing-error = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 url = "2"
-pinyin = "0.10"
+pinyin = "0.11"
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "time", "macros", "json"] }
 uuid = { version = "1", features = ["serde", "v4"] }
 async-trait = "0.1"
