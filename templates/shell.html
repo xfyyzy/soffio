@@ -4,8 +4,8 @@
 
 {% block content %}
 <page-shell data-structure="stack" role="document">
-  {% call layout::site_header(view.brand, view.navigation.entries) %}
+  {{ layout::site_header(view.brand, view.navigation.entries) }}
   {% block shell_content %}{% endblock %}
-  {% call layout::site_footer(view.footer) %}
+  {{ layout::site_footer(view.footer) }}
 </page-shell>
 {% endblock %}

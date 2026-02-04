@@ -1,2 +1,2 @@
 {% import "admin/macros/uploads.html" as uploads %}
-{% call uploads::queue(&queue.entries, queue.limit_mib) %}
+{{ uploads::queue(&queue.entries, queue.limit_mib) }}

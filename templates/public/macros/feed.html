@@ -31,10 +31,10 @@
 {% if content.show_tag_filters || content.show_month_filters -%}
 <filters-column data-region="filters" role="complementary" aria-label="Filter posts">
   {% if content.show_tag_filters -%}
-  {% call filter_panel("tag-panel", "Filter by tag", content.tags, "posts") %}
+  {{ filter_panel("tag-panel", "Filter by tag", content.tags, "posts") }}
   {%- endif %}
   {% if content.show_month_filters -%}
-  {% call filter_panel("month-panel", "Filter by month", content.months, "posts") %}
+  {{ filter_panel("month-panel", "Filter by month", content.months, "posts") }}
   {%- endif %}
 </filters-column>
 {%- endif %}
@@ -68,7 +68,7 @@
 {% macro post_card(post, heading_id, tags) %}
 <post-card data-entry="{{ post.slug }}" role="listitem" view-transition-name="post-card-{{ post.slug }}">
   <article data-role="card" aria-labelledby="{{ heading_id }}">
-    {% call post_card_header(post.slug, heading_id, post.title, post.excerpt, post.iso_date, post.published, tags, true) %}
+    {{ post_card_header(post.slug, heading_id, post.title, post.excerpt, post.iso_date, post.published, tags, true) }}
   </article>
 </post-card>
 {% endmacro %}
@@ -78,7 +78,7 @@
 {% set heading_index = heading_offset + loop.index %}
 {% set heading_id = "post-title-" ~ heading_index %}
 {% set tags = post.badges %}
-  {% call post_card(post, heading_id, tags) %}
+  {{ post_card(post, heading_id, tags) }}
 {% endfor %}
 {% endmacro %}
 
@@ -91,7 +91,7 @@
   aria-live="polite"
 >
   {% if content.has_results %}
-    {% call post_cards(content.posts) %}
+    {{ post_cards(content.posts) }}
   {% else %}
   <empty-state role="status" aria-live="polite">
     <empty-title role="heading" aria-level="2">No matching posts</empty-title>
@@ -129,11 +129,11 @@
 {% endmacro %}
 
 {% macro feed_layout(content) %}
-{% call filters_column(content) %}
+{{ filters_column(content) }}
 <content-panel data-region="primary" role="region" aria-label="Latest posts">
-  {% call feed_grid(content) %}
+  {{ feed_grid(content) }}
   <div id="feed-sentinel-container" role="presentation" aria-live="polite">
-    {% call feed_loader(content) %}
+    {{ feed_loader(content) }}
   </div>
 </content-panel>
 {% endmacro %}

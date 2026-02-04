@@ -14,7 +14,7 @@
     {% else %}
     <div data-role="chip-list">
       {% for scope in picker.selected %}
-      {% call picker_macro::chip(picker.toggle_action, "scope_state", picker.selected_values|join(","), "scope_id", scope.value, "scope", "true", scope.label, "", "", false, false, 0) %}
+      {{ picker_macro::chip(picker.toggle_action, "scope_state", picker.selected_values|join(","), "scope_id", scope.value, "scope", "true", scope.label, "", "", false, false, 0) }}
       {% endfor %}
     </div>
     {% endif %}
@@ -26,7 +26,7 @@
     {% else %}
     <div data-role="chip-grid">
       {% for scope in picker.available %}
-      {% call picker_macro::chip(picker.toggle_action, "scope_state", picker.selected_values|join(","), "scope_id", scope.value, "scope", scope.is_selected, scope.label, "", "", false, false, 0) %}
+      {{ picker_macro::chip(picker.toggle_action, "scope_state", picker.selected_values|join(","), "scope_id", scope.value, "scope", scope.is_selected, scope.label, "", "", false, false, 0) }}
       {% endfor %}
     </div>
     {% endif %}

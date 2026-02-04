@@ -8,7 +8,7 @@ name = "soffio-cli"
 path = "src/bin/soffio_cli/main.rs"
 
 [dependencies]
-askama = "0.14"
+askama = "0.15"
 axum = { version = "0.8", features = ["macros", "multipart"] }
 datastar = { version = "0.3", features = ["axum"] }
 async-stream = "0.3"

@@ -12,7 +12,7 @@
 {% endif %}
 <main data-role="content">
   <layout-frame data-layout="split" role="group" aria-label="Page layout">
-    {% call feed::feed_layout(view.content) %}
+    {{ feed::feed_layout(view.content) }}
   </layout-frame>
 </main>
 {% endblock %}

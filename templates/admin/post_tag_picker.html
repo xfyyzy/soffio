@@ -14,7 +14,7 @@
     {% else %}
     <div data-role="chip-list">
       {% for tag in picker.selected %}
-      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", tag.id, "tag", "true", tag.name, tag.slug, "#", true, false, 0) %}
+      {{ picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", tag.id, "tag", "true", tag.name, tag.slug, "#", true, false, 0) }}
       {% endfor %}
     </div>
     {% endif %}
@@ -26,7 +26,7 @@
     {% else %}
     <div data-role="chip-grid">
       {% for option in picker.options %}
-      {% call picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", option.id, "tag", option.is_selected, option.name, option.slug, "#", true, true, option.usage_count) %}
+      {{ picker_macro::chip(picker.toggle_action, "tag_state", picker.selected_tag_ids|join(","), "tag_id", option.id, "tag", option.is_selected, option.name, option.slug, "#", true, true, option.usage_count) }}
       {% endfor %}
     </div>
     {% endif %}
