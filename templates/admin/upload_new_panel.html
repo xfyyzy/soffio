@@ -33,7 +33,7 @@
         data-upload-queue
         aria-live="polite"
       >
-        {% call uploads::queue(&content.queue.entries, content.upload_limit_mib) %}
+        {{ uploads::queue(&content.queue.entries, content.upload_limit_mib) }}
       </section>
       <div data-role="form-actions">
         <button type="submit" data-role="primary">Upload files</button>

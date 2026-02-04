@@ -14,7 +14,7 @@
     </thead>
     <tbody>
       {% for entry in entries %}
-{% call queue_item(entry) %}
+{{ queue_item(entry) }}
       {% endfor %}
     </tbody>
   </table>

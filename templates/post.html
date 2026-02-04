@@ -18,7 +18,7 @@
     {% if let Some(toc) = post.toc %}
     <meta-column data-region="meta" role="complementary" aria-label="Article metadata">
       <aside data-role="meta-card">
-        {% call post::toc(&toc.events) %}
+        {{ post::toc(&toc.events) }}
       </aside>
     </meta-column>
     {% endif %}
@@ -37,7 +37,7 @@
             {{ summary_html | safe }}
           </section>
           {% endif %}
-          {% call post::sections(&post.sections) %}
+          {{ post::sections(&post.sections) }}
         </article>
       </post-card>
     </content-panel>
