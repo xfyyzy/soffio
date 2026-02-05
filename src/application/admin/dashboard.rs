@@ -55,16 +55,26 @@ pub struct AdminDashboardService {
     api_keys: Arc<dyn ApiKeysRepo>,
 }
 
+pub struct AdminDashboardDeps {
+    pub posts: Arc<dyn PostsRepo>,
+    pub pages: Arc<dyn PagesRepo>,
+    pub tags: Arc<dyn TagsRepo>,
+    pub navigation: Arc<dyn NavigationRepo>,
+    pub uploads: Arc<dyn UploadsRepo>,
+    pub api_keys: Arc<dyn ApiKeysRepo>,
+}
+
 impl AdminDashboardService {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        posts: Arc<dyn PostsRepo>,
-        pages: Arc<dyn PagesRepo>,
-        tags: Arc<dyn TagsRepo>,
-        navigation: Arc<dyn NavigationRepo>,
-        uploads: Arc<dyn UploadsRepo>,
-        api_keys: Arc<dyn ApiKeysRepo>,
-    ) -> Self {
+    pub fn new(deps: AdminDashboardDeps) -> Self {
+        let AdminDashboardDeps {
+            posts,
+            pages,
+            tags,
+            navigation,
+            uploads,
+            api_keys,
+        } = deps;
+
         Self {
             posts,
             pages,
