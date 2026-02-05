@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.15-alpha.5] - 2026-02-05
+
 ### Changed
 - CI now runs security advisory checks (`cargo audit` and `cargo deny check advisories`) with pinned tool versions in the build image so security gate results are reproducible.
 - API page creation now honors a provided `slug`; when omitted, slug generation from `title` remains unchanged.
