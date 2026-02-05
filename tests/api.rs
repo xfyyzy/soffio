@@ -615,6 +615,54 @@ async fn api_can_create_and_list_pages(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "./migrations")]
+async fn api_page_create_honors_slug_field(pool: PgPool) {
+    let (state, token) = build_state(pool).await;
+    let principal = state.api_keys.authenticate(&token).await.unwrap();
+
+    let (status, custom_page) = response_json(
+        handlers::create_page(
+            State(state.clone()),
+            Extension(principal.clone()),
+            Json(PageCreateRequest {
+                slug: Some("custom-page-slug".into()),
+                title: "ignored-title-for-slug".into(),
+                body_markdown: "# Page content".into(),
+                status: soffio::domain::types::PageStatus::Draft,
+                scheduled_at: None,
+                published_at: None,
+                archived_at: None,
+            }),
+        )
+        .await
+        .expect("create page with custom slug"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(string_field(&custom_page, "slug"), "custom-page-slug");
+
+    let (status, auto_page) = response_json(
+        handlers::create_page(
+            State(state.clone()),
+            Extension(principal),
+            Json(PageCreateRequest {
+                slug: None,
+                title: "Auto Slug Page".into(),
+                body_markdown: "# Page content".into(),
+                status: soffio::domain::types::PageStatus::Draft,
+                scheduled_at: None,
+                published_at: None,
+                archived_at: None,
+            }),
+        )
+        .await
+        .expect("create page with derived slug"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(string_field(&auto_page, "slug"), "auto-slug-page");
+}
+
+#[sqlx::test(migrations = "./migrations")]
 async fn api_can_update_page_content(pool: PgPool) {
     let (state, token) = build_state(pool).await;
     let principal = state.api_keys.authenticate(&token).await.unwrap();
@@ -625,6 +673,7 @@ async fn api_can_update_page_content(pool: PgPool) {
         .create_page(
             "test",
             soffio::application::admin::pages::CreatePageCommand {
+                slug: None,
                 title: "original-page".into(),
                 body_markdown: "# original".into(),
                 status: soffio::domain::types::PageStatus::Draft,
@@ -664,6 +713,7 @@ async fn api_can_update_page_status(pool: PgPool) {
         .create_page(
             "test",
             soffio::application::admin::pages::CreatePageCommand {
+                slug: None,
                 title: "status-page".into(),
                 body_markdown: "# content".into(),
                 status: soffio::domain::types::PageStatus::Draft,
@@ -703,6 +753,7 @@ async fn api_can_partial_update_page(pool: PgPool) {
         .create_page(
             "test",
             soffio::application::admin::pages::CreatePageCommand {
+                slug: None,
                 title: "page".into(),
                 body_markdown: "hello".into(),
                 status: soffio::domain::types::PageStatus::Draft,

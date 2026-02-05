@@ -10,6 +10,10 @@ use time::OffsetDateTime;
 use tracing::info;
 use uuid::Uuid;
 
+use super::lock::mutex_lock;
+
+const SOURCE: &str = "cache::events";
+
 /// Monotonic epoch for ordering events.
 ///
 /// Each event gets a unique, monotonically increasing epoch number.
@@ -110,21 +114,21 @@ impl EventQueue {
             "Cache event enqueued"
         );
 
-        self.queue.lock().unwrap().push_back(event);
+        mutex_lock(&self.queue, SOURCE, "publish").push_back(event);
     }
 
     /// Drain up to `limit` events from the queue.
     ///
     /// Returns the events in FIFO order.
     pub fn drain(&self, limit: usize) -> Vec<CacheEvent> {
-        let mut queue = self.queue.lock().unwrap();
+        let mut queue = mutex_lock(&self.queue, SOURCE, "drain");
         let count = limit.min(queue.len());
         queue.drain(..count).collect()
     }
 
     /// Get the current queue length.
     pub fn len(&self) -> usize {
-        self.queue.lock().unwrap().len()
+        mutex_lock(&self.queue, SOURCE, "len").len()
     }
 
     /// Check if the queue is empty.
@@ -134,7 +138,7 @@ impl EventQueue {
 
     /// Clear all events from the queue.
     pub fn clear(&self) {
-        self.queue.lock().unwrap().clear();
+        mutex_lock(&self.queue, SOURCE, "clear").clear();
     }
 }
 
@@ -146,6 +150,8 @@ impl Default for EventQueue {
 
 #[cfg(test)]
 mod tests {
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+
     use super::*;
 
     #[test]
@@ -232,5 +238,18 @@ mod tests {
 
         assert_eq!(kind1, kind2);
         assert_ne!(kind1, kind3);
+    }
+
+    #[test]
+    fn event_queue_recovers_from_poisoned_lock() {
+        let queue = EventQueue::new();
+
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            let _guard = queue.queue.lock().expect("queue lock should be acquired");
+            panic!("poison queue lock");
+        }));
+
+        queue.publish(EventKind::SiteSettingsUpdated);
+        assert_eq!(queue.len(), 1);
     }
 }

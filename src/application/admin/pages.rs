@@ -38,6 +38,7 @@ pub enum AdminPageError {
 
 #[derive(Debug, Clone)]
 pub struct CreatePageCommand {
+    pub slug: Option<String>,
     pub title: String,
     pub body_markdown: String,
     pub status: PageStatus,
@@ -232,6 +233,7 @@ impl AdminPageService {
         ensure_non_empty(&command.body_markdown, "body_markdown")?;
 
         let CreatePageCommand {
+            slug,
             title,
             body_markdown,
             status,
@@ -241,7 +243,9 @@ impl AdminPageService {
         } = command;
 
         let reader = self.reader.clone();
-        let slug = match generate_unique_slug_async(&title, move |candidate| {
+        let slug_is_custom = slug.is_some();
+        let slug_source = slug.as_deref().unwrap_or(title.as_str());
+        let slug = match generate_unique_slug_async(slug_source, move |candidate| {
             let reader = reader.clone();
             let candidate = candidate.to_string();
             async move {
@@ -256,7 +260,11 @@ impl AdminPageService {
             Ok(slug) => slug,
             Err(SlugAsyncError::Slug(err)) => match err {
                 SlugError::EmptyInput | SlugError::Unrepresentable { .. } => {
-                    return Err(AdminPageError::ConstraintViolation("title"));
+                    return Err(AdminPageError::ConstraintViolation(if slug_is_custom {
+                        "slug"
+                    } else {
+                        "title"
+                    }));
                 }
                 SlugError::Exhausted { .. } => {
                     return Err(AdminPageError::ConstraintViolation("slug"));

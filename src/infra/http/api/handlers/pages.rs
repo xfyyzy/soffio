@@ -103,6 +103,7 @@ pub async fn create_page(
     let actor = ApiState::actor_label(&principal);
 
     let command = CreatePageCommand {
+        slug: payload.slug,
         title: payload.title,
         body_markdown: payload.body_markdown,
         status: payload.status,

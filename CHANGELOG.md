@@ -7,6 +7,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- CI now runs security advisory checks (`cargo audit` and `cargo deny check advisories`) with pinned tool versions in the build image so security gate results are reproducible.
+- API page creation now honors a provided `slug`; when omitted, slug generation from `title` remains unchanged.
+
+### Fixed
+- Cache internals now recover from poisoned locks instead of panicking on lock acquisition failures, improving runtime resilience after thread panics.
+- Snapshot admin actions now return controlled `400 Bad Request` responses when required filter metadata is missing, instead of panicking.
+
 ## [0.1.15-alpha.4] - 2025-12-17
 
 ### Fixed

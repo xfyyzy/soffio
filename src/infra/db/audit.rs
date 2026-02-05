@@ -322,11 +322,15 @@ impl AuditRepo for PostgresRepositories {
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<AuditLogRecord>, RepoError> {
-        let row: Option<AuditRow> = sqlx::query_as(
-            "SELECT id, actor, action, entity_type, entity_id, payload_text, created_at \
-             FROM audit_logs WHERE id = $1",
+        let row = sqlx::query_as!(
+            AuditRow,
+            r#"
+            SELECT id, actor, action, entity_type, entity_id, payload_text, created_at
+            FROM audit_logs
+            WHERE id = $1
+            "#,
+            id
         )
-        .bind(id)
         .fetch_optional(self.pool())
         .await
         .map_err(map_sqlx_error)?;

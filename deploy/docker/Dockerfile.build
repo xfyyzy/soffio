@@ -23,6 +23,7 @@ RUN set -eux; \
       pkgconf \
       python3; \
     rustup component add rustfmt clippy; \
+    cargo install --locked cargo-audit@0.22.1 cargo-deny@0.19.0; \
     # Install cargo-nextest for parallel test execution
     curl -LsSf https://get.nexte.st/latest/linux-musl | tar zxf - -C /usr/local/bin; \
     npm install --global --unsafe-perm typescript@latest; \

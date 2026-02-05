@@ -130,6 +130,10 @@ jobs:
               cargo fmt --all -- --check; \
               cargo check --workspace --all-targets --target x86_64-unknown-linux-musl; \
               cargo clippy --workspace --all-targets --target x86_64-unknown-linux-musl -- -D warnings; \
+              # sqlx pulls mysql/rsa into Cargo.lock through optional feature wiring;
+              # the mysql backend is not enabled in this workspace.
+              cargo audit --ignore RUSTSEC-2023-0071; \
+              cargo deny check advisories; \
               cargo run --target x86_64-unknown-linux-musl --bin gen_cli_docs; \
               # Ensure docs are regenerated and committed. Explicit GIT_DIR/WORK_TREE avoids absolute-path issues when mounted at /work. \
               if ! GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff --quiet HEAD -- docs/cli.md docs/cli.zh.md; then \

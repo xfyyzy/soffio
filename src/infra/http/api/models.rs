@@ -83,7 +83,6 @@ pub struct PostTagsRequest {
     pub tag_ids: Vec<Uuid>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PageCreateRequest {
     pub slug: Option<String>,

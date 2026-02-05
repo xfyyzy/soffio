@@ -32,12 +32,6 @@ use serde::Deserialize;
 
 use crate::domain::types::{JobState, JobType, PageStatus, PostStatus};
 
-#[allow(dead_code)]
-#[derive(Debug, Deserialize)]
-pub struct CursorQuery {
-    pub cursor: Option<String>,
-}
-
 #[derive(Debug, Deserialize)]
 pub struct PostListQuery {
     pub status: Option<PostStatus>,

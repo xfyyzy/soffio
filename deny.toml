@@ -1,0 +1,7 @@
+[advisories]
+version = 2
+yanked = "deny"
+ignore = [
+    { id = "RUSTSEC-2025-0141", reason = "syntect transitively depends on bincode 1.x and no maintained upstream replacement is available yet; temporary exception, review by 2026-05-06" },
+    { id = "RUSTSEC-2024-0320", reason = "syntect transitively depends on yaml-rust and no maintained upstream replacement is available yet; temporary exception, review by 2026-05-06" },
+]
