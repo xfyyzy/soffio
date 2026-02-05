@@ -230,12 +230,16 @@ async fn load_panel(
 
     let timezone = settings.timezone;
     let public_site_url = super::panel::normalize_public_site_url(&settings.public_site_url);
+    let filter_meta = match validated_snapshot_filter_meta(filter) {
+        Ok(meta) => meta,
+        Err(err) => return Err(err.into_response()),
+    };
 
     let meta = super::panel::SnapshotContentMeta {
         filter,
-        entity_label: entity_label(filter.entity_type.unwrap()),
-        entity_slug: entity_slug(filter.entity_type.unwrap()),
-        entity_id: filter.entity_id.unwrap(),
+        entity_label: entity_label(filter_meta.entity_type),
+        entity_slug: entity_slug(filter_meta.entity_type),
+        entity_id: filter_meta.entity_id,
         timezone,
         public_site_url: &public_site_url,
     };
@@ -278,6 +282,29 @@ async fn admin_page_size(state: &AdminState) -> u32 {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+struct SnapshotFilterMeta {
+    entity_type: SnapshotEntityType,
+    entity_id: Uuid,
+}
+
+fn validated_snapshot_filter_meta(
+    filter: &SnapshotFilter,
+) -> Result<SnapshotFilterMeta, HttpError> {
+    match (filter.entity_type, filter.entity_id) {
+        (Some(entity_type), Some(entity_id)) => Ok(SnapshotFilterMeta {
+            entity_type,
+            entity_id,
+        }),
+        _ => Err(HttpError::new(
+            SOURCE,
+            StatusCode::BAD_REQUEST,
+            "Invalid snapshot filter",
+            "Snapshot filter metadata is incomplete".to_string(),
+        )),
+    }
+}
+
 fn entity_slug(entity_type: SnapshotEntityType) -> &'static str {
     match entity_type {
         SnapshotEntityType::Post => "posts",
@@ -293,3 +320,36 @@ fn entity_label(entity_type: SnapshotEntityType) -> &'static str {
 }
 
 const SOURCE: &str = "infra::http::admin::snapshots::actions";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validated_snapshot_filter_meta_rejects_missing_fields() {
+        let filter = SnapshotFilter {
+            entity_type: Some(SnapshotEntityType::Post),
+            entity_id: None,
+            search: None,
+            month: None,
+        };
+
+        let err = validated_snapshot_filter_meta(&filter).expect_err("missing entity_id");
+        assert_eq!(err.into_response().status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[test]
+    fn validated_snapshot_filter_meta_accepts_complete_filter() {
+        let id = Uuid::new_v4();
+        let filter = SnapshotFilter {
+            entity_type: Some(SnapshotEntityType::Page),
+            entity_id: Some(id),
+            search: None,
+            month: None,
+        };
+
+        let meta = validated_snapshot_filter_meta(&filter).expect("valid filter");
+        assert_eq!(meta.entity_type, SnapshotEntityType::Page);
+        assert_eq!(meta.entity_id, id);
+    }
+}

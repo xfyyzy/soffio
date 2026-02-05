@@ -17,6 +17,9 @@ use crate::domain::posts::MonthCount;
 
 use super::config::CacheConfig;
 use super::keys::L1Key;
+use super::lock::{rw_read, rw_write};
+
+const SOURCE: &str = "cache::store";
 
 // ============================================================================
 // L0 Store: Object/Query Cache
@@ -67,51 +70,51 @@ impl L0Store {
     // ========================================================================
 
     pub fn get_site_settings(&self) -> Option<SiteSettingsRecord> {
-        self.site_settings.read().unwrap().clone()
+        rw_read(&self.site_settings, SOURCE, "get_site_settings").clone()
     }
 
     pub fn set_site_settings(&self, value: SiteSettingsRecord) {
-        *self.site_settings.write().unwrap() = Some(value);
+        *rw_write(&self.site_settings, SOURCE, "set_site_settings") = Some(value);
     }
 
     pub fn invalidate_site_settings(&self) {
-        *self.site_settings.write().unwrap() = None;
+        *rw_write(&self.site_settings, SOURCE, "invalidate_site_settings") = None;
     }
 
     pub fn get_navigation(&self) -> Option<Vec<NavigationItemRecord>> {
-        self.navigation.read().unwrap().clone()
+        rw_read(&self.navigation, SOURCE, "get_navigation").clone()
     }
 
     pub fn set_navigation(&self, value: Vec<NavigationItemRecord>) {
-        *self.navigation.write().unwrap() = Some(value);
+        *rw_write(&self.navigation, SOURCE, "set_navigation") = Some(value);
     }
 
     pub fn invalidate_navigation(&self) {
-        *self.navigation.write().unwrap() = None;
+        *rw_write(&self.navigation, SOURCE, "invalidate_navigation") = None;
     }
 
     pub fn get_tag_counts(&self) -> Option<Vec<TagWithCount>> {
-        self.tag_counts.read().unwrap().clone()
+        rw_read(&self.tag_counts, SOURCE, "get_tag_counts").clone()
     }
 
     pub fn set_tag_counts(&self, value: Vec<TagWithCount>) {
-        *self.tag_counts.write().unwrap() = Some(value);
+        *rw_write(&self.tag_counts, SOURCE, "set_tag_counts") = Some(value);
     }
 
     pub fn invalidate_tag_counts(&self) {
-        *self.tag_counts.write().unwrap() = None;
+        *rw_write(&self.tag_counts, SOURCE, "invalidate_tag_counts") = None;
     }
 
     pub fn get_month_counts(&self) -> Option<Vec<MonthCount>> {
-        self.month_counts.read().unwrap().clone()
+        rw_read(&self.month_counts, SOURCE, "get_month_counts").clone()
     }
 
     pub fn set_month_counts(&self, value: Vec<MonthCount>) {
-        *self.month_counts.write().unwrap() = Some(value);
+        *rw_write(&self.month_counts, SOURCE, "set_month_counts") = Some(value);
     }
 
     pub fn invalidate_month_counts(&self) {
-        *self.month_counts.write().unwrap() = None;
+        *rw_write(&self.month_counts, SOURCE, "invalidate_month_counts") = None;
     }
 
     // ========================================================================
@@ -119,23 +122,27 @@ impl L0Store {
     // ========================================================================
 
     pub fn get_post_by_id(&self, id: Uuid) -> Option<PostRecord> {
-        self.posts_by_id.write().unwrap().get(&id).cloned()
+        rw_write(&self.posts_by_id, SOURCE, "get_post_by_id")
+            .get(&id)
+            .cloned()
     }
 
     pub fn get_post_by_slug(&self, slug: &str) -> Option<PostRecord> {
-        self.posts_by_slug.write().unwrap().get(slug).cloned()
+        rw_write(&self.posts_by_slug, SOURCE, "get_post_by_slug")
+            .get(slug)
+            .cloned()
     }
 
     pub fn set_post(&self, post: PostRecord) {
-        let mut by_id = self.posts_by_id.write().unwrap();
-        let mut by_slug = self.posts_by_slug.write().unwrap();
+        let mut by_id = rw_write(&self.posts_by_id, SOURCE, "set_post.by_id");
+        let mut by_slug = rw_write(&self.posts_by_slug, SOURCE, "set_post.by_slug");
         by_id.put(post.id, post.clone());
         by_slug.put(post.slug.clone(), post);
     }
 
     pub fn invalidate_post(&self, id: Uuid, slug: &str) {
-        self.posts_by_id.write().unwrap().pop(&id);
-        self.posts_by_slug.write().unwrap().pop(slug);
+        rw_write(&self.posts_by_id, SOURCE, "invalidate_post.by_id").pop(&id);
+        rw_write(&self.posts_by_slug, SOURCE, "invalidate_post.by_slug").pop(slug);
     }
 
     // ========================================================================
@@ -143,23 +150,27 @@ impl L0Store {
     // ========================================================================
 
     pub fn get_page_by_id(&self, id: Uuid) -> Option<PageRecord> {
-        self.pages_by_id.write().unwrap().get(&id).cloned()
+        rw_write(&self.pages_by_id, SOURCE, "get_page_by_id")
+            .get(&id)
+            .cloned()
     }
 
     pub fn get_page_by_slug(&self, slug: &str) -> Option<PageRecord> {
-        self.pages_by_slug.write().unwrap().get(slug).cloned()
+        rw_write(&self.pages_by_slug, SOURCE, "get_page_by_slug")
+            .get(slug)
+            .cloned()
     }
 
     pub fn set_page(&self, page: PageRecord) {
-        let mut by_id = self.pages_by_id.write().unwrap();
-        let mut by_slug = self.pages_by_slug.write().unwrap();
+        let mut by_id = rw_write(&self.pages_by_id, SOURCE, "set_page.by_id");
+        let mut by_slug = rw_write(&self.pages_by_slug, SOURCE, "set_page.by_slug");
         by_id.put(page.id, page.clone());
         by_slug.put(page.slug.clone(), page);
     }
 
     pub fn invalidate_page(&self, id: Uuid, slug: &str) {
-        self.pages_by_id.write().unwrap().pop(&id);
-        self.pages_by_slug.write().unwrap().pop(slug);
+        rw_write(&self.pages_by_id, SOURCE, "invalidate_page.by_id").pop(&id);
+        rw_write(&self.pages_by_slug, SOURCE, "invalidate_page.by_slug").pop(slug);
     }
 
     // ========================================================================
@@ -167,22 +178,17 @@ impl L0Store {
     // ========================================================================
 
     pub fn get_api_key_by_prefix(&self, prefix: &str) -> Option<ApiKeyRecord> {
-        self.api_keys_by_prefix
-            .write()
-            .unwrap()
+        rw_write(&self.api_keys_by_prefix, SOURCE, "get_api_key_by_prefix")
             .get(prefix)
             .cloned()
     }
 
     pub fn set_api_key(&self, key: ApiKeyRecord) {
-        self.api_keys_by_prefix
-            .write()
-            .unwrap()
-            .put(key.prefix.clone(), key);
+        rw_write(&self.api_keys_by_prefix, SOURCE, "set_api_key").put(key.prefix.clone(), key);
     }
 
     pub fn invalidate_api_key(&self, prefix: &str) {
-        self.api_keys_by_prefix.write().unwrap().pop(prefix);
+        rw_write(&self.api_keys_by_prefix, SOURCE, "invalidate_api_key").pop(prefix);
     }
 
     // ========================================================================
@@ -194,22 +200,17 @@ impl L0Store {
         filter_hash: u64,
         cursor_hash: u64,
     ) -> Option<CursorPage<PostRecord>> {
-        self.post_lists
-            .write()
-            .unwrap()
+        rw_write(&self.post_lists, SOURCE, "get_post_list")
             .get(&(filter_hash, cursor_hash))
             .cloned()
     }
 
     pub fn set_post_list(&self, filter_hash: u64, cursor_hash: u64, page: CursorPage<PostRecord>) {
-        self.post_lists
-            .write()
-            .unwrap()
-            .put((filter_hash, cursor_hash), page);
+        rw_write(&self.post_lists, SOURCE, "set_post_list").put((filter_hash, cursor_hash), page);
     }
 
     pub fn invalidate_all_post_lists(&self) {
-        self.post_lists.write().unwrap().clear();
+        rw_write(&self.post_lists, SOURCE, "invalidate_all_post_lists").clear();
     }
 
     // ========================================================================
@@ -222,12 +223,12 @@ impl L0Store {
         self.invalidate_navigation();
         self.invalidate_tag_counts();
         self.invalidate_month_counts();
-        self.posts_by_id.write().unwrap().clear();
-        self.posts_by_slug.write().unwrap().clear();
-        self.pages_by_id.write().unwrap().clear();
-        self.pages_by_slug.write().unwrap().clear();
-        self.api_keys_by_prefix.write().unwrap().clear();
-        self.post_lists.write().unwrap().clear();
+        rw_write(&self.posts_by_id, SOURCE, "clear.posts_by_id").clear();
+        rw_write(&self.posts_by_slug, SOURCE, "clear.posts_by_slug").clear();
+        rw_write(&self.pages_by_id, SOURCE, "clear.pages_by_id").clear();
+        rw_write(&self.pages_by_slug, SOURCE, "clear.pages_by_slug").clear();
+        rw_write(&self.api_keys_by_prefix, SOURCE, "clear.api_keys_by_prefix").clear();
+        rw_write(&self.post_lists, SOURCE, "clear.post_lists").clear();
     }
 }
 
@@ -259,28 +260,28 @@ impl L1Store {
     }
 
     pub fn get(&self, key: &L1Key) -> Option<CachedResponse> {
-        self.responses.write().unwrap().get(key).cloned()
+        rw_write(&self.responses, SOURCE, "l1_get")
+            .get(key)
+            .cloned()
     }
 
     pub fn set(&self, key: L1Key, response: CachedResponse) -> Option<L1Key> {
-        self.responses
-            .write()
-            .unwrap()
+        rw_write(&self.responses, SOURCE, "l1_set")
             .push(key, response)
             .map(|(evicted_key, _)| evicted_key)
     }
 
     pub fn invalidate(&self, key: &L1Key) {
-        self.responses.write().unwrap().pop(key);
+        rw_write(&self.responses, SOURCE, "l1_invalidate").pop(key);
     }
 
     pub fn invalidate_all(&self) {
-        self.responses.write().unwrap().clear();
+        rw_write(&self.responses, SOURCE, "l1_invalidate_all").clear();
     }
 
     /// Get the number of cached responses.
     pub fn len(&self) -> usize {
-        self.responses.read().unwrap().len()
+        rw_read(&self.responses, SOURCE, "l1_len").len()
     }
 
     /// Check if the cache is empty.
@@ -291,6 +292,8 @@ impl L1Store {
 
 #[cfg(test)]
 mod tests {
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+
     use time::OffsetDateTime;
 
     use super::*;
@@ -311,6 +314,29 @@ mod tests {
             summary_markdown: None,
             summary_html: None,
             created_at: OffsetDateTime::now_utc(),
+            updated_at: OffsetDateTime::now_utc(),
+        }
+    }
+
+    fn sample_settings() -> SiteSettingsRecord {
+        SiteSettingsRecord {
+            homepage_size: 10,
+            admin_page_size: 20,
+            show_tag_aggregations: true,
+            show_month_aggregations: true,
+            tag_filter_limit: 10,
+            month_filter_limit: 12,
+            global_toc_enabled: false,
+            brand_title: "Test".to_string(),
+            brand_href: "/".to_string(),
+            footer_copy: "© 2024".to_string(),
+            public_site_url: "http://localhost".to_string(),
+            favicon_svg: "".to_string(),
+            timezone: chrono_tz::Tz::UTC,
+            meta_title: "Test Site".to_string(),
+            meta_description: "Test description".to_string(),
+            og_title: "Test Site".to_string(),
+            og_description: "Test OG description".to_string(),
             updated_at: OffsetDateTime::now_utc(),
         }
     }
@@ -346,26 +372,7 @@ mod tests {
 
         assert!(store.get_site_settings().is_none());
 
-        let settings = SiteSettingsRecord {
-            homepage_size: 10,
-            admin_page_size: 20,
-            show_tag_aggregations: true,
-            show_month_aggregations: true,
-            tag_filter_limit: 10,
-            month_filter_limit: 12,
-            global_toc_enabled: false,
-            brand_title: "Test".to_string(),
-            brand_href: "/".to_string(),
-            footer_copy: "© 2024".to_string(),
-            public_site_url: "http://localhost".to_string(),
-            favicon_svg: "".to_string(),
-            timezone: chrono_tz::Tz::UTC,
-            meta_title: "Test Site".to_string(),
-            meta_description: "Test description".to_string(),
-            og_title: "Test Site".to_string(),
-            og_description: "Test OG description".to_string(),
-            updated_at: OffsetDateTime::now_utc(),
-        };
+        let settings = sample_settings();
 
         store.set_site_settings(settings.clone());
 
@@ -433,5 +440,22 @@ mod tests {
         assert!(store.get_post_by_id(id1).is_none()); // Evicted
         assert!(store.get_post_by_id(id2).is_some());
         assert!(store.get_post_by_id(id3).is_some());
+    }
+
+    #[test]
+    fn l0_store_recovers_from_poisoned_lock() {
+        let config = CacheConfig::default();
+        let store = L0Store::new(&config);
+
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            let _guard = store
+                .site_settings
+                .write()
+                .expect("site_settings lock should be acquired");
+            panic!("poison site_settings lock");
+        }));
+
+        store.set_site_settings(sample_settings());
+        assert!(store.get_site_settings().is_some());
     }
 }

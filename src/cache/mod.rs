@@ -23,6 +23,7 @@ mod consumer;
 pub mod deps;
 mod events;
 mod keys;
+mod lock;
 mod middleware;
 mod planner;
 mod registry;

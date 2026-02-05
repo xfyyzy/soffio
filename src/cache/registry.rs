@@ -7,6 +7,9 @@ use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 
 use super::keys::{CacheKey, EntityKey};
+use super::lock::{rw_read, rw_write};
+
+const SOURCE: &str = "cache::registry";
 
 /// Tracks entity → cache_keys and cache_key → entities mappings.
 ///
@@ -35,8 +38,8 @@ impl CacheRegistry {
     /// - When any entity changes, we can find all affected cache keys
     /// - When a cache entry is evicted, we can clean up entity mappings
     pub fn register(&self, cache_key: CacheKey, entities: HashSet<EntityKey>) {
-        let mut e2k = self.entity_to_keys.write().unwrap();
-        let mut k2e = self.key_to_entities.write().unwrap();
+        let mut e2k = rw_write(&self.entity_to_keys, SOURCE, "register.entity_to_keys");
+        let mut k2e = rw_write(&self.key_to_entities, SOURCE, "register.key_to_entities");
 
         for entity in &entities {
             e2k.entry(entity.clone())
@@ -48,9 +51,7 @@ impl CacheRegistry {
 
     /// Get all cache keys affected by an entity change.
     pub fn keys_for_entity(&self, entity: &EntityKey) -> HashSet<CacheKey> {
-        self.entity_to_keys
-            .read()
-            .unwrap()
+        rw_read(&self.entity_to_keys, SOURCE, "keys_for_entity")
             .get(entity)
             .cloned()
             .unwrap_or_default()
@@ -58,9 +59,7 @@ impl CacheRegistry {
 
     /// Get all entities that a cache key depends on.
     pub fn entities_for_key(&self, cache_key: &CacheKey) -> HashSet<EntityKey> {
-        self.key_to_entities
-            .read()
-            .unwrap()
+        rw_read(&self.key_to_entities, SOURCE, "entities_for_key")
             .get(cache_key)
             .cloned()
             .unwrap_or_default()
@@ -70,8 +69,8 @@ impl CacheRegistry {
     ///
     /// Called when a cache entry is evicted or invalidated.
     pub fn unregister(&self, cache_key: &CacheKey) {
-        let mut e2k = self.entity_to_keys.write().unwrap();
-        let mut k2e = self.key_to_entities.write().unwrap();
+        let mut e2k = rw_write(&self.entity_to_keys, SOURCE, "unregister.entity_to_keys");
+        let mut k2e = rw_write(&self.key_to_entities, SOURCE, "unregister.key_to_entities");
 
         if let Some(entities) = k2e.remove(cache_key) {
             for entity in entities {
@@ -89,8 +88,16 @@ impl CacheRegistry {
     ///
     /// Returns the set of cache keys that were affected.
     pub fn unregister_entity(&self, entity: &EntityKey) -> HashSet<CacheKey> {
-        let mut e2k = self.entity_to_keys.write().unwrap();
-        let mut k2e = self.key_to_entities.write().unwrap();
+        let mut e2k = rw_write(
+            &self.entity_to_keys,
+            SOURCE,
+            "unregister_entity.entity_to_keys",
+        );
+        let mut k2e = rw_write(
+            &self.key_to_entities,
+            SOURCE,
+            "unregister_entity.key_to_entities",
+        );
 
         let affected_keys = e2k.remove(entity).unwrap_or_default();
 
@@ -107,18 +114,18 @@ impl CacheRegistry {
 
     /// Clear all mappings.
     pub fn clear(&self) {
-        self.entity_to_keys.write().unwrap().clear();
-        self.key_to_entities.write().unwrap().clear();
+        rw_write(&self.entity_to_keys, SOURCE, "clear.entity_to_keys").clear();
+        rw_write(&self.key_to_entities, SOURCE, "clear.key_to_entities").clear();
     }
 
     /// Get the number of tracked entities.
     pub fn entity_count(&self) -> usize {
-        self.entity_to_keys.read().unwrap().len()
+        rw_read(&self.entity_to_keys, SOURCE, "entity_count").len()
     }
 
     /// Get the number of tracked cache keys.
     pub fn key_count(&self) -> usize {
-        self.key_to_entities.read().unwrap().len()
+        rw_read(&self.key_to_entities, SOURCE, "key_count").len()
     }
 }
 
@@ -130,6 +137,8 @@ impl Default for CacheRegistry {
 
 #[cfg(test)]
 mod tests {
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+
     use uuid::Uuid;
 
     use super::*;
@@ -239,5 +248,28 @@ mod tests {
         registry.clear();
         assert_eq!(registry.key_count(), 0);
         assert_eq!(registry.entity_count(), 0);
+    }
+
+    #[test]
+    fn registry_recovers_from_poisoned_lock() {
+        let registry = CacheRegistry::new();
+
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            let _guard = registry
+                .entity_to_keys
+                .write()
+                .expect("entity_to_keys lock should be acquired");
+            panic!("poison entity_to_keys lock");
+        }));
+
+        let post_id = Uuid::new_v4();
+        let entity = EntityKey::Post(post_id);
+        let cache_key = CacheKey::L0(L0Key::PostById(post_id));
+        let mut entities = HashSet::new();
+        entities.insert(entity.clone());
+
+        registry.register(cache_key.clone(), entities);
+        let keys = registry.keys_for_entity(&entity);
+        assert!(keys.contains(&cache_key));
     }
 }
