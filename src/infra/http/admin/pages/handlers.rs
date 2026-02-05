@@ -284,6 +284,7 @@ pub(crate) async fn admin_page_create(
     let body_markdown = form.body_markdown.trim().to_string();
 
     let command = CreatePageCommand {
+        slug: None,
         title: title.clone(),
         body_markdown: body_markdown.clone(),
         status: status_value,
