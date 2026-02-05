@@ -14,6 +14,7 @@ All contributors must follow `CODE_OF_CONDUCT.md`. If you encounter improper beh
 - PostgreSQL 18 (local dev can rely on the bundled migrations)
 - TypeScript Compiler 5.9.3
 - Optional tooling: `sqlx-cli`
+- Security tooling (recommended): `cargo-audit 0.22.1`, `cargo-deny 0.19.0`
 
 ## Workflow
 
@@ -28,6 +29,9 @@ All contributors must follow `CODE_OF_CONDUCT.md`. If you encounter improper beh
    cargo fmt --all -- --check
    cargo check --workspace --all-targets
    cargo clippy --workspace --all-targets -- -D warnings
+   # RUSTSEC-2023-0071 is from the optional sqlx-mysql path in Cargo.lock.
+   cargo audit --ignore RUSTSEC-2023-0071
+   cargo deny check advisories
    cargo test --workspace --all-targets -- --nocapture
    # If you change soffio-cli commands/options, regenerate docs:
    cargo run --bin gen_cli_docs
