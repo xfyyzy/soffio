@@ -3454,7 +3454,7 @@ dependencies = [
 
 [[package]]
 name = "soffio"
-version = "0.1.15-alpha.5"
+version = "0.1.15"
 dependencies = [
  "ammonia",
  "apalis",

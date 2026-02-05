@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-02-05
+
+### Changed
+- Promote the cache rework train from `0.1.15-alpha.*` to `0.1.15` after passing full cache consistency, live API, and CI verification gates.
+
 ## [0.1.15-alpha.5] - 2026-02-05
 
 ### Changed
