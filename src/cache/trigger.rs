@@ -53,7 +53,7 @@ impl CacheTrigger {
         self.queue.publish(kind);
 
         if consume_now {
-            self.consumer.consume().await;
+            self.consumer.consume_invalidate_only().await;
         }
     }
 

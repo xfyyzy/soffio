@@ -136,7 +136,7 @@ async fn run_serve(settings: config::Settings) -> Result<(), AppError> {
             interval.tick().await; // Skip the first immediate tick
             loop {
                 interval.tick().await;
-                trigger.consumer().consume().await;
+                trigger.consumer().consume_full().await;
             }
         }))
     } else {
