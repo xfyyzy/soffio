@@ -7,6 +7,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Cache observability metrics for L0/L1 hit/miss/evict events, queue depth/drop counts, and consume/warm latency.
+- Configurable cache event queue backpressure via `cache.max_event_queue_len`, including dropped-event accounting under burst load.
+- Upload table indexes for `created_at` and `(content_type, created_at)` access patterns to improve admin list/filter responsiveness on larger datasets.
+- A deterministic `scripts/nextest-full.sh` runner used by CI to execute the full nextest matrix in stable slices.
+
+### Changed
+- API rate limiting now uses a bounded-memory limiter and route-template keying so limits are fair across parameterized endpoints.
+- Admin dashboard summary metrics now use database-side aggregate queries instead of page-by-page scans, reducing round-trips.
+- Cache write paths now do synchronous invalidation only; warming is deferred to the background consumer to reduce write-tail latency.
+- Build-time static asset preparation now skips expensive steps when input fingerprints are unchanged.
+- Admin view definitions are decomposed into focused modules with a stable re-export surface and no intended behavior change.
+
+### Fixed
+- Frontend snapshot test repositories now implement external-navigation counting required by dashboard aggregate metrics.
+
 ## [0.1.15] - 2026-02-05
 
 ### Changed
