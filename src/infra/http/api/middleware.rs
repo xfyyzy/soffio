@@ -1,4 +1,5 @@
 use axum::body::Body;
+use axum::extract::MatchedPath;
 use axum::extract::State;
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
@@ -58,7 +59,11 @@ pub async fn api_rate_limit(
     request: Request<Body>,
     next: Next,
 ) -> Response {
-    let path = request.uri().path().to_string();
+    let route_key = request
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|matched| matched.as_str().to_string())
+        .unwrap_or_else(|| request.uri().path().to_string());
     let principal = match request
         .extensions()
         .get::<crate::application::api_keys::ApiPrincipal>()
@@ -75,7 +80,7 @@ pub async fn api_rate_limit(
 
     let key = principal.key_id.to_string();
 
-    let (allowed, remaining) = state.rate_limiter.allow(&key, &path);
+    let (allowed, remaining) = state.rate_limiter.allow(&key, &route_key);
     let retry_after = state.rate_limiter.retry_after_secs();
 
     let mut response = if allowed {
