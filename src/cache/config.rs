@@ -15,6 +15,7 @@ const DEFAULT_L1_RESPONSE_LIMIT: usize = 200;
 const DEFAULT_L1_RESPONSE_BODY_LIMIT_BYTES: usize = 1_048_576;
 const DEFAULT_AUTO_CONSUME_INTERVAL_MS: u64 = 5000;
 const DEFAULT_CONSUME_BATCH_LIMIT: usize = 100;
+const DEFAULT_MAX_EVENT_QUEUE_LEN: usize = 2048;
 
 /// Cache configuration from `soffio.toml`.
 #[derive(Debug, Clone, Deserialize)]
@@ -40,6 +41,8 @@ pub struct CacheConfig {
     pub auto_consume_interval_ms: u64,
     /// Maximum events per consumption batch.
     pub consume_batch_limit: usize,
+    /// Maximum event queue length before dropping oldest events.
+    pub max_event_queue_len: usize,
 }
 
 impl Default for CacheConfig {
@@ -55,6 +58,7 @@ impl Default for CacheConfig {
             l1_response_body_limit_bytes: DEFAULT_L1_RESPONSE_BODY_LIMIT_BYTES,
             auto_consume_interval_ms: DEFAULT_AUTO_CONSUME_INTERVAL_MS,
             consume_batch_limit: DEFAULT_CONSUME_BATCH_LIMIT,
+            max_event_queue_len: DEFAULT_MAX_EVENT_QUEUE_LEN,
         }
     }
 }
@@ -72,6 +76,7 @@ impl From<&crate::config::CacheSettings> for CacheConfig {
             l1_response_body_limit_bytes: settings.l1_response_body_limit_bytes,
             auto_consume_interval_ms: settings.auto_consume_interval_ms,
             consume_batch_limit: settings.consume_batch_limit,
+            max_event_queue_len: settings.max_event_queue_len,
         }
     }
 }
@@ -106,6 +111,11 @@ impl CacheConfig {
     pub fn l1_response_limit_non_zero(&self) -> NonZeroUsize {
         NonZeroUsize::new(self.l1_response_limit).unwrap_or(NonZeroUsize::MIN)
     }
+
+    /// Returns the queue limit as NonZeroUsize, clamping to 1 if zero.
+    pub fn max_event_queue_len_non_zero(&self) -> NonZeroUsize {
+        NonZeroUsize::new(self.max_event_queue_len).unwrap_or(NonZeroUsize::MIN)
+    }
 }
 
 #[cfg(test)]
@@ -125,6 +135,7 @@ mod tests {
         assert_eq!(config.l1_response_body_limit_bytes, 1_048_576);
         assert_eq!(config.auto_consume_interval_ms, 5000);
         assert_eq!(config.consume_batch_limit, 100);
+        assert_eq!(config.max_event_queue_len, 2048);
     }
 
     #[test]
@@ -164,5 +175,14 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(config.l0_post_limit_non_zero().get(), 1);
+    }
+
+    #[test]
+    fn queue_limit_clamps_to_min() {
+        let config = CacheConfig {
+            max_event_queue_len: 0,
+            ..Default::default()
+        };
+        assert_eq!(config.max_event_queue_len_non_zero().get(), 1);
     }
 }

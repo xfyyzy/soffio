@@ -357,7 +357,7 @@ fn build_application_context(
         let l0 = Arc::new(L0Store::new(&cache_config));
         let l1 = Arc::new(L1Store::new(&cache_config));
         let registry = Arc::new(CacheRegistry::new());
-        let queue = Arc::new(EventQueue::new());
+        let queue = Arc::new(EventQueue::new_with_limit(cache_config.max_event_queue_len));
         let consumer = Arc::new(CacheConsumer::new(
             cache_config.clone(),
             l0,
