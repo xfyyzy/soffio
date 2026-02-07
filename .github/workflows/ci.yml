@@ -142,7 +142,7 @@ jobs:
                 GIT_DIR=/work/.git GIT_WORK_TREE=/work git diff HEAD -- docs/cli.md docs/cli.zh.md; \
                 exit 1; \
               fi; \
-              cargo nextest run --workspace --all-targets --target x86_64-unknown-linux-musl --profile ci --no-fail-fast; \
+              ./scripts/nextest-full.sh --target x86_64-unknown-linux-musl --profile ci --no-fail-fast; \
               cargo run --target x86_64-unknown-linux-musl --bin soffio -- import --database-url postgres://soffio:soffio_local_dev@127.0.0.1:5432/soffio_dev seed/seed.toml; \
               LOG_PATH=/tmp/soffio.log; \
               cp soffio.toml.example /tmp/soffio.toml; \

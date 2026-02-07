@@ -646,6 +646,22 @@ impl NavigationRepo for StaticContentRepo {
         Ok(records.len() as u64)
     }
 
+    async fn count_external_navigation(
+        &self,
+        _visibility: Option<bool>,
+        filter: &NavigationQueryFilter,
+    ) -> Result<u64, RepoError> {
+        let mut records = self.navigation_records();
+        if let Some(search) = filter.search.as_ref() {
+            let needle = search.to_lowercase();
+            records.retain(|r| r.label.to_lowercase().contains(&needle));
+        }
+        Ok(records
+            .into_iter()
+            .filter(|record| record.destination_type == NavigationDestinationType::External)
+            .count() as u64)
+    }
+
     async fn find_by_id(&self, id: Uuid) -> Result<Option<NavigationItemRecord>, RepoError> {
         Ok(self
             .navigation_records()

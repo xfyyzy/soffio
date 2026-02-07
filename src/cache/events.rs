@@ -6,13 +6,17 @@ use std::collections::VecDeque;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use metrics::{counter, gauge};
 use time::OffsetDateTime;
-use tracing::info;
+use tracing::{info, warn};
 use uuid::Uuid;
 
 use super::lock::mutex_lock;
 
 const SOURCE: &str = "cache::events";
+const DEFAULT_MAX_EVENT_QUEUE_LEN: usize = 2048;
+const METRIC_EVENT_QUEUE_LEN: &str = "soffio_cache_event_queue_len";
+const METRIC_EVENT_DROPPED_TOTAL: &str = "soffio_cache_event_dropped_total";
 
 /// Monotonic epoch for ordering events.
 ///
@@ -83,15 +87,26 @@ pub enum EventKind {
 pub struct EventQueue {
     queue: Mutex<VecDeque<CacheEvent>>,
     epoch_counter: AtomicU64,
+    max_len: usize,
+    dropped_total: AtomicU64,
 }
 
 impl EventQueue {
     /// Create a new empty event queue.
     pub fn new() -> Self {
-        Self {
+        Self::new_with_limit(DEFAULT_MAX_EVENT_QUEUE_LEN)
+    }
+
+    /// Create a new empty event queue with an explicit length limit.
+    pub fn new_with_limit(max_len: usize) -> Self {
+        let queue = Self {
             queue: Mutex::new(VecDeque::new()),
             epoch_counter: AtomicU64::new(0),
-        }
+            max_len: max_len.max(1),
+            dropped_total: AtomicU64::new(0),
+        };
+        gauge!(METRIC_EVENT_QUEUE_LEN).set(0.0);
+        queue
     }
 
     /// Get the next epoch number.
@@ -114,7 +129,18 @@ impl EventQueue {
             "Cache event enqueued"
         );
 
-        mutex_lock(&self.queue, SOURCE, "publish").push_back(event);
+        let mut queue = mutex_lock(&self.queue, SOURCE, "publish");
+        if queue.len() >= self.max_len {
+            let _ = queue.pop_front();
+            let dropped_total = self.dropped_total.fetch_add(1, Ordering::Relaxed) + 1;
+            counter!(METRIC_EVENT_DROPPED_TOTAL).increment(1);
+            warn!(
+                max_event_queue_len = self.max_len,
+                dropped_total, "Cache event queue full; dropped oldest event"
+            );
+        }
+        queue.push_back(event);
+        gauge!(METRIC_EVENT_QUEUE_LEN).set(queue.len() as f64);
     }
 
     /// Drain up to `limit` events from the queue.
@@ -123,7 +149,9 @@ impl EventQueue {
     pub fn drain(&self, limit: usize) -> Vec<CacheEvent> {
         let mut queue = mutex_lock(&self.queue, SOURCE, "drain");
         let count = limit.min(queue.len());
-        queue.drain(..count).collect()
+        let drained = queue.drain(..count).collect();
+        gauge!(METRIC_EVENT_QUEUE_LEN).set(queue.len() as f64);
+        drained
     }
 
     /// Get the current queue length.
@@ -139,6 +167,17 @@ impl EventQueue {
     /// Clear all events from the queue.
     pub fn clear(&self) {
         mutex_lock(&self.queue, SOURCE, "clear").clear();
+        gauge!(METRIC_EVENT_QUEUE_LEN).set(0.0);
+    }
+
+    /// Number of events dropped due to queue overflow.
+    pub fn dropped_count(&self) -> u64 {
+        self.dropped_total.load(Ordering::Relaxed)
+    }
+
+    /// Configured event queue length limit.
+    pub fn max_len(&self) -> usize {
+        self.max_len
     }
 }
 
@@ -219,6 +258,21 @@ mod tests {
 
         queue.clear();
         assert!(queue.is_empty());
+    }
+
+    #[test]
+    fn queue_respects_max_len_and_drops_oldest() {
+        let queue = EventQueue::new_with_limit(3);
+
+        for i in 0..10 {
+            queue.publish(EventKind::ApiKeyUpserted {
+                prefix: format!("sof_{i}"),
+            });
+        }
+
+        assert_eq!(queue.len(), 3);
+        assert_eq!(queue.max_len(), 3);
+        assert_eq!(queue.dropped_count(), 7);
     }
 
     #[test]

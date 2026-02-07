@@ -194,6 +194,21 @@ impl UploadsRepo for PostgresRepositories {
         PostgresRepositories::convert_count(count)
     }
 
+    async fn sum_upload_sizes(&self, filter: &UploadQueryFilter) -> Result<u64, RepoError> {
+        let mut qb = QueryBuilder::new(
+            "SELECT COALESCE(SUM(size_bytes), 0)::BIGINT FROM uploads WHERE 1=1 ",
+        );
+        apply_filter(&mut qb, filter);
+
+        let total: i64 = qb
+            .build_query_scalar()
+            .fetch_one(self.pool())
+            .await
+            .map_err(map_sqlx_error)?;
+
+        PostgresRepositories::convert_count(total)
+    }
+
     async fn month_counts(
         &self,
         filter: &UploadQueryFilter,

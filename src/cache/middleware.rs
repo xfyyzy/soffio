@@ -12,6 +12,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
+use metrics::counter;
 use tracing::{debug, instrument};
 
 use super::{
@@ -19,6 +20,9 @@ use super::{
     keys::{CacheKey, L1Key, OutputFormat, hash_query},
     store::CachedResponse,
 };
+
+const METRIC_L1_HIT_TOTAL: &str = "soffio_cache_l1_hit_total";
+const METRIC_L1_MISS_TOTAL: &str = "soffio_cache_l1_miss_total";
 
 /// Shared cache state for middleware.
 #[derive(Clone)]
@@ -59,6 +63,7 @@ pub async fn response_cache_layer(
     let path = request.uri().path().to_string();
     let query = request.uri().query().unwrap_or("");
     let format = detect_format(&request);
+    let format_label = output_format_label(&format);
 
     let l1_key = L1Key::Response {
         format,
@@ -68,10 +73,12 @@ pub async fn response_cache_layer(
 
     // Check cache
     if let Some(cached) = cache.l1.get(&l1_key) {
+        counter!(METRIC_L1_HIT_TOTAL, "format" => format_label).increment(1);
         debug!(cache = "l1", outcome = "hit", "serving cached response");
         return build_response(cached);
     }
 
+    counter!(METRIC_L1_MISS_TOTAL, "format" => format_label).increment(1);
     debug!(
         cache = "l1",
         outcome = "miss",
@@ -176,6 +183,17 @@ fn detect_format(request: &Request<Body>) -> OutputFormat {
         OutputFormat::Json
     } else {
         OutputFormat::Html
+    }
+}
+
+fn output_format_label(format: &OutputFormat) -> &'static str {
+    match format {
+        OutputFormat::Html => "html",
+        OutputFormat::Json => "json",
+        OutputFormat::Rss => "rss",
+        OutputFormat::Atom => "atom",
+        OutputFormat::Sitemap => "sitemap",
+        OutputFormat::Favicon => "favicon",
     }
 }
 

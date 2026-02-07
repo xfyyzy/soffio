@@ -1,3 +1,6 @@
+#[path = "build_support/incremental.rs"]
+mod incremental;
+
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -34,6 +37,12 @@ fn prepare_admin_assets() -> Result<(), String> {
     let out_dir = PathBuf::from(env::var("OUT_DIR").map_err(|err| err.to_string())?);
     let source_admin = Path::new("static").join("admin");
     let dest_admin = out_dir.join("static_admin");
+    let admin_stamp = out_dir.join(".static_admin.stamp");
+    let admin_fingerprint = incremental::fingerprint_inputs(&[source_admin.as_path()], "")?;
+
+    if incremental::stamp_matches(&admin_stamp, &dest_admin, admin_fingerprint)? {
+        return Ok(());
+    }
 
     if dest_admin.exists() {
         fs::remove_dir_all(&dest_admin)
@@ -87,6 +96,8 @@ fn prepare_admin_assets() -> Result<(), String> {
     fs::write(&dest_file, combined)
         .map_err(|err| format!("failed to write {}: {err}", dest_file.display()))?;
 
+    incremental::write_stamp(&admin_stamp, admin_fingerprint)?;
+
     Ok(())
 }
 
@@ -94,6 +105,16 @@ fn prepare_public_assets() -> Result<(), String> {
     let out_dir = PathBuf::from(env::var("OUT_DIR").map_err(|err| err.to_string())?);
     let source_public = Path::new("static").join("public");
     let dest_public = out_dir.join("static_public");
+    let public_stamp = out_dir.join(".static_public.stamp");
+    let public_fingerprint = incremental::fingerprint_inputs(&[source_public.as_path()], VERSION)?;
+    let syntax_pack_path = out_dir.join("syntaxes.packdump");
+
+    if incremental::stamp_matches(&public_stamp, &dest_public, public_fingerprint)?
+        && syntax_pack_path.is_file()
+    {
+        emit_syntax_pack_env(&syntax_pack_path);
+        return Ok(());
+    }
 
     if dest_public.exists() {
         fs::remove_dir_all(&dest_public)
@@ -104,13 +125,29 @@ fn prepare_public_assets() -> Result<(), String> {
     append_version_to_gfm_imports(&dest_public.join("styles/page.css"))?;
     append_version_to_gfm_imports(&dest_public.join("styles/post.css"))?;
     append_theme_css(&dest_public.join("styles/code.css"))?;
-    write_syntax_pack(&out_dir)
+    let syntax_pack_path = write_syntax_pack(&out_dir)?;
+    emit_syntax_pack_env(&syntax_pack_path);
+    incremental::write_stamp(&public_stamp, public_fingerprint)
 }
 
 fn prepare_common_assets() -> Result<(), String> {
     let out_dir = PathBuf::from(env::var("OUT_DIR").map_err(|err| err.to_string())?);
     let source_common = Path::new("static").join("common");
     let dest_common = out_dir.join("static_common");
+    let common_stamp = out_dir.join(".static_common.stamp");
+    let common_fingerprint = incremental::fingerprint_inputs(
+        &[
+            source_common.as_path(),
+            Path::new("frontend/ts/datastar-init.ts"),
+            Path::new("frontend/ts/datastar.d.ts"),
+            Path::new("tsconfig.json"),
+        ],
+        VERSION,
+    )?;
+
+    if incremental::stamp_matches(&common_stamp, &dest_common, common_fingerprint)? {
+        return Ok(());
+    }
 
     if dest_common.exists() {
         fs::remove_dir_all(&dest_common)
@@ -120,6 +157,7 @@ fn prepare_common_assets() -> Result<(), String> {
     copy_dir(&source_common, &dest_common)?;
     compile_typescript(&dest_common)?;
     append_version_to_datastar_import(&dest_common.join("datastar-init.js"))?;
+    incremental::write_stamp(&common_stamp, common_fingerprint)?;
 
     Ok(())
 }
@@ -222,13 +260,15 @@ fn render_theme_css() -> Result<String, String> {
         .map_err(|err| err.to_string())
 }
 
-fn write_syntax_pack(out_dir: &Path) -> Result<(), String> {
+fn write_syntax_pack(out_dir: &Path) -> Result<PathBuf, String> {
     let syntax_set = syntax::extra_newlines();
     let pack_path = out_dir.join("syntaxes.packdump");
     dump_to_uncompressed_file(&syntax_set, &pack_path)
         .map_err(|err| format!("failed to encode syntax set: {err}"))?;
 
-    println!("cargo:rustc-env=SYNTAX_PACK_FILE={}", pack_path.display());
+    Ok(pack_path)
+}
 
-    Ok(())
+fn emit_syntax_pack_env(pack_path: &Path) {
+    println!("cargo:rustc-env=SYNTAX_PACK_FILE={}", pack_path.display());
 }

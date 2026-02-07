@@ -119,6 +119,11 @@ auto_consume_interval_ms = 5000
 # CLI: --cache-consume-batch-limit
 consume_batch_limit = 100
 
+# Maximum in-memory cache events retained before dropping oldest items.
+# Env: SOFFIO__CACHE__MAX_EVENT_QUEUE_LEN
+# CLI: --cache-max-event-queue-len
+max_event_queue_len = 2048
+
 [rate_limit]
 # Window size for rate limiting in seconds.
 # Env: SOFFIO__RATE_LIMIT__WINDOW_SECONDS

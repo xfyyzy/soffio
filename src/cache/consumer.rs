@@ -3,7 +3,11 @@
 //! Consumes events from the queue and executes invalidation/warming actions.
 
 use std::sync::Arc;
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Instant;
 
+use metrics::histogram;
 use tracing::{info, instrument};
 use uuid::Uuid;
 
@@ -21,6 +25,9 @@ use super::planner::ConsumptionPlan;
 use super::registry::CacheRegistry;
 use super::store::{L0Store, L1Store};
 
+const METRIC_CACHE_CONSUME_MS: &str = "soffio_cache_consume_ms";
+const METRIC_CACHE_WARM_MS: &str = "soffio_cache_warm_ms";
+
 /// Cache consumer that processes events and maintains cache consistency.
 ///
 /// The consumer:
@@ -34,6 +41,8 @@ pub struct CacheConsumer {
     registry: Arc<CacheRegistry>,
     queue: Arc<EventQueue>,
     repos: Option<Arc<PostgresRepositories>>,
+    #[cfg(test)]
+    warm_invocations: Arc<AtomicUsize>,
 }
 
 impl CacheConsumer {
@@ -53,6 +62,8 @@ impl CacheConsumer {
             registry,
             queue,
             repos: Some(repos),
+            #[cfg(test)]
+            warm_invocations: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -74,6 +85,7 @@ impl CacheConsumer {
             registry,
             queue,
             repos: None,
+            warm_invocations: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -82,6 +94,25 @@ impl CacheConsumer {
     /// Returns true if any events were processed.
     #[instrument(skip(self))]
     pub async fn consume(&self) -> bool {
+        self.consume_with_mode(true).await
+    }
+
+    /// Consume pending events and run only invalidation actions.
+    ///
+    /// Useful on latency-sensitive write paths where pre-warming is deferred.
+    #[instrument(skip(self))]
+    pub async fn consume_invalidate_only(&self) -> bool {
+        self.consume_with_mode(false).await
+    }
+
+    /// Consume pending events and run both invalidation and warming actions.
+    #[instrument(skip(self))]
+    pub async fn consume_full(&self) -> bool {
+        self.consume_with_mode(true).await
+    }
+
+    async fn consume_with_mode(&self, include_warm: bool) -> bool {
+        let consume_started_at = Instant::now();
         let events = self.queue.drain(self.config.consume_batch_limit);
         if events.is_empty() {
             return false;
@@ -96,6 +127,7 @@ impl CacheConsumer {
             event_count,
             event_ids = ?event_ids,
             plan = %plan,
+            include_warm,
             "Cache consumption starting"
         );
 
@@ -110,7 +142,7 @@ impl CacheConsumer {
         }
 
         // Phase 3: Warm cache from repositories (skip if L0 disabled or no warm actions)
-        if self.config.enable_l0_cache && plan.has_warm_actions() {
+        if include_warm && self.config.enable_l0_cache && plan.has_warm_actions() {
             self.warm(&plan).await;
         }
 
@@ -120,6 +152,12 @@ impl CacheConsumer {
             invalidated = plan.invalidate_entities.len(),
             "Cache consumption complete"
         );
+
+        histogram!(
+            METRIC_CACHE_CONSUME_MS,
+            "mode" => if include_warm { "full" } else { "invalidate_only" }
+        )
+        .record(consume_started_at.elapsed().as_secs_f64() * 1000.0);
 
         true
     }
@@ -182,8 +220,14 @@ impl CacheConsumer {
     /// Loads data from repositories and populates the L0 cache.
     /// Skipped if repository access is not available.
     async fn warm(&self, plan: &ConsumptionPlan) {
+        let warm_started_at = Instant::now();
+        #[cfg(test)]
+        self.warm_invocations.fetch_add(1, Ordering::Relaxed);
+
         let Some(repos) = &self.repos else {
             tracing::debug!("Warming skipped: no repository access");
+            histogram!(METRIC_CACHE_WARM_MS)
+                .record(warm_started_at.elapsed().as_secs_f64() * 1000.0);
             return;
         };
 
@@ -285,6 +329,8 @@ impl CacheConsumer {
         if plan.warm_sitemap {
             tracing::debug!("Sitemap warming deferred to first request (L1 only)");
         }
+
+        histogram!(METRIC_CACHE_WARM_MS).record(warm_started_at.elapsed().as_secs_f64() * 1000.0);
     }
 
     /// Get reference to the event queue.
@@ -305,6 +351,11 @@ impl CacheConsumer {
     /// Get reference to the registry.
     pub fn registry(&self) -> &Arc<CacheRegistry> {
         &self.registry
+    }
+
+    #[cfg(test)]
+    fn warm_invocation_count(&self) -> usize {
+        self.warm_invocations.load(Ordering::Relaxed)
     }
 }
 
@@ -362,6 +413,19 @@ mod tests {
         assert_eq!(consumer.queue.len(), 5);
         consumer.consume().await;
         assert_eq!(consumer.queue.len(), 3); // Only consumed 2
+    }
+
+    #[tokio::test]
+    async fn consume_invalidate_only_skips_warm_phase() {
+        let consumer = create_consumer();
+
+        consumer.queue.publish(EventKind::WarmupOnStartup);
+        assert!(consumer.consume_invalidate_only().await);
+        assert_eq!(consumer.warm_invocation_count(), 0);
+
+        consumer.queue.publish(EventKind::WarmupOnStartup);
+        assert!(consumer.consume_full().await);
+        assert_eq!(consumer.warm_invocation_count(), 1);
     }
 
     #[tokio::test]

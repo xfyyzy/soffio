@@ -136,7 +136,7 @@ async fn run_serve(settings: config::Settings) -> Result<(), AppError> {
             interval.tick().await; // Skip the first immediate tick
             loop {
                 interval.tick().await;
-                trigger.consumer().consume().await;
+                trigger.consumer().consume_full().await;
             }
         }))
     } else {
@@ -357,7 +357,7 @@ fn build_application_context(
         let l0 = Arc::new(L0Store::new(&cache_config));
         let l1 = Arc::new(L1Store::new(&cache_config));
         let registry = Arc::new(CacheRegistry::new());
-        let queue = Arc::new(EventQueue::new());
+        let queue = Arc::new(EventQueue::new_with_limit(cache_config.max_event_queue_len));
         let consumer = Arc::new(CacheConsumer::new(
             cache_config.clone(),
             l0,
