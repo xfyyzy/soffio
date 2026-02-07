@@ -412,6 +412,11 @@ pub trait NavigationRepo: Send + Sync {
         visibility: Option<bool>,
         filter: &NavigationQueryFilter,
     ) -> Result<u64, RepoError>;
+    async fn count_external_navigation(
+        &self,
+        visibility: Option<bool>,
+        filter: &NavigationQueryFilter,
+    ) -> Result<u64, RepoError>;
     async fn find_by_id(&self, id: Uuid) -> Result<Option<NavigationItemRecord>, RepoError>;
 }
 
@@ -474,6 +479,7 @@ pub trait UploadsRepo: Send + Sync {
         page: PageRequest<UploadCursor>,
     ) -> Result<CursorPage<UploadRecord>, RepoError>;
     async fn count_uploads(&self, filter: &UploadQueryFilter) -> Result<u64, RepoError>;
+    async fn sum_upload_sizes(&self, filter: &UploadQueryFilter) -> Result<u64, RepoError>;
     async fn month_counts(
         &self,
         filter: &UploadQueryFilter,

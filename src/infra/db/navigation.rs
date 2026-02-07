@@ -224,6 +224,60 @@ impl NavigationRepo for PostgresRepositories {
         })?)
     }
 
+    async fn count_external_navigation(
+        &self,
+        visibility: Option<bool>,
+        filter: &NavigationQueryFilter,
+    ) -> Result<u64, RepoError> {
+        let mut qb = QueryBuilder::new(
+            "SELECT COUNT(*) AS count \
+             FROM navigation_items ni \
+             LEFT JOIN pages p ON p.id = ni.destination_page_id \
+             WHERE 1=1 ",
+        );
+
+        if let Some(visibility) = visibility {
+            qb.push("AND ni.visible = ");
+            qb.push_bind(visibility);
+            qb.push(" ");
+        }
+
+        if let Some(search) = filter.search.as_ref().and_then(|value| {
+            let trimmed = value.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        }) {
+            let pattern = format!("%{}%", search);
+            qb.push(" AND (");
+            qb.push("ni.label ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(" OR (p.slug IS NOT NULL AND p.slug ILIKE ");
+            qb.push_bind(pattern.clone());
+            qb.push(") OR (ni.destination_url IS NOT NULL AND ni.destination_url ILIKE ");
+            qb.push_bind(pattern);
+            qb.push(")) ");
+        }
+
+        qb.push(" AND ni.destination_type = 'external'::navigation_destination_type ");
+        qb.push(
+            " AND (ni.destination_type <> 'internal'::navigation_destination_type \
+                 OR (p.status = 'published'::page_status AND p.published_at IS NOT NULL))",
+        );
+
+        let count: i64 = qb
+            .build_query_scalar()
+            .fetch_one(self.pool())
+            .await
+            .map_err(map_sqlx_error)?;
+
+        Ok(u64::try_from(count).map_err(|e| RepoError::InvalidInput {
+            message: e.to_string(),
+        })?)
+    }
+
     async fn find_by_id(&self, id: Uuid) -> Result<Option<NavigationItemRecord>, RepoError> {
         let row = sqlx::query_as!(
             NavigationItemRow,
