@@ -130,7 +130,7 @@ run the sequence below:
 2) **Build & Clippy** —  
    `cargo check --workspace --all-targets`  
    `cargo clippy --workspace --all-targets -- -D warnings`
-3) **Tests** — `cargo nextest run --workspace --all-targets`  
+3) **Tests** — `./scripts/nextest-full.sh`  
    Live tests (require running server): `cargo test --test live_api --test live_cache -- --ignored --test-threads=1`  
    If features exist: `cargo hack test --workspace --feature-powerset --depth 1`
 4) **Deps & Risk** —  
@@ -156,7 +156,7 @@ Use a single atomic commit when possible. Use the template in §9.
      - `cargo check --workspace --all-targets`
      - `cargo clippy --workspace --all-targets -- -D warnings`
      - Snapshot tests first: `cargo insta test --review` — review diffs to ensure only version number changes, then accept.
-     - Full test suite: `cargo nextest run --workspace --all-targets` (snapshots already accepted, no filtering needed).
+     - Full test suite: `./scripts/nextest-full.sh` (snapshots already accepted, no filtering needed).
   3) Update `CHANGELOG.md`: add the new version section, move Unreleased contents there, and fill in any missing release notes.
   4) Commit all changes (version bump, snapshots, changelog) and **push to origin before creating the release**. This ensures the tag will be placed on the correct commit containing the new version.
   5) After user reconfirms, create the release via `gh`: tag `vX.Y.Z`, title `vX.Y.Z - <brief title>`, release notes based on that version’s changelog entry. Use `--prerelease` for alpha/beta versions.

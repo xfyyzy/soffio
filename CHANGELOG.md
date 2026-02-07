@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16-alpha.1] - 2026-02-07
+
 ### Added
 - Cache observability metrics for L0/L1 hit/miss/evict events, queue depth/drop counts, and consume/warm latency.
 - Configurable cache event queue backpressure via `cache.max_event_queue_len`, including dropped-event accounting under burst load.

@@ -29,7 +29,16 @@ has_top_level_rs_targets() {
 }
 
 run_nextest --lib --lib "$@"
-run_nextest --bins --bins "$@"
+
+# `cargo nextest ... --bins` and `--bin <name>` can hang on this workspace
+# during target enumeration (no rustc activity, no output). The current binary
+# targets do not contain runnable tests, so skip this shard by default to keep
+# the full matrix deterministic. Set NEXTEST_RUN_BINS=1 to force a bins run.
+if [ "${NEXTEST_RUN_BINS:-0}" = "1" ]; then
+  run_nextest --bins --bins "$@"
+else
+  printf "==> nextest --bins (skipped: known nextest bin-target stall; set NEXTEST_RUN_BINS=1 to force)\n"
+fi
 
 # Running each integration test target separately avoids long stalls seen with a monolithic `--tests` listing pass.
 test_targets_file="$(mktemp)"
