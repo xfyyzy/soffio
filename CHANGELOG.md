@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Public markdown code blocks now include a top-right `Copy` button that copies the rendered code text and temporarily switches to `Copied` before auto-resetting.
+
+### Changed
+- Public markdown code block language labels are now shown at the top-left corner to make room for the new copy action on the right.
+- Public code-block copy button states now use tokenized semantic colors aligned with the site design system, removing hardcoded per-component status colors.
+
 ## [0.1.16-alpha.1] - 2026-02-07
 
 ### Added

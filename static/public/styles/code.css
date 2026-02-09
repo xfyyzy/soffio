@@ -8,7 +8,8 @@
 pre.syntax-highlight {
   background: var(--surface-muted);
   color: var(--text-primary);
-  padding: 1rem 1.25rem;
+  position: relative;
+  padding: 2.35rem 1.25rem 1rem;
   border: none;
   overflow-x: auto;
   margin: 1.25rem 0;
@@ -32,11 +33,12 @@ pre.syntax-highlight code.syntax-code span {
 
 pre.syntax-highlight[data-language]::before {
   content: attr(data-language);
+  position: absolute;
+  top: 0.72rem;
+  left: 1.25rem;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-  margin-bottom: 0.5rem;
+  justify-content: flex-start;
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -44,9 +46,60 @@ pre.syntax-highlight[data-language]::before {
   color: var(--text-tertiary);
 }
 
+pre.syntax-highlight [data-role="code-copy-button"] {
+  position: absolute;
+  top: 0.52rem;
+  right: 0.72rem;
+  border: 1px solid var(--copy-button-border-idle);
+  border-radius: var(--radius-soft);
+  background: var(--copy-button-bg-idle);
+  color: var(--copy-button-fg-idle);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 0.3rem 0.62rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast) ease, color var(--transition-fast) ease, background-color var(--transition-fast) ease;
+}
+
+pre.syntax-highlight [data-role="code-copy-button"]:hover {
+  border-color: var(--copy-button-border-hover);
+  color: var(--copy-button-fg-hover);
+  background: var(--copy-button-bg-hover);
+}
+
+pre.syntax-highlight [data-role="code-copy-button"][data-copy-state="success"] {
+  color: var(--copy-button-fg-success);
+  border-color: var(--copy-button-border-success);
+  background: var(--copy-button-bg-success);
+}
+
+pre.syntax-highlight [data-role="code-copy-button"][data-copy-state="error"] {
+  color: var(--copy-button-fg-error);
+  border-color: var(--copy-button-border-error);
+  background: var(--copy-button-bg-error);
+}
+
+pre.syntax-highlight [data-role="code-copy-button"]:focus-visible {
+  outline: var(--focus-outline-width) solid var(--accent);
+  outline-offset: var(--focus-outline-offset);
+}
+
 @media (max-width: 640px) {
   pre.syntax-highlight {
+    padding: 2.1rem 1rem 0.9rem;
     font-size: 0.85rem;
+  }
+
+  pre.syntax-highlight[data-language]::before {
+    left: 1rem;
+  }
+
+  pre.syntax-highlight [data-role="code-copy-button"] {
+    top: 0.45rem;
+    right: 0.55rem;
+    padding: 0.25rem 0.5rem;
   }
 }
 

@@ -47,6 +47,7 @@ type ActionHandler = (...args: unknown[]) => void | Promise<void>;
 type ActionHandlerMap = Record<string, ActionHandler>;
 
 const uploadQueues = new WeakMap<HTMLFormElement, UploadQueueState>();
+const codeCopyResetTimers = new WeakMap<HTMLButtonElement, number>();
 let activeQueueForm: HTMLFormElement | null = null;
 
 const getFormElements = (form: HTMLFormElement | null): HTMLFormControlsCollection | null => {
@@ -87,6 +88,50 @@ const resolveClosestForm = (el: Element | EventTarget | null): HTMLFormElement |
     }
   }
   return null;
+};
+
+const resolveCodeCopyButton = (el: Element | null | undefined): HTMLButtonElement | null => {
+  if (!el || !(el instanceof Element)) {
+    return null;
+  }
+  if (el instanceof HTMLButtonElement && el.dataset.role === 'code-copy-button') {
+    return el;
+  }
+  const button = el.closest('button[data-role="code-copy-button"]');
+  return button instanceof HTMLButtonElement ? button : null;
+};
+
+const codeCopyLabel = (button: HTMLButtonElement, key: 'default' | 'success' | 'error'): string => {
+  if (key === 'default') {
+    return button.dataset.copyLabelDefault?.trim() || 'Copy';
+  }
+  if (key === 'success') {
+    return button.dataset.copyLabelSuccess?.trim() || 'Copied';
+  }
+  return button.dataset.copyLabelError?.trim() || 'Copy failed';
+};
+
+const normalizeCodeText = (code: string): string => {
+  if (code.endsWith('\r\n')) {
+    return code.slice(0, -2);
+  }
+  if (code.endsWith('\n')) {
+    return code.slice(0, -1);
+  }
+  return code;
+};
+
+const setCodeCopyState = (button: HTMLButtonElement, state: 'idle' | 'success' | 'error', label: string): void => {
+  button.dataset.copyState = state;
+  button.textContent = label;
+};
+
+const clearCodeCopyReset = (button: HTMLButtonElement): void => {
+  const timer = codeCopyResetTimers.get(button);
+  if (typeof timer === 'number') {
+    window.clearTimeout(timer);
+    codeCopyResetTimers.delete(button);
+  }
 };
 
 const generateQueueId = (): string => {
@@ -298,23 +343,23 @@ window.addEventListener(UPLOAD_QUEUE_EVENT, (event) => {
 });
 
 const actionHandlers: ActionHandlerMap = {
-  async copyToClipboard(ctxArg, paramsArg = {}) {
+  async copyTextWithToast(ctxArg, paramsArg = {}) {
     const { el } = (ctxArg ?? {}) as ActionContext;
     const {
-      href,
-      successMessage = 'Link copied to clipboard',
+      text,
+      successMessage = 'Copied to clipboard',
       errorMessage = 'Copy failed',
       kindField = 'kind',
       messageField = 'message',
     } = (paramsArg ?? {}) as {
-      href?: string;
+      text?: string;
       successMessage?: string;
       errorMessage?: string;
       kindField?: string;
       messageField?: string;
     };
 
-    if (!href) {
+    if (!text) {
       return;
     }
 
@@ -334,14 +379,63 @@ const actionHandlers: ActionHandlerMap = {
       if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
         throw new Error('Clipboard API unavailable');
       }
-      await navigator.clipboard.writeText(href);
-      setToast('success', successMessage ?? 'Link copied to clipboard');
+      await navigator.clipboard.writeText(text);
+      setToast('success', successMessage ?? 'Copied to clipboard');
     } catch (error) {
       void error;
       setToast('error', errorMessage ?? 'Copy failed');
     }
 
     submitForm(form);
+  },
+
+  async copyCodeBlockText(ctxArg) {
+    const { el } = (ctxArg ?? {}) as ActionContext;
+    const button = resolveCodeCopyButton(el ?? null);
+    if (!button) {
+      return;
+    }
+
+    const codeContainer = button.closest('pre');
+    if (!(codeContainer instanceof HTMLPreElement)) {
+      return;
+    }
+
+    const code = codeContainer.querySelector('code');
+    if (!(code instanceof HTMLElement)) {
+      return;
+    }
+
+    const rawCode = code.textContent ?? '';
+    const codeText = normalizeCodeText(rawCode);
+    if (!codeText) {
+      return;
+    }
+
+    const defaultLabel = codeCopyLabel(button, 'default');
+    const successLabel = codeCopyLabel(button, 'success');
+    const errorLabel = codeCopyLabel(button, 'error');
+    const resetAfterRaw = Number(button.dataset.copyResetMs);
+    const resetAfterMs = Number.isFinite(resetAfterRaw) && resetAfterRaw > 0 ? resetAfterRaw : 2000;
+
+    clearCodeCopyReset(button);
+
+    try {
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+        throw new Error('Clipboard API unavailable');
+      }
+      await navigator.clipboard.writeText(codeText);
+      setCodeCopyState(button, 'success', successLabel);
+    } catch (error) {
+      void error;
+      setCodeCopyState(button, 'error', errorLabel);
+    }
+
+    const timer = window.setTimeout(() => {
+      setCodeCopyState(button, 'idle', defaultLabel);
+      codeCopyResetTimers.delete(button);
+    }, resetAfterMs);
+    codeCopyResetTimers.set(button, timer);
   },
 
   queueFiles(ctxArg) {

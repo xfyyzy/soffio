@@ -33,6 +33,8 @@ struct HeadingSlice {
     contains_mermaid: bool,
 }
 
+const CODE_COPY_BUTTON_HTML: &str = "<button type=\"button\" data-role=\"code-copy-button\" data-copy-label-default=\"Copy\" data-copy-label-success=\"Copied\" data-copy-label-error=\"Copy failed\" data-copy-reset-ms=\"2000\" data-copy-state=\"idle\" aria-label=\"Copy code block\" data-on-click__prevent=\"(@copyCodeBlockText())\">Copy</button>";
+
 pub(crate) fn post_process(
     sanitized_html: &str,
     target: &RenderTarget,
@@ -43,17 +45,22 @@ pub(crate) fn post_process(
         RenderTarget::PostBody { .. } => {
             process_post_html(sanitized_html, headings, public_site_url)
         }
-        _ => Ok(ProcessedHtml {
-            html: sanitized_html.to_string(),
-            sections: None,
-            contains_code: sanitized_html.contains("syntax-")
-                || sanitized_html.contains("<pre")
-                || sanitized_html.contains("<code"),
-            contains_math: sanitized_html.contains("data-math-style"),
-            contains_mermaid: sanitized_html.contains("data-role=\"diagram-mermaid\""),
-            resource_hints: ResourceHints::default(),
-            content_metrics: ContentMetrics::default(),
-        }),
+        _ => {
+            let html = augment_code_blocks_only(sanitized_html)?;
+            let contains_code =
+                html.contains("syntax-") || html.contains("<pre") || html.contains("<code");
+            let contains_math = html.contains("data-math-style");
+            let contains_mermaid = html.contains("data-role=\"diagram-mermaid\"");
+            Ok(ProcessedHtml {
+                html,
+                sections: None,
+                contains_code,
+                contains_math,
+                contains_mermaid,
+                resource_hints: ResourceHints::default(),
+                content_metrics: ContentMetrics::default(),
+            })
+        }
     }
 }
 
@@ -132,6 +139,74 @@ struct AugmentState {
 struct AugmentOutcome {
     html: String,
     state: AugmentState,
+}
+
+fn is_highlighted_code_block(el: &lol_html::html_content::Element<'_, '_>) -> bool {
+    let is_syntax_highlight = el
+        .get_attribute("class")
+        .map(|class| {
+            class
+                .split_whitespace()
+                .any(|token| token == "syntax-highlight")
+        })
+        .unwrap_or(false);
+    is_syntax_highlight || el.get_attribute("data-language").is_some()
+}
+
+fn apply_code_block_accessibility(
+    el: &mut lol_html::html_content::Element<'_, '_>,
+) -> Result<(), lol_html::errors::AttributeNameError> {
+    if let Some(lang) = el.get_attribute("data-language") {
+        if el.get_attribute("role").is_none() {
+            el.set_attribute("role", "region")?;
+        }
+
+        if el.get_attribute("aria-label").is_none() {
+            let trimmed = lang.trim();
+            if !trimmed.is_empty() {
+                let label = format!("Code block in {}", trimmed);
+                el.set_attribute("aria-label", &label)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn attach_code_copy_button(
+    el: &mut lol_html::html_content::Element<'_, '_>,
+) -> Result<(), lol_html::errors::AttributeNameError> {
+    if !is_highlighted_code_block(el) {
+        return Ok(());
+    }
+
+    el.set_attribute("data-role", "code-block")?;
+    if el.get_attribute("data-copy-enabled").is_none() {
+        el.prepend(
+            CODE_COPY_BUTTON_HTML,
+            lol_html::html_content::ContentType::Html,
+        );
+        el.set_attribute("data-copy-enabled", "true")?;
+    }
+
+    Ok(())
+}
+
+fn augment_code_blocks_only(html: &str) -> Result<String, RenderError> {
+    rewrite_str(
+        html,
+        RewriteStrSettings {
+            element_content_handlers: vec![element!("pre", |el| {
+                apply_code_block_accessibility(el)?;
+                attach_code_copy_button(el)?;
+                Ok(())
+            })],
+            ..RewriteStrSettings::default()
+        },
+    )
+    .map_err(|err| RenderError::Document {
+        message: err.to_string(),
+    })
 }
 
 fn augment_semantics(
@@ -249,19 +324,8 @@ fn augment_semantics(
                             state.code_blocks = state.code_blocks.saturating_add(1);
                         }
 
-                        if let Some(lang) = el.get_attribute("data-language") {
-                            if el.get_attribute("role").is_none() {
-                                el.set_attribute("role", "region")?;
-                            }
-
-                            if el.get_attribute("aria-label").is_none() {
-                                let trimmed = lang.trim();
-                                if !trimmed.is_empty() {
-                                    let label = format!("Code block in {}", trimmed);
-                                    el.set_attribute("aria-label", &label)?;
-                                }
-                            }
-                        }
+                        apply_code_block_accessibility(el)?;
+                        attach_code_copy_button(el)?;
                         Ok(())
                     }
                 }),
@@ -747,5 +811,32 @@ mod tests {
         let metrics = build_content_metrics(&outcome);
         assert_eq!(metrics.external_links_count, 1);
         assert_eq!(metrics.internal_links_count, 0);
+    }
+
+    #[test]
+    fn augment_semantics_injects_code_copy_button_for_highlighted_pre() {
+        let html = "<pre class=\"syntax-highlight syntax-lang-rust\" data-language=\"rust\"><code class=\"language-rust syntax-code\">fn main() {}\n</code></pre>";
+        let outcome = augment_semantics(html, None).expect("augment");
+
+        assert!(outcome.html.contains("data-role=\"code-copy-button\""));
+        assert!(outcome.html.contains("@copyCodeBlockText()"));
+        assert!(outcome.html.contains("data-copy-label-success=\"Copied\""));
+    }
+
+    #[test]
+    fn page_target_post_process_also_injects_copy_button() {
+        let html = "<pre class=\"syntax-highlight syntax-lang-rust\" data-language=\"rust\"><code class=\"language-rust syntax-code\">fn main() {}\n</code></pre>";
+        let output = post_process(
+            html,
+            &RenderTarget::PageBody {
+                slug: "about".to_string(),
+            },
+            &[],
+            None,
+        )
+        .expect("post process");
+
+        assert!(output.html.contains("data-role=\"code-copy-button\""));
+        assert!(output.html.contains("@copyCodeBlockText()"));
     }
 }
