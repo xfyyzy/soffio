@@ -9,6 +9,6 @@
   <button
     type="submit"
     {% if !copy_button_role.is_empty() %}data-role="{{ copy_button_role }}"{% endif %}
-    data-on-click__prevent="(@copyToClipboard({ href: `{{ copy_value }}`, successMessage: '{{ copy_success_message }}', errorMessage: '{{ copy_error_message }}' }))"
+    data-on-click__prevent="(@copyTextWithToast({ text: `{{ copy_value }}`, successMessage: '{{ copy_success_message }}', errorMessage: '{{ copy_error_message }}' }))"
   >{{ copy_button_label }}</button>
 </form>
