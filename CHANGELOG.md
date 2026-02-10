@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16-alpha.2] - 2026-02-10
+
 ### Added
 - Public markdown code blocks now include a top-right `Copy` button that copies the rendered code text and temporarily switches to `Copied` before auto-resetting.
 
