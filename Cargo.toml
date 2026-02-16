@@ -52,7 +52,7 @@ imagesize = "0.14"
 toml = { version = "0.9", features = ["parse", "display"] }
 hex = "0.4"
 dashmap = "6.1"
-tempfile = "3.24"
+tempfile = "3.25"
 subtle = "2.6"
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "multipart", "rustls"] }
 lru = "0.16.3"
