@@ -26,7 +26,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"]
 url = "2"
 pinyin = "0.11"
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "time", "macros", "json", "migrate"] }
-uuid = { version = "1.20.0", features = ["serde", "v4"] }
+uuid = { version = "1.21.0", features = ["serde", "v4"] }
 async-trait = "0.1"
 base64 = "0.22"
 ammonia = "4"
