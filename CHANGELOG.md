@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16-alpha.3] - 2026-02-28
+
+### Changed
+- Promote the 0.1.16 prerelease train from `0.1.16-alpha.2` to `0.1.16-alpha.3` after passing the full release verification gate.
+
 ## [0.1.16-alpha.2] - 2026-02-10
 
 ### Added
