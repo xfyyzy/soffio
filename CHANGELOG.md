@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16-alpha.4] - 2026-03-17
+
 ### Breaking
 - `soffio-cli` is now built from a dedicated workspace package. Use `cargo build -p soffio-cli --release` instead of root-package bin selection (`--bin soffio-cli`).
 
