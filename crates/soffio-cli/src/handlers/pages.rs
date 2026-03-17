@@ -3,9 +3,9 @@
 use std::path::PathBuf;
 
 use reqwest::Method;
-use soffio::domain::types::PageStatus;
-use soffio::infra::http::api::models::{
-    PageBodyRequest, PageCreateRequest, PageStatusRequest, PageTitleRequest, PageUpdateRequest,
+use soffio_api_types::{
+    PageBodyRequest, PageCreateRequest, PageStatus, PageStatusRequest, PageTitleRequest,
+    PageUpdateRequest,
 };
 use uuid::Uuid;
 

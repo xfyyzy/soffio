@@ -1,34 +1,7 @@
 //! Shared domain enumerations aligned with persisted database enums.
 
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[serde(rename_all = "snake_case")]
-#[sqlx(type_name = "post_status", rename_all = "snake_case")]
-pub enum PostStatus {
-    Draft,
-    Published,
-    Archived,
-    Error,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[serde(rename_all = "snake_case")]
-#[sqlx(type_name = "page_status", rename_all = "snake_case")]
-pub enum PageStatus {
-    Draft,
-    Published,
-    Archived,
-    Error,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[serde(rename_all = "snake_case")]
-#[sqlx(type_name = "navigation_destination_type", rename_all = "snake_case")]
-pub enum NavigationDestinationType {
-    Internal,
-    External,
-}
+pub use soffio_api_types::{NavigationDestinationType, PageStatus, PostStatus, SnapshotEntityType};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -64,15 +37,6 @@ pub enum JobType {
     RenderSummary,
     PublishPost,
     PublishPage,
-}
-
-/// Supported snapshot entity types (mirrors Postgres enum `snapshot_entity_type`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[serde(rename_all = "snake_case")]
-#[sqlx(type_name = "snapshot_entity_type", rename_all = "snake_case")]
-pub enum SnapshotEntityType {
-    Post,
-    Page,
 }
 
 impl JobType {

@@ -73,7 +73,7 @@ Headless API CLI for admins and automation. See [`docs/cli.md`](docs/cli.md) for
 Quick start:
 
 ```
-cargo build --release --bin soffio-cli
+cargo build -p soffio-cli --release
 SOFFIO_SITE_URL=https://your.site \
 SOFFIO_API_KEY_FILE=~/.config/soffio/key \
 ./target/release/soffio-cli api-keys me

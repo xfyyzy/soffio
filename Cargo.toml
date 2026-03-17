@@ -3,9 +3,13 @@ name = "soffio"
 version = "0.1.16-alpha.3"
 edition = "2024"
 
-[[bin]]
-name = "soffio-cli"
-path = "src/bin/soffio_cli/main.rs"
+[workspace]
+members = [
+    ".",
+    "crates/soffio-api-types",
+    "crates/soffio-cli",
+]
+default-members = ["."]
 
 [dependencies]
 askama = "0.15"
@@ -57,14 +61,12 @@ subtle = "2.6"
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "multipart", "rustls"] }
 lru = "0.16.3"
 metrics = "0.24.2"
+soffio-api-types = { path = "crates/soffio-api-types", features = ["sqlx"] }
 
 [dev-dependencies]
 insta = { version = "1.46.3", features = ["glob"] }
 tower = "0.5"
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "multipart", "rustls"] }
-httpmock = "0.8"
-assert_cmd = "2"
-predicates = "3"
 serial_test = "3"
 metrics-util = "0.20.1"
 

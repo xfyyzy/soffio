@@ -1,7 +1,7 @@
 #![deny(clippy::all, clippy::pedantic)]
 
 use reqwest::Method;
-use soffio::infra::http::api::models::ApiKeyInfoResponse;
+use soffio_api_types::ApiKeyInfoResponse;
 
 use crate::args::ApiKeysCmd;
 use crate::client::{CliError, Ctx};

@@ -75,7 +75,7 @@ Headless API 的命令行客户端。生成式命令矩阵与使用指南见 [`d
 快速开始：
 
 ```
-cargo build --release --bin soffio-cli
+cargo build -p soffio-cli --release
 SOFFIO_SITE_URL=https://your.site \
 SOFFIO_API_KEY_FILE=~/.config/soffio/key \
 ./target/release/soffio-cli api-keys me

@@ -3,10 +3,9 @@
 use std::path::PathBuf;
 
 use reqwest::Method;
-use soffio::domain::types::PostStatus;
-use soffio::infra::http::api::models::{
-    PostBodyRequest, PostCreateRequest, PostExcerptRequest, PostPinRequest, PostStatusRequest,
-    PostSummaryRequest, PostTagsRequest, PostTitleRequest, PostUpdateRequest,
+use soffio_api_types::{
+    PostBodyRequest, PostCreateRequest, PostExcerptRequest, PostPinRequest, PostStatus,
+    PostStatusRequest, PostSummaryRequest, PostTagsRequest, PostTitleRequest, PostUpdateRequest,
 };
 use uuid::Uuid;
 

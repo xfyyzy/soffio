@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Breaking
+- `soffio-cli` is now built from a dedicated workspace package. Use `cargo build -p soffio-cli --release` instead of root-package bin selection (`--bin soffio-cli`).
+
+### Changed
+- Introduced a shared `soffio-api-types` crate for API request/response payloads and API-facing enums, so `soffio-cli` can compile without pulling the full `soffio` server dependency graph.
+
 ## [0.1.16-alpha.3] - 2026-02-28
 
 ### Changed

@@ -1,5 +1,5 @@
-//! soffio-cli: headless API command-line client
-//! Modularized for maintainability; reuses infra http models for request/response shapes.
+//! soffio-cli: headless API command-line client.
+//! Modularized for maintainability and backed by shared `soffio-api-types` payloads.
 #![deny(clippy::all, clippy::pedantic)]
 
 mod args;
@@ -7,6 +7,8 @@ mod client;
 mod handlers;
 mod io;
 mod print;
+#[cfg(test)]
+mod tests;
 
 use clap::Parser;
 

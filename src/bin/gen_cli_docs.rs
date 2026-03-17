@@ -7,7 +7,7 @@ use std::fs;
 
 use clap::CommandFactory;
 
-#[path = "soffio_cli/args.rs"]
+#[path = "../../crates/soffio-cli/src/args.rs"]
 mod cli;
 use cli::Cli;
 
@@ -53,7 +53,7 @@ fn table(rows: &[Row]) -> String {
 fn render_en(matrix: &str) -> String {
     format!(
         "# soffio-cli\n\nEnglish | [中文](cli.zh.md)\n\nA headless admin CLI for Soffio. Built to cover every admin scenario (posts, pages, tags, navigation, uploads, settings, jobs, audit, API key introspection) via the headless HTTP API.\n\n## Quick start\n```
-cargo build --release --bin soffio-cli
+cargo build -p soffio-cli --release
 SOFFIO_SITE_URL=https://your.site \\
 SOFFIO_API_KEY_FILE=~/.config/soffio/key \\
 ./target/release/soffio-cli api-keys me
@@ -64,7 +64,7 @@ SOFFIO_API_KEY_FILE=~/.config/soffio/key \\
 fn render_zh(matrix: &str) -> String {
     format!(
         "# soffio-cli\n\n[English](cli.md) | 中文\n\nSoffio 的 headless 管理 CLI，覆盖帖子、页面、标签、导航、上传、站点设置、后台任务、审计等管理场景。\n\n## 快速开始\n```
-cargo build --release --bin soffio-cli
+cargo build -p soffio-cli --release
 SOFFIO_SITE_URL=https://your.site \\
 SOFFIO_API_KEY_FILE=~/.config/soffio/key \\
 ./target/release/soffio-cli api-keys me

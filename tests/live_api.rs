@@ -8,7 +8,14 @@ use chrono::Utc;
 use reqwest::{Client, Method, StatusCode, multipart};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{collections::HashSet, fs, path::Path, process::Command, time::Duration};
+use std::{
+    collections::HashSet,
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+    sync::OnceLock,
+    time::Duration,
+};
 use tokio::task::spawn_blocking;
 
 type TestResult<T> = Result<T, Box<dyn std::error::Error>>;
@@ -1304,8 +1311,64 @@ async fn get_public_page(client: &Client, base: &str, path: &str) -> TestResult<
     Ok(resp.text().await.unwrap_or_default())
 }
 
+fn soffio_cli_bin() -> &'static Path {
+    static BIN: OnceLock<PathBuf> = OnceLock::new();
+
+    BIN.get_or_init(|| {
+        if let Some(path) = std::env::var_os("CARGO_BIN_EXE_soffio-cli") {
+            return PathBuf::from(path);
+        }
+
+        let target_triple = current_test_target_triple();
+        let workspace_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut build = Command::new("cargo");
+        build.current_dir(&workspace_root).args([
+            "build",
+            "-p",
+            "soffio-cli",
+            "--bin",
+            "soffio-cli",
+        ]);
+        if let Some(triple) = target_triple.as_deref() {
+            build.args(["--target", triple]);
+        }
+        let status = build
+            .status()
+            .expect("build soffio-cli binary for integration tests");
+        assert!(status.success(), "failed to build soffio-cli test binary");
+
+        let mut bin = workspace_root.join("target");
+        if let Some(triple) = target_triple {
+            bin = bin.join(triple);
+        }
+        bin = bin.join("debug").join("soffio-cli");
+        if cfg!(windows) {
+            bin.set_extension("exe");
+        }
+        bin
+    })
+}
+
+fn current_test_target_triple() -> Option<String> {
+    let exe = std::env::current_exe().ok()?;
+    let components = exe
+        .components()
+        .map(|component| component.as_os_str().to_string_lossy().into_owned())
+        .collect::<Vec<_>>();
+
+    let target_idx = components
+        .iter()
+        .position(|component| component == "target")?;
+    let candidate = components.get(target_idx + 1)?;
+    if candidate == "debug" || candidate == "release" {
+        return None;
+    }
+
+    Some(candidate.clone())
+}
+
 async fn cli_output(args: &[&str], base: &str, key: &str) -> TestResult<(i32, String, String)> {
-    let bin = assert_cmd::cargo::cargo_bin!("soffio-cli");
+    let bin = soffio_cli_bin().to_path_buf();
     let args = args.iter().map(|s| s.to_string()).collect::<Vec<_>>();
     let base = base.to_string();
     let key = key.to_string();

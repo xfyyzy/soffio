@@ -1,11 +1,10 @@
 #![deny(clippy::all, clippy::pedantic)]
 
 use reqwest::Method;
-use soffio::domain::types::NavigationDestinationType;
-use soffio::infra::http::api::models::{
-    NavigationCreateRequest, NavigationDestinationRequest, NavigationLabelRequest,
-    NavigationOpenInNewTabRequest, NavigationSortOrderRequest, NavigationUpdateRequest,
-    NavigationVisibilityRequest,
+use soffio_api_types::{
+    NavigationCreateRequest, NavigationDestinationRequest, NavigationDestinationType,
+    NavigationLabelRequest, NavigationOpenInNewTabRequest, NavigationSortOrderRequest,
+    NavigationUpdateRequest, NavigationVisibilityRequest,
 };
 use uuid::Uuid;
 

@@ -1,6 +1,6 @@
 #![deny(clippy::all, clippy::pedantic)]
 
-use axum::http::HeaderValue;
+use reqwest::header::{AUTHORIZATION, HeaderValue};
 use reqwest::{Client, Method, Response, Url};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -77,7 +77,7 @@ impl Ctx {
         let mut req = self
             .client
             .request(method, url)
-            .header(axum::http::header::AUTHORIZATION, self.auth_header()?);
+            .header(AUTHORIZATION, self.auth_header()?);
         if let Some(b) = body {
             req = req.json(&b);
         }
@@ -105,7 +105,7 @@ impl Ctx {
         let mut req = self
             .client
             .request(method, url)
-            .header(axum::http::header::AUTHORIZATION, self.auth_header()?);
+            .header(AUTHORIZATION, self.auth_header()?);
         if let Some(b) = body {
             req = req.json(&b);
         }
@@ -149,7 +149,7 @@ impl Ctx {
         let resp = self
             .client
             .request(method, url)
-            .header(axum::http::header::AUTHORIZATION, self.auth_header()?)
+            .header(AUTHORIZATION, self.auth_header()?)
             .send()
             .await?;
         let status = resp.status();

@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use reqwest::Method;
-use soffio::infra::http::api::models::{
+use soffio_api_types::{
     TagCreateRequest, TagDescriptionRequest, TagNameRequest, TagPinRequest, TagUpdateRequest,
 };
 use uuid::Uuid;

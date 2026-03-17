@@ -1,7 +1,7 @@
 #![deny(clippy::all, clippy::pedantic)]
 
 use reqwest::Method;
-use soffio::infra::http::api::models::SettingsPatchRequest;
+use soffio_api_types::SettingsPatchRequest;
 
 use crate::args::{SettingsCmd, SettingsPatchArgs};
 use crate::client::{CliError, Ctx};

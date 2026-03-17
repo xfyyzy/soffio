@@ -4,6 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use reqwest::Method;
+use reqwest::header::AUTHORIZATION;
 use uuid::Uuid;
 
 use crate::args::UploadsCmd;
@@ -73,7 +74,7 @@ async fn upload(ctx: &Ctx, file: PathBuf) -> Result<(), CliError> {
     let resp = ctx
         .client
         .post(url)
-        .header(axum::http::header::AUTHORIZATION, ctx.auth_header()?)
+        .header(AUTHORIZATION, ctx.auth_header()?)
         .multipart(form)
         .send()
         .await?;
