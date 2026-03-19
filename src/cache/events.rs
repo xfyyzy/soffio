@@ -61,11 +61,25 @@ pub enum EventKind {
 
     // Content
     /// A post was created or updated.
-    PostUpserted { post_id: Uuid, slug: String },
+    ///
+    /// `previous_slug` is set when an existing post changes slug so old slug caches
+    /// can be invalidated in the same pass.
+    PostUpserted {
+        post_id: Uuid,
+        slug: String,
+        previous_slug: Option<String>,
+    },
     /// A post was deleted.
     PostDeleted { post_id: Uuid, slug: String },
     /// A page was created or updated.
-    PageUpserted { page_id: Uuid, slug: String },
+    ///
+    /// `previous_slug` is set when an existing page changes slug so old slug caches
+    /// can be invalidated in the same pass.
+    PageUpserted {
+        page_id: Uuid,
+        slug: String,
+        previous_slug: Option<String>,
+    },
     /// A page was deleted.
     PageDeleted { page_id: Uuid, slug: String },
     /// Tags were created, updated, deleted, or re-bound to posts.
@@ -226,6 +240,7 @@ mod tests {
         queue.publish(EventKind::PostUpserted {
             post_id: Uuid::nil(),
             slug: "test".to_string(),
+            previous_slug: None,
         });
 
         assert_eq!(queue.len(), 3);
@@ -282,14 +297,17 @@ mod tests {
         let kind1 = EventKind::PostUpserted {
             post_id: Uuid::nil(),
             slug: "test".to_string(),
+            previous_slug: None,
         };
         let kind2 = EventKind::PostUpserted {
             post_id: Uuid::nil(),
             slug: "test".to_string(),
+            previous_slug: None,
         };
         let kind3 = EventKind::PostUpserted {
             post_id: Uuid::nil(),
             slug: "other".to_string(),
+            previous_slug: None,
         };
 
         assert_eq!(kind1, kind2);

@@ -247,6 +247,11 @@ pub async fn process_render_post_job(
     )
     .await?;
 
+    ctx.admin_posts
+        .notify_post_materialized(post_id, &payload.slug)
+        .await
+        .map_err(job_failed)?;
+
     drop(guard);
 
     join_children(child_handles).await?;
@@ -483,6 +488,10 @@ pub async fn process_render_page_job(
         .map_err(job_failed)?;
 
     tx.commit().await.map_err(job_failed)?;
+    ctx.admin_pages
+        .notify_page_materialized(page_id, &payload.slug)
+        .await
+        .map_err(job_failed)?;
     Ok(())
 }
 

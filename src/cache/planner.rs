@@ -146,10 +146,20 @@ impl ConsumptionPlan {
                     plan.invalidate_entities
                         .insert(EntityKey::PostSlug(slug.clone()));
                 }
-                EventKind::PostUpserted { slug, .. } => {
+                EventKind::PostUpserted {
+                    slug,
+                    previous_slug,
+                    ..
+                } => {
                     plan.invalidate_entities.insert(EntityKey::Post(post_id));
                     plan.invalidate_entities
                         .insert(EntityKey::PostSlug(slug.clone()));
+                    if let Some(previous_slug) = previous_slug
+                        && previous_slug != slug
+                    {
+                        plan.invalidate_entities
+                            .insert(EntityKey::PostSlug(previous_slug.clone()));
+                    }
                     plan.warm_posts.insert(post_id);
                 }
                 _ => {}
@@ -177,10 +187,20 @@ impl ConsumptionPlan {
                     plan.invalidate_entities
                         .insert(EntityKey::PageSlug(slug.clone()));
                 }
-                EventKind::PageUpserted { slug, .. } => {
+                EventKind::PageUpserted {
+                    slug,
+                    previous_slug,
+                    ..
+                } => {
                     plan.invalidate_entities.insert(EntityKey::Page(page_id));
                     plan.invalidate_entities
                         .insert(EntityKey::PageSlug(slug.clone()));
+                    if let Some(previous_slug) = previous_slug
+                        && previous_slug != slug
+                    {
+                        plan.invalidate_entities
+                            .insert(EntityKey::PageSlug(previous_slug.clone()));
+                    }
                     plan.warm_pages.insert(page_id);
                 }
                 _ => {}
@@ -255,6 +275,7 @@ mod tests {
             EventKind::PostUpserted {
                 post_id,
                 slug: "test".to_string(),
+                previous_slug: None,
             },
             0,
         )];
@@ -301,6 +322,7 @@ mod tests {
             EventKind::PageUpserted {
                 page_id,
                 slug: "about".to_string(),
+                previous_slug: None,
             },
             0,
         )];
@@ -337,6 +359,7 @@ mod tests {
             EventKind::PostUpserted {
                 post_id,
                 slug: "test".to_string(),
+                previous_slug: None,
             },
             0,
         );
@@ -359,6 +382,7 @@ mod tests {
                 EventKind::PostUpserted {
                     post_id,
                     slug: "test".to_string(),
+                    previous_slug: None,
                 },
                 0,
             ),
@@ -413,6 +437,52 @@ mod tests {
         assert!(plan.invalidate_entities.contains(&EntityKey::PostAggTags));
         assert!(plan.invalidate_entities.contains(&EntityKey::PostsIndex));
         assert!(plan.warm_aggregations);
+    }
+
+    #[test]
+    fn post_slug_change_invalidates_previous_slug() {
+        let post_id = Uuid::new_v4();
+        let events = vec![make_event(
+            EventKind::PostUpserted {
+                post_id,
+                slug: "new-slug".to_string(),
+                previous_slug: Some("old-slug".to_string()),
+            },
+            0,
+        )];
+        let plan = ConsumptionPlan::from_events(events);
+
+        assert!(
+            plan.invalidate_entities
+                .contains(&EntityKey::PostSlug("new-slug".to_string()))
+        );
+        assert!(
+            plan.invalidate_entities
+                .contains(&EntityKey::PostSlug("old-slug".to_string()))
+        );
+    }
+
+    #[test]
+    fn page_slug_change_invalidates_previous_slug() {
+        let page_id = Uuid::new_v4();
+        let events = vec![make_event(
+            EventKind::PageUpserted {
+                page_id,
+                slug: "new-page".to_string(),
+                previous_slug: Some("old-page".to_string()),
+            },
+            0,
+        )];
+        let plan = ConsumptionPlan::from_events(events);
+
+        assert!(
+            plan.invalidate_entities
+                .contains(&EntityKey::PageSlug("new-page".to_string()))
+        );
+        assert!(
+            plan.invalidate_entities
+                .contains(&EntityKey::PageSlug("old-page".to_string()))
+        );
     }
 
     #[test]
