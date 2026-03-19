@@ -7,6 +7,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16-alpha.5] - 2026-03-19
+
+### Fixed
+- Tag mutations (create/update/delete and post-tag rebinding) now trigger immediate cache invalidation for tag-derived aggregates and post indexes, so homepage/admin tag panels no longer show stale data after writes.
+- Post/page slug updates now invalidate both new and previous slug cache keys, preventing stale content at old URLs after slug changes.
+- Background render materialization now emits follow-up cache invalidation after persistence commits, closing stale-window drift between request-time invalidation and async writes.
+- API key issue/update/rotate/revoke/delete paths now emit prefix-scoped cache invalidation events so auth/cache lookups stay consistent with key lifecycle changes.
+
 ## [0.1.16-alpha.4] - 2026-03-17
 
 ### Breaking
