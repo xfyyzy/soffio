@@ -113,6 +113,13 @@ impl AdminPostService {
         ensure_non_empty(&command.excerpt, "excerpt")?;
         ensure_non_empty(&command.body_markdown, "body_markdown")?;
 
+        let previous_slug = self
+            .reader
+            .find_by_id(command.id)
+            .await?
+            .map(|post| post.slug)
+            .ok_or_else(|| RepoError::from_persistence("post not found"))?;
+
         let params = UpdatePostParams {
             id: command.id,
             slug: command.slug,
@@ -145,7 +152,10 @@ impl AdminPostService {
 
         // Trigger cache invalidation
         if let Some(trigger) = &self.cache_trigger {
-            trigger.post_upserted(post.id, &post.slug).await;
+            let previous_slug = (previous_slug != post.slug).then_some(previous_slug.as_str());
+            trigger
+                .post_upserted_with_previous_slug(post.id, &post.slug, previous_slug)
+                .await;
         }
 
         Ok(post)
