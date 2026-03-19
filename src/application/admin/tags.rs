@@ -10,6 +10,7 @@ use crate::application::repos::{
     CreateTagParams, RepoError, TagListRecord, TagQueryFilter, TagWithCount, TagsRepo,
     TagsWriteRepo, UpdateTagParams,
 };
+use crate::cache::CacheTrigger;
 use crate::domain::entities::TagRecord;
 use crate::domain::posts::MonthCount;
 use crate::domain::slug::{SlugAsyncError, SlugError, generate_unique_slug_async};
@@ -51,6 +52,7 @@ pub struct AdminTagService {
     reader: Arc<dyn TagsRepo>,
     writer: Arc<dyn TagsWriteRepo>,
     audit: AdminAuditService,
+    cache_trigger: Option<Arc<CacheTrigger>>,
 }
 
 impl AdminTagService {
@@ -63,7 +65,20 @@ impl AdminTagService {
             reader,
             writer,
             audit,
+            cache_trigger: None,
         }
+    }
+
+    /// Set the cache trigger for this service.
+    pub fn with_cache_trigger(mut self, trigger: Arc<CacheTrigger>) -> Self {
+        self.cache_trigger = Some(trigger);
+        self
+    }
+
+    /// Set the cache trigger for this service (optional).
+    pub fn with_cache_trigger_opt(mut self, trigger: Option<Arc<CacheTrigger>>) -> Self {
+        self.cache_trigger = trigger;
+        self
     }
 
     pub async fn list_all(&self) -> Result<Vec<TagRecord>, AdminTagError> {
@@ -207,6 +222,10 @@ impl AdminTagService {
                 Some(&snapshot),
             )
             .await?;
+
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.tags_changed().await;
+        }
         Ok(tag)
     }
 
@@ -264,6 +283,10 @@ impl AdminTagService {
                 Some(&snapshot),
             )
             .await?;
+
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.tags_changed().await;
+        }
         Ok(tag)
     }
 
@@ -305,6 +328,10 @@ impl AdminTagService {
                 Option::<&TagSnapshot>::None,
             )
             .await?;
+
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.tags_changed().await;
+        }
         Ok(())
     }
 }

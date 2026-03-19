@@ -413,11 +413,14 @@ fn build_application_context(
         )
         .with_cache_trigger_opt(cache_trigger.clone()),
     );
-    let admin_tag_service = Arc::new(AdminTagService::new(
-        tags_repo.clone(),
-        tags_write_repo.clone(),
-        audit_service.clone(),
-    ));
+    let admin_tag_service = Arc::new(
+        AdminTagService::new(
+            tags_repo.clone(),
+            tags_write_repo.clone(),
+            audit_service.clone(),
+        )
+        .with_cache_trigger_opt(cache_trigger.clone()),
+    );
     let admin_navigation_service = Arc::new(
         AdminNavigationService::new(
             navigation_repo.clone(),

@@ -68,6 +68,8 @@ pub enum EventKind {
     PageUpserted { page_id: Uuid, slug: String },
     /// A page was deleted.
     PageDeleted { page_id: Uuid, slug: String },
+    /// Tags were created, updated, deleted, or re-bound to posts.
+    TagsChanged,
 
     // Security
     /// An API key was created or updated.
