@@ -59,10 +59,22 @@ impl CacheTrigger {
 
     /// Trigger a post upsert event (create or update).
     pub async fn post_upserted(&self, post_id: Uuid, slug: &str) {
+        self.post_upserted_with_previous_slug(post_id, slug, None)
+            .await;
+    }
+
+    /// Trigger a post upsert event with an optional previous slug.
+    pub async fn post_upserted_with_previous_slug(
+        &self,
+        post_id: Uuid,
+        slug: &str,
+        previous_slug: Option<&str>,
+    ) {
         self.trigger(
             EventKind::PostUpserted {
                 post_id,
                 slug: slug.to_string(),
+                previous_slug: previous_slug.map(str::to_string),
             },
             true,
         )
@@ -83,10 +95,22 @@ impl CacheTrigger {
 
     /// Trigger a page upsert event (create or update).
     pub async fn page_upserted(&self, page_id: Uuid, slug: &str) {
+        self.page_upserted_with_previous_slug(page_id, slug, None)
+            .await;
+    }
+
+    /// Trigger a page upsert event with an optional previous slug.
+    pub async fn page_upserted_with_previous_slug(
+        &self,
+        page_id: Uuid,
+        slug: &str,
+        previous_slug: Option<&str>,
+    ) {
         self.trigger(
             EventKind::PageUpserted {
                 page_id,
                 slug: slug.to_string(),
+                previous_slug: previous_slug.map(str::to_string),
             },
             true,
         )
@@ -249,8 +273,14 @@ mod tests {
         let trigger = create_trigger();
 
         trigger.post_upserted(Uuid::nil(), "post-slug").await;
+        trigger
+            .post_upserted_with_previous_slug(Uuid::nil(), "new-post-slug", Some("old-post-slug"))
+            .await;
         trigger.post_deleted(Uuid::nil(), "post-slug").await;
         trigger.page_upserted(Uuid::nil(), "page-slug").await;
+        trigger
+            .page_upserted_with_previous_slug(Uuid::nil(), "new-page-slug", Some("old-page-slug"))
+            .await;
         trigger.page_deleted(Uuid::nil(), "page-slug").await;
         trigger.tags_changed().await;
         trigger.navigation_updated().await;

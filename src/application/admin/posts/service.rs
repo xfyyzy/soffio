@@ -84,6 +84,11 @@ impl AdminPostService {
         payload: PostSnapshotPayload,
         post_id: uuid::Uuid,
     ) -> Result<PostRecord, crate::application::admin::posts::types::AdminPostError> {
+        let previous_slug = self
+            .reader
+            .find_by_id(post_id)
+            .await?
+            .map(|record| record.slug);
         let params = RestorePostSnapshotParams {
             id: post_id,
             slug: payload.slug,
@@ -105,9 +110,32 @@ impl AdminPostService {
 
         // Trigger cache invalidation
         if let Some(trigger) = &self.cache_trigger {
-            trigger.post_upserted(post.id, &post.slug).await;
+            let previous_slug = previous_slug.filter(|slug| slug != &post.slug);
+            trigger
+                .post_upserted_with_previous_slug(post.id, &post.slug, previous_slug.as_deref())
+                .await;
         }
 
         Ok(post)
+    }
+
+    /// Trigger cache invalidation after background materialization completes.
+    pub(crate) async fn notify_post_materialized(
+        &self,
+        post_id: uuid::Uuid,
+        slug: &str,
+    ) -> Result<(), crate::application::admin::posts::types::AdminPostError> {
+        let previous_slug = self
+            .reader
+            .find_by_id(post_id)
+            .await?
+            .map(|record| record.slug);
+        if let Some(trigger) = &self.cache_trigger {
+            let previous_slug = previous_slug.filter(|value| value != slug);
+            trigger
+                .post_upserted_with_previous_slug(post_id, slug, previous_slug.as_deref())
+                .await;
+        }
+        Ok(())
     }
 }

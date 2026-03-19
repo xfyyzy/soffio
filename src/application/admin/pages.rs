@@ -128,6 +128,11 @@ impl AdminPageService {
         payload: PageSnapshotPayload,
         page_id: Uuid,
     ) -> Result<PageRecord, AdminPageError> {
+        let previous_slug = self
+            .reader
+            .find_by_id(page_id)
+            .await?
+            .map(|record| record.slug);
         let params = RestorePageSnapshotParams {
             id: page_id,
             slug: payload.slug,
@@ -144,7 +149,10 @@ impl AdminPageService {
 
         // Trigger cache invalidation
         if let Some(trigger) = &self.cache_trigger {
-            trigger.page_upserted(page.id, &page.slug).await;
+            let previous_slug = previous_slug.filter(|slug| slug != &page.slug);
+            trigger
+                .page_upserted_with_previous_slug(page.id, &page.slug, previous_slug.as_deref())
+                .await;
         }
 
         Ok(page)
@@ -330,6 +338,13 @@ impl AdminPageService {
         ensure_non_empty(&command.title, "title")?;
         ensure_non_empty(&command.body_markdown, "body_markdown")?;
 
+        let previous_slug = self
+            .reader
+            .find_by_id(command.id)
+            .await?
+            .map(|page| page.slug)
+            .ok_or_else(|| RepoError::from_persistence("page not found"))?;
+
         let site_settings = self.settings.load_site_settings().await?;
         let public_site_url = normalize_public_site_url(&site_settings.public_site_url);
 
@@ -369,7 +384,10 @@ impl AdminPageService {
 
         // Trigger cache invalidation
         if let Some(trigger) = &self.cache_trigger {
-            trigger.page_upserted(page.id, &page.slug).await;
+            let previous_slug = (previous_slug != page.slug).then_some(previous_slug.as_str());
+            trigger
+                .page_upserted_with_previous_slug(page.id, &page.slug, previous_slug)
+                .await;
         }
 
         Ok(page)
@@ -490,6 +508,26 @@ impl AdminPageService {
             trigger.page_deleted(id, slug).await;
         }
 
+        Ok(())
+    }
+
+    /// Trigger cache invalidation after background materialization completes.
+    pub(crate) async fn notify_page_materialized(
+        &self,
+        page_id: Uuid,
+        slug: &str,
+    ) -> Result<(), AdminPageError> {
+        let previous_slug = self
+            .reader
+            .find_by_id(page_id)
+            .await?
+            .map(|record| record.slug);
+        if let Some(trigger) = &self.cache_trigger {
+            let previous_slug = previous_slug.filter(|value| value != slug);
+            trigger
+                .page_upserted_with_previous_slug(page_id, slug, previous_slug.as_deref())
+                .await;
+        }
         Ok(())
     }
 
