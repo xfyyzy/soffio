@@ -10,6 +10,7 @@ use crate::application::repos::{
     ApiKeyPageRequest, ApiKeyQueryFilter, ApiKeysRepo, CreateApiKeyParams, RepoError,
     UpdateApiKeyMetadataParams, UpdateApiKeySecretParams,
 };
+use crate::cache::CacheTrigger;
 use crate::domain::api_keys::{ApiKeyRecord, ApiKeyStatus, ApiScope};
 
 const TOKEN_PREFIX: &str = "sk";
@@ -81,11 +82,27 @@ impl ApiPrincipal {
 #[derive(Clone)]
 pub struct ApiKeyService {
     repo: Arc<dyn ApiKeysRepo>,
+    cache_trigger: Option<Arc<CacheTrigger>>,
 }
 
 impl ApiKeyService {
     pub fn new(repo: Arc<dyn ApiKeysRepo>) -> Self {
-        Self { repo }
+        Self {
+            repo,
+            cache_trigger: None,
+        }
+    }
+
+    /// Set the cache trigger for this service.
+    pub fn with_cache_trigger(mut self, trigger: Arc<CacheTrigger>) -> Self {
+        self.cache_trigger = Some(trigger);
+        self
+    }
+
+    /// Set the cache trigger for this service (optional).
+    pub fn with_cache_trigger_opt(mut self, trigger: Option<Arc<CacheTrigger>>) -> Self {
+        self.cache_trigger = trigger;
+        self
     }
 
     pub async fn issue(&self, cmd: IssueApiKeyCommand) -> Result<ApiKeyIssued, ApiKeyError> {
@@ -118,12 +135,16 @@ impl ApiKeyService {
             })
             .await?;
 
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.api_key_upserted(&record.prefix).await;
+        }
+
         Ok(ApiKeyIssued { record, token })
     }
 
     pub async fn rotate(&self, id: Uuid) -> Result<ApiKeyIssued, ApiKeyError> {
         // Verify key exists
-        let _current = self
+        let current = self
             .repo
             .find_by_id(id)
             .await?
@@ -143,6 +164,13 @@ impl ApiKeyService {
                 new_hashed_secret: hashed_secret,
             })
             .await?;
+
+        if let Some(trigger) = &self.cache_trigger {
+            if current.prefix != record.prefix {
+                trigger.api_key_revoked(&current.prefix).await;
+            }
+            trigger.api_key_upserted(&record.prefix).await;
+        }
 
         Ok(ApiKeyIssued { record, token })
     }
@@ -164,6 +192,10 @@ impl ApiKeyService {
             })
             .await?;
 
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.api_key_upserted(&record.prefix).await;
+        }
+
         Ok(record)
     }
 
@@ -173,13 +205,26 @@ impl ApiKeyService {
     }
 
     pub async fn revoke(&self, id: Uuid) -> Result<(), ApiKeyError> {
+        let prefix = self.repo.find_by_id(id).await?.map(|record| record.prefix);
         let now = OffsetDateTime::now_utc();
         self.repo.revoke_key(id, now).await?;
+        if let Some(trigger) = &self.cache_trigger
+            && let Some(prefix) = prefix
+        {
+            trigger.api_key_revoked(&prefix).await;
+        }
         Ok(())
     }
 
     pub async fn delete(&self, id: Uuid) -> Result<bool, ApiKeyError> {
+        let prefix = self.repo.find_by_id(id).await?.map(|record| record.prefix);
         let deleted = self.repo.delete_key(id).await?;
+        if deleted
+            && let Some(trigger) = &self.cache_trigger
+            && let Some(prefix) = prefix
+        {
+            trigger.api_key_revoked(&prefix).await;
+        }
         Ok(deleted)
     }
 

@@ -449,7 +449,9 @@ fn build_application_context(
         settings_repo.clone(),
     ));
     let admin_audit_service = Arc::new(audit_service);
-    let api_key_service = Arc::new(ApiKeyService::new(api_keys_repo.clone()));
+    let api_key_service = Arc::new(
+        ApiKeyService::new(api_keys_repo.clone()).with_cache_trigger_opt(cache_trigger.clone()),
+    );
 
     let job_audit_service = AdminAuditService::new(job_repositories.clone());
     let job_admin_post_service = Arc::new(
