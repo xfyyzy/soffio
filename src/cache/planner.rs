@@ -115,6 +115,11 @@ impl ConsumptionPlan {
                         })
                         .or_insert((event.epoch, event.kind.clone()));
                 }
+                EventKind::TagsChanged => {
+                    plan.invalidate_entities.insert(EntityKey::PostAggTags);
+                    plan.invalidate_entities.insert(EntityKey::PostsIndex);
+                    plan.warm_aggregations = true;
+                }
                 EventKind::ApiKeyUpserted { prefix } | EventKind::ApiKeyRevoked { prefix } => {
                     plan.invalidate_entities
                         .insert(EntityKey::ApiKey(prefix.clone()));
@@ -398,6 +403,16 @@ mod tests {
             plan.invalidate_entities
                 .contains(&EntityKey::ApiKey("sof_old_".to_string()))
         );
+    }
+
+    #[test]
+    fn tags_changed_invalidates_tag_aggregates_and_post_index() {
+        let events = vec![make_event(EventKind::TagsChanged, 0)];
+        let plan = ConsumptionPlan::from_events(events);
+
+        assert!(plan.invalidate_entities.contains(&EntityKey::PostAggTags));
+        assert!(plan.invalidate_entities.contains(&EntityKey::PostsIndex));
+        assert!(plan.warm_aggregations);
     }
 
     #[test]

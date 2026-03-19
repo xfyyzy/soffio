@@ -343,6 +343,11 @@ impl AdminPostService {
             )
             .await?;
 
+        // Trigger cache invalidation so tag-derived and post detail caches refresh.
+        if let Some(trigger) = &self.cache_trigger {
+            trigger.post_upserted(post.id, &post.slug).await;
+        }
+
         Ok(())
     }
 

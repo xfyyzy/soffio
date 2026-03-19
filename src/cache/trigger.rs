@@ -105,6 +105,11 @@ impl CacheTrigger {
         .await;
     }
 
+    /// Trigger tag cache invalidation for tag CRUD or tag-to-post rebinding.
+    pub async fn tags_changed(&self) {
+        self.trigger(EventKind::TagsChanged, true).await;
+    }
+
     /// Trigger a navigation update event.
     pub async fn navigation_updated(&self) {
         self.trigger(EventKind::NavigationUpdated, true).await;
@@ -247,6 +252,7 @@ mod tests {
         trigger.post_deleted(Uuid::nil(), "post-slug").await;
         trigger.page_upserted(Uuid::nil(), "page-slug").await;
         trigger.page_deleted(Uuid::nil(), "page-slug").await;
+        trigger.tags_changed().await;
         trigger.navigation_updated().await;
         trigger.site_settings_updated().await;
         trigger.api_key_upserted("sof_").await;
