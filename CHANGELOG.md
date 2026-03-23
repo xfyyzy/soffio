@@ -7,6 +7,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16-alpha.6] - 2026-03-23
+
+### Fixed
+- Restored API key lifecycle cache event emission on issue/update/rotate/revoke/delete paths and re-wired service bootstrap to pass the cache trigger, ensuring auth/cache reads stay consistent after key writes.
+
+### Changed
+- Refreshed lockfile TLS dependencies to resolve RustSec advisories in the `aws-lc-rs` / `aws-lc-sys` and `rustls-webpki` chain, restoring security gate green status.
+- Upgraded dependencies: `askama` 0.15.4 -> 0.15.5, `config` 0.15.21 -> 0.15.22, `once_cell` 1.21.3 -> 1.21.4, `tempfile` 3.26.0 -> 3.27.0, `toml` 1.0.6+spec-1.1.0 -> 1.0.7+spec-1.1.0.
+
 ## [0.1.16-alpha.5] - 2026-03-19
 
 ### Fixed
