@@ -23,4 +23,4 @@ uuid = { version = "1.22.0", features = ["serde", "v4"] }
 assert_cmd = "2"
 httpmock = "0.8"
 predicates = "3"
-tempfile = "3.26"
+tempfile = "3.27"
