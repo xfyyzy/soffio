@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Contributor verification now uses tiered gate scripts: `scripts/gate-fast.sh` for rapid local feedback, `scripts/gate-full.sh` for pre-merge validation, and `scripts/gate-hygiene.sh` for periodic dependency hygiene.
+
 ## [0.1.16-alpha.6] - 2026-03-23
 
 ### Fixed

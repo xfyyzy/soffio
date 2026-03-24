@@ -26,13 +26,21 @@ All contributors must follow `CODE_OF_CONDUCT.md`. If you encounter improper beh
    - Justify new dependencies and enable the minimal feature set.
 4. **Checks** (run all before opening a PR):
    ```bash
-   cargo fmt --all -- --check
-   cargo check --workspace --all-targets
-   cargo clippy --workspace --all-targets -- -D warnings
+   export DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev
+   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres
+
+   # default local feedback loop
+   ./scripts/gate-fast.sh
+
+   # required before PR
+   ./scripts/gate-full.sh
+
+   # scheduled hygiene (for example weekly)
+   ./scripts/gate-hygiene.sh
+
    # RUSTSEC-2023-0071 is from the optional sqlx-mysql path in Cargo.lock.
    cargo audit --ignore RUSTSEC-2023-0071
    cargo deny check advisories
-   cargo test --workspace --all-targets -- --nocapture
    # If you change soffio-cli commands/options, regenerate docs:
    cargo run --bin gen_cli_docs
    ```

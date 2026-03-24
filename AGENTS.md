@@ -23,7 +23,7 @@ You MUST:
 6. **Fail closed.** If correctness is uncertain, stop and request clarification . If silence
    persists, implement the **conservative** option and document assumptions.
 
-7. **Test env vars.** When running the full gate (fmt/check/clippy/tests/udeps/outdated), set both:
+7. **Test env vars.** When running `./scripts/gate-fast.sh` or `./scripts/gate-full.sh`, set both:
    - `SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres`
    - `DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`
 
@@ -122,21 +122,18 @@ Rules:
   `cargo upgrade --incompatible` (ensure latest version)
   Do **not** raise MSRV; keep `rust-version` pinned in `Cargo.toml` unless explicitly approved.
 
-### 4.3 Verify (gate everything; stop on first failure)
+### 4.3 Verify (tiered gates; stop on first failure)
 
-run the sequence below:
+Use the gate tier that matches the change risk:
 
-1) **Format** — `cargo fmt --all -- --check`
-2) **Build & Clippy** —  
-   `cargo check --workspace --all-targets`  
-   `cargo clippy --workspace --all-targets -- -D warnings`
-3) **Tests** — `./scripts/nextest-full.sh`  
-   Live tests (require running server): `cargo test --test live_api --test live_cache -- --ignored --test-threads=1`  
-   If features exist: `cargo hack test --workspace --feature-powerset --depth 1`
-4) **Deps & Risk** —  
-   `cargo +nightly udeps --all-targets --workspace` (unused deps)
-   `cargo outdated -wR` (report only; do not upgrade unless asked)
-5) **Macros (if touched)** — `cargo expand -p <crate> --lib` and sanity‑scan the output.
+1) **Fast gate (default, every local iteration)** — `./scripts/gate-fast.sh`  
+   Includes `fmt/check/clippy` and `nextest --lib` for rapid feedback.
+2) **Full gate (required before PR or merge)** — `./scripts/gate-full.sh`  
+   Includes `fmt/check/clippy`, `./scripts/nextest-full.sh`, and ignored live tests.  
+   Optional feature matrix: `RUN_FEATURE_POWERSET=1 ./scripts/gate-full.sh`
+3) **Dependency hygiene (scheduled/periodic)** — `./scripts/gate-hygiene.sh`  
+   Includes `cargo +nightly udeps --all-targets --workspace` and `cargo outdated -wR`.
+4) **Macros (if touched)** — `cargo expand -p <crate> --lib` and sanity‑scan the output.
 
 ### 4.4 Deliver (clear, auditable)
 
@@ -152,11 +149,9 @@ Use a single atomic commit when possible. Use the template in §9.
 - Release flow (run **only when the user explicitly asks to publish**):
   1) Bump version in `Cargo.toml` to the user-specified value.
   2) Run the full gate with the env vars in §0.8:
-     - `cargo fmt --all -- --check`
-     - `cargo check --workspace --all-targets`
-     - `cargo clippy --workspace --all-targets -- -D warnings`
+     - `./scripts/gate-full.sh`
      - Snapshot tests first: `cargo insta test --review` — review diffs to ensure only version number changes, then accept.
-     - Full test suite: `./scripts/nextest-full.sh` (snapshots already accepted, no filtering needed).
+     - Dependency hygiene: `./scripts/gate-hygiene.sh`
   3) Update `CHANGELOG.md`: add the new version section, move Unreleased contents there, and fill in any missing release notes.
   4) Commit all changes (version bump, snapshots, changelog) and **push to origin before creating the release**. This ensures the tag will be placed on the correct commit containing the new version.
   5) After user reconfirms, create the release via `gh`: tag `vX.Y.Z`, title `vX.Y.Z - <brief title>`, release notes based on that version’s changelog entry. Use `--prerelease` for alpha/beta versions.
