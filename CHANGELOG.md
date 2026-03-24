@@ -14,6 +14,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - API integration tests are now further split by resource into `tests/api/tags.rs` and `tests/api/navigation.rs`, keeping admin API coverage stable while reducing monolithic test-file complexity.
 - API integration tests are now fully modularized by resource (`tests/api/uploads.rs`, `tests/api/settings.rs`, `tests/api/jobs.rs`, `tests/api/audit.rs`, `tests/api/api_keys.rs`), with `tests/api.rs` reduced to shared setup and module wiring.
 - API key integration tests are now split into focused submodules (`tests/api/api_keys/info.rs`, `scope.rs`, `auth_status.rs`, `rotation.rs`, `snapshots.rs`) to keep each lifecycle scenario isolated without changing endpoint coverage.
+- Post/page/tag/navigation integration suites are now split into focused case modules under `tests/api/{posts_cases,pages_cases,tags_cases,navigation_cases}/`, reducing per-file test size while preserving handler coverage.
 - CI builder tooling now pins `cargo-nextest` to `0.9.132` and recommends the same minimum local version via `.config/nextest.toml`, keeping test-runner behavior consistent across environments.
 
 ## [0.1.16-alpha.6] - 2026-03-23
