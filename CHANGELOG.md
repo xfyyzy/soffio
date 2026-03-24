@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 - Contributor verification now uses tiered gate scripts: `scripts/gate-fast.sh` for rapid local feedback, `scripts/gate-full.sh` for pre-merge validation, and `scripts/gate-hygiene.sh` for periodic dependency hygiene.
 - API integration tests now share a dedicated harness (`tests/support/api_harness.rs`) for state setup and JSON helpers, reducing duplication in `tests/api.rs` while preserving behavior.
+- API integration tests are now split by resource into `tests/api/posts.rs` and `tests/api/pages.rs`, reducing `tests/api.rs` size and improving test maintainability without changing coverage.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
