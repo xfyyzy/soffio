@@ -14,6 +14,7 @@
 - PostgreSQL 18（本地开发可使用仓库附带的迁移）
 - TypeScript Compiler - Version 5.9.3
 - 可选工具：`sqlx-cli`
+- 测试工具（建议）：`cargo-nextest 0.9.132`
 
 
 

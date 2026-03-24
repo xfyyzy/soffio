@@ -14,6 +14,7 @@ All contributors must follow `CODE_OF_CONDUCT.md`. If you encounter improper beh
 - PostgreSQL 18 (local dev can rely on the bundled migrations)
 - TypeScript Compiler 5.9.3
 - Optional tooling: `sqlx-cli`
+- Test tooling (recommended): `cargo-nextest 0.9.132`
 - Security tooling (recommended): `cargo-audit 0.22.1`, `cargo-deny 0.19.0`
 
 ## Workflow
