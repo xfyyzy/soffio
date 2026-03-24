@@ -17,6 +17,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Post/page/tag/navigation integration suites are now split into focused case modules under `tests/api/{posts_cases,pages_cases,tags_cases,navigation_cases}/`, reducing per-file test size while preserving handler coverage.
 - API integration tests now isolate `rate_limit` into `tests/api/rate_limit.rs` and split uploads/settings/jobs/audit resource suites into focused case modules under `tests/api/{uploads_cases,settings_cases,jobs_cases,audit_cases}/`, reducing single-file complexity while preserving endpoint coverage.
 - CI builder tooling now pins `cargo-nextest` to `0.9.132` and recommends the same minimum local version via `.config/nextest.toml`, keeping test-runner behavior consistent across environments.
+- Dependency stack now uses `toml` `1.1.0+spec-1.1.0` (from `1.0.7+spec-1.1.0`), with lockfile refreshed for the updated parser/writer chain.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
