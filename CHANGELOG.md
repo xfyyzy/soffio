@@ -22,6 +22,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Configuration loading internals are now decomposed into focused modules (`defaults`, `types`, `loading`, `overrides`) behind a stable `config` public surface, reducing `src/config/mod.rs` size without behavior changes.
 - Runtime entry wiring is now decomposed into focused `main` modules (`serve`, `renderall`, `import_export`) with `src/main.rs` reduced to startup and command dispatch, preserving existing command behavior.
 - Repository contracts are now decomposed into domain-focused modules under `src/application/repos/` (`posts`, `pages`, `tags`, `navigation`, `settings`, `uploads`, `audit`, `snapshots`, `jobs`, `api_keys`) with a stable `application::repos` re-export surface.
+- Site archive import/export internals are now split into focused `application/site` modules (`models`, `export`, `import`), reducing `src/application/site.rs` to entry orchestration with unchanged archive semantics.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
