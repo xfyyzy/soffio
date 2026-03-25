@@ -1,6 +1,6 @@
 ---
-source: tests/admin_panels.rs
-assertion_line: 86
+source: tests/admin_panels/posts.rs
+assertion_line: 83
 expression: rendered
 ---
 

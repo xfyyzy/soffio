@@ -1,5 +1,6 @@
 ---
-source: tests/admin_panels.rs
+source: tests/admin_panels/api_keys.rs
+assertion_line: 160
 expression: rendered
 ---
 
