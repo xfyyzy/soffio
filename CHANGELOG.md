@@ -39,6 +39,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Pagination internals are now decomposed into focused `application/pagination` cursor modules (`post`, `page`, `navigation`, `tag`, `job`, `audit`, `upload`, `api_key`, `snapshot`) with `pagination.rs` reduced to shared exports, request/page types, errors, and tests while preserving cursor encode/decode behavior.
 - Public HTTP handlers are now decomposed into focused `infra/http/public` modules (`feed`, `previews`, `pages`, `assets`, `syndication`, `meta`) with `public.rs` reduced to route wiring and shared state while preserving existing public route behavior and responses.
 - Admin page application service internals are now decomposed into focused `application/admin/pages` modules (`service`, `queries`, `commands`, `types`) with a stable public `admin::pages` surface, reducing monolithic service size while preserving page workflow behavior.
+- Page repository internals are now decomposed into focused `infra/db/pages` modules (`types`, `read`, `write`) with a stable `infra::db::pages` surface, reducing monolithic persistence-file size while preserving existing SQL behavior and repository contracts.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
