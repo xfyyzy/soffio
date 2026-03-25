@@ -40,6 +40,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Public HTTP handlers are now decomposed into focused `infra/http/public` modules (`feed`, `previews`, `pages`, `assets`, `syndication`, `meta`) with `public.rs` reduced to route wiring and shared state while preserving existing public route behavior and responses.
 - Admin page application service internals are now decomposed into focused `application/admin/pages` modules (`service`, `queries`, `commands`, `types`) with a stable public `admin::pages` surface, reducing monolithic service size while preserving page workflow behavior.
 - Page repository internals are now decomposed into focused `infra/db/pages` modules (`types`, `read`, `write`) with a stable `infra::db::pages` surface, reducing monolithic persistence-file size while preserving existing SQL behavior and repository contracts.
+- Built-in post fixture data is now decomposed into focused `domain/posts/data` modules (`longform`, `overview`) with `data.rs` reduced to composition wiring, preserving post order/content while lowering maintenance cost for fixture edits.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
