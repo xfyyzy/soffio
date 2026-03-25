@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -eu
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+REPO_ROOT="$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)"
+cd "${REPO_ROOT}"
+
+printf "==> cargo +nightly udeps --all-targets --workspace\n"
+cargo +nightly udeps --all-targets --workspace
+
+printf "==> cargo outdated -wR\n"
+cargo outdated -wR

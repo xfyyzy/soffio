@@ -18,7 +18,7 @@
       "DOM.Iterable"
     ],
     "allowImportingTsExtensions": false,
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "sourceMap": false
   },
   "include": [

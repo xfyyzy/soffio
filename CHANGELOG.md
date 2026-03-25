@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Internal engineering optimizations landed across build/test gates and module/test decomposition; no user-visible behavior changes were introduced in this batch.
+
 ## [0.1.16-alpha.6] - 2026-03-23
 
 ### Fixed

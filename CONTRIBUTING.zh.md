@@ -14,6 +14,7 @@
 - PostgreSQL 18（本地开发可使用仓库附带的迁移）
 - TypeScript Compiler - Version 5.9.3
 - 可选工具：`sqlx-cli`
+- 测试工具（建议）：`cargo-nextest 0.9.132`
 
 
 
@@ -27,10 +28,21 @@
     - 新增依赖须解释必要性，并启用最少特性。
 4. **检测流程**（全部通过后再提交 PR）：
    ```bash
-   cargo fmt --all -- --check
-   cargo check --workspace --all-targets
-   cargo clippy --workspace --all-targets -- -D warnings
-   cargo test --workspace --all-targets -- --nocapture
+   export DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev
+   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres
+
+   # 日常快速反馈
+   ./scripts/gate-fast.sh
+
+   # 提交 PR 前必须执行
+   ./scripts/gate-full.sh
+
+   # 周期性依赖体检（例如每周）
+   ./scripts/gate-hygiene.sh
+
+   # RUSTSEC-2023-0071 来自 Cargo.lock 中 sqlx 的可选 mysql 路径。
+   cargo audit --ignore RUSTSEC-2023-0071
+   cargo deny check advisories
    # 如果改动了 soffio-cli 的命令/选项，请重新生成文档：
    cargo run --bin gen_cli_docs
    ```

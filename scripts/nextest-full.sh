@@ -13,7 +13,7 @@ run_nextest() {
   shift
 
   printf "==> nextest %s\n" "${label}"
-  cargo nextest run \
+  cargo nextest --no-pager run \
     --workspace \
     --build-jobs "${NEXTEST_BUILD_JOBS}" \
     --cargo-quiet \

@@ -1,0 +1,55 @@
+name: Hygiene Weekly
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchains
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup toolchain install nightly --profile minimal
+          rustup component add --toolchain nightly rust-src rustc-dev llvm-tools-preview
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: hygiene-weekly
+          cache-on-failure: true
+
+      - name: Install hygiene tools
+        run: |
+          cargo install --locked cargo-udeps
+          cargo install --locked cargo-outdated
+
+      - name: Run dependency hygiene gate
+        id: hygiene
+        run: |
+          start_ts="$(date +%s)"
+          ./scripts/gate-hygiene.sh
+          end_ts="$(date +%s)"
+          echo "duration_sec=$((end_ts - start_ts))" >> "$GITHUB_OUTPUT"
+
+      - name: Publish step summary
+        if: always()
+        run: |
+          {
+            echo "## Weekly hygiene result"
+            echo ""
+            echo "- Workflow: \`hygiene-weekly\`"
+            echo "- Script: \`./scripts/gate-hygiene.sh\`"
+            echo "- Duration (sec): \`${{ steps.hygiene.outputs.duration_sec || 'n/a' }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

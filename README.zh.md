@@ -41,7 +41,7 @@ src/
 1. **准备依赖**
     - Rust 稳定版 >= 1.91（支持 2024 Edition）
     - PostgreSQL 18（默认连接 `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`）
-    - TypeScript Compiler - Version 5.9.3
+    - TypeScript Compiler 6.x（`tsc --version`，当前验证版本 6.0.2）
 
 2. **启动服务**
    ```bash
@@ -92,15 +92,20 @@ SOFFIO_API_KEY_FILE=~/.config/soffio/key \
 
 ## 开发工作流
 
-1. 运行格式化与静态检查：
+1. 运行分层质量门禁：
    ```bash
    # 请配置可写数据库；SQLX_TEST_DATABASE_URL 供 `#[sqlx::test]` 创建临时库
    export DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev
-   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/postgres
+   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres
 
-   cargo fmt --all
-   cargo clippy --workspace --all-targets -- -D warnings
-   cargo test --workspace --all-targets
+   # 日常快速反馈
+   ./scripts/gate-fast.sh
+
+   # 提交 PR / 合并前
+   ./scripts/gate-full.sh
+
+   # 周期性依赖体检（例如每周）
+   ./scripts/gate-hygiene.sh
    ```
 2. 参考 `CONTRIBUTING.md` 获取分支策略与提交要求。
 3. 提交 PR 时遵循 `.github/PULL_REQUEST_TEMPLATE.md`，并保持 CI 绿色。

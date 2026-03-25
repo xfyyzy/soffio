@@ -38,7 +38,7 @@ src/
 
 - Rust stable ≥ 1.91 (2024 Edition ready)
 - PostgreSQL 18 (default DSN `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`)
-- TypeScript Compiler 5.9.3
+- TypeScript Compiler 6.x (`tsc --version`, validated with 6.0.2)
 
 ## Quick Start
 
@@ -94,11 +94,16 @@ Create a post from files:
    ```bash
    # point DATABASE_URL to your writable instance; SQLX_TEST_DATABASE_URL is used by `#[sqlx::test]` to create temp DBs
    export DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev
-   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@localhost:5432/postgres
+   export SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres
 
-   cargo fmt --all
-   cargo clippy --workspace --all-targets -- -D warnings
-   cargo test --workspace --all-targets
+   # default fast loop
+   ./scripts/gate-fast.sh
+
+   # before PR/merge
+   ./scripts/gate-full.sh
+
+   # periodic dependency hygiene (for example weekly)
+   ./scripts/gate-hygiene.sh
    ```
 2. Consult `CONTRIBUTING.md` for branching strategy, commit format, and review expectations.
 3. Follow `.github/PULL_REQUEST_TEMPLATE.md` and ensure CI stays green before merging.

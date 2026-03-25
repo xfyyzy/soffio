@@ -1,6 +1,8 @@
 # cargo-nextest configuration
 # See: https://nexte.st/book/configuration.html
 
+nextest-version = { recommended = "0.9.132" }
+
 [store]
 # Directory for storing test artifacts
 dir = "target/nextest"

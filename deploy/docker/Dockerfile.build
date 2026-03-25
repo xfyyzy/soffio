@@ -5,6 +5,9 @@ FROM ${RUST_IMAGE}
 
 # Control optional tooling to keep the image minimal when not needed.
 ARG INSTALL_REDOC=true
+ARG CARGO_AUDIT_VERSION=0.22.1
+ARG CARGO_DENY_VERSION=0.19.0
+ARG CARGO_NEXTEST_VERSION=0.9.132
 
 RUN set -eux; \
     apk update; \
@@ -23,10 +26,12 @@ RUN set -eux; \
       pkgconf \
       python3; \
     rustup component add rustfmt clippy; \
-    cargo install --locked cargo-audit@0.22.1 cargo-deny@0.19.0; \
-    # Install cargo-nextest for parallel test execution
-    curl -LsSf https://get.nexte.st/latest/linux-musl | tar zxf - -C /usr/local/bin; \
-    npm install --global --unsafe-perm typescript@latest; \
+    cargo install --locked \
+      cargo-audit@${CARGO_AUDIT_VERSION} \
+      cargo-deny@${CARGO_DENY_VERSION}; \
+    # Pin cargo-nextest for reproducible CI test behavior.
+    curl -LsSf https://get.nexte.st/${CARGO_NEXTEST_VERSION}/linux-musl | tar zxf - -C /usr/local/bin; \
+    npm install --global --unsafe-perm typescript@6; \
     if [ "${INSTALL_REDOC}" = "true" ]; then \
       npm install --global --unsafe-perm @redocly/cli; \
     fi
