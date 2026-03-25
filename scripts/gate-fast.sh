@@ -19,4 +19,4 @@ printf "==> cargo clippy --workspace --all-targets -- -D warnings\n"
 cargo clippy --workspace --all-targets -- -D warnings
 
 printf "==> cargo nextest run --workspace --lib --cargo-quiet --no-tests warn\n"
-cargo nextest run --workspace --lib --cargo-quiet --no-tests warn
+cargo nextest --no-pager run --workspace --lib --cargo-quiet --no-tests warn
