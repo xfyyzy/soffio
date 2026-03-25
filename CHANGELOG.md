@@ -18,6 +18,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - API integration tests now isolate `rate_limit` into `tests/api/rate_limit.rs` and split uploads/settings/jobs/audit resource suites into focused case modules under `tests/api/{uploads_cases,settings_cases,jobs_cases,audit_cases}/`, reducing single-file complexity while preserving endpoint coverage.
 - CI builder tooling now pins `cargo-nextest` to `0.9.132` and recommends the same minimum local version via `.config/nextest.toml`, keeping test-runner behavior consistent across environments.
 - Dependency stack now uses `toml` `1.1.0+spec-1.1.0` (from `1.0.7+spec-1.1.0`), with lockfile refreshed for the updated parser/writer chain.
+- Dependency stack now uses `askama` `0.15.6` (from `0.15.5`), including synchronized `askama_derive`, `askama_macros`, and `askama_parser` updates.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
