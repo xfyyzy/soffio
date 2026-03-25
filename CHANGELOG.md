@@ -33,6 +33,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Frontend snapshot utility repo fakes are now decomposed into focused `tests/snapshots/frontend/util` repo-implementation modules (`posts_repo`, `sections_repo`, `tags_repo`, `settings_repo`, `navigation_repo`, `pages_repo`), reducing `tests/snapshots/frontend/util.rs` to shared fixtures and static dataset helpers.
 - CLI argument definitions are now decomposed into focused `crates/soffio-cli/src/args` modules (`commands`, `value_enums`) with `args.rs` reduced to root wiring and re-exports, preserving the existing `crate::args::*` type surface used by handlers and tests.
 - Admin panel snapshot tests are now decomposed into focused `tests/admin_panels` modules (`posts`, `pages`, `tags`, `navigation`, `settings`, `uploads`, `api_keys`) with snapshots relocated under `tests/admin_panels/snapshots/`, reducing `tests/admin_panels.rs` to shared wiring while preserving rendered panel expectations.
+- Admin navigation HTTP handlers are now decomposed into focused `navigation/handlers` modules (`listing`, `editing`, `mutations`) with `handlers.rs` reduced to shared imports and route re-exports, preserving existing admin navigation route behavior.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
