@@ -31,6 +31,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Live API end-to-end flow is now decomposed into focused `tests/live_api/api_end_to_end` scenario modules (`tags`, `posts`, `pages`, `navigation`, `uploads`, `settings_jobs_audit`, `cleanup`), reducing monolithic test-file complexity without changing ignored live test coverage.
 - Render AST rewrite internals are now decomposed into focused `application/render/service/rewrite` modules (`media`, `utils`, `tests`), reducing `src/application/render/service/rewrite.rs` to walker orchestration while preserving math/mermaid/image rewrite semantics.
 - Frontend snapshot utility repo fakes are now decomposed into focused `tests/snapshots/frontend/util` repo-implementation modules (`posts_repo`, `sections_repo`, `tags_repo`, `settings_repo`, `navigation_repo`, `pages_repo`), reducing `tests/snapshots/frontend/util.rs` to shared fixtures and static dataset helpers.
+- CLI argument definitions are now decomposed into focused `crates/soffio-cli/src/args` modules (`commands`, `value_enums`) with `args.rs` reduced to root wiring and re-exports, preserving the existing `crate::args::*` type surface used by handlers and tests.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
