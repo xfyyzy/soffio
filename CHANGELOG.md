@@ -19,6 +19,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CI builder tooling now pins `cargo-nextest` to `0.9.132` and recommends the same minimum local version via `.config/nextest.toml`, keeping test-runner behavior consistent across environments.
 - Dependency stack now uses `toml` `1.1.0+spec-1.1.0` (from `1.0.7+spec-1.1.0`), with lockfile refreshed for the updated parser/writer chain.
 - Dependency stack now uses `askama` `0.15.6` (from `0.15.5`), including synchronized `askama_derive`, `askama_macros`, and `askama_parser` updates.
+- Configuration loading internals are now decomposed into focused modules (`defaults`, `types`, `loading`, `overrides`) behind a stable `config` public surface, reducing `src/config/mod.rs` size without behavior changes.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
