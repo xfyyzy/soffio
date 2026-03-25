@@ -1,7 +1,9 @@
 use super::*;
 use sqlx::PgPool;
 use tokio::time::{Duration, timeout};
+use uuid::Uuid;
 
+use super::helpers::persist_sections_and_summary;
 use crate::application::repos::{CreatePostParams, PostsWriteRepo};
 use crate::domain::types::PostStatus;
 use crate::infra::db::{PersistedPostSectionOwned, PostgresRepositories};

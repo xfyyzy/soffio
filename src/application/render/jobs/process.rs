@@ -1,125 +1,21 @@
-use apalis::prelude::{Data, Error as ApalisError};
-use serde::{Deserialize, Serialize};
 use std::time::Instant;
-use thiserror::Error;
-use time::OffsetDateTime;
+
+use apalis::prelude::{Data, Error as ApalisError};
 use tokio::task::JoinHandle;
 use tracing::{info, warn};
 use uuid::Uuid;
 
-use crate::{
-    application::{
-        jobs::{JobWorkerContext, enqueue_job, job_failed},
-        render::runtime::{InFlightError, RenderArtifact, RenderMailboxError},
-        repos::{JobsRepo, RepoError},
-    },
-    domain::types::JobType,
+use crate::application::jobs::{JobWorkerContext, job_failed};
+use crate::application::render::runtime::{InFlightError, RenderArtifact, RenderMailboxError};
+use crate::application::render::{RenderRequest, RenderService, RenderTarget};
+
+use super::helpers::{
+    convert_section, join_children, load_public_site_url, persist_sections_and_summary,
 };
-
-use super::types::{RenderRequest, RenderService, RenderTarget, RenderedSection};
-
-#[path = "jobs/helpers.rs"]
-mod helpers;
-#[cfg(test)]
-#[path = "jobs/tests.rs"]
-mod tests;
-
-use helpers::{convert_section, join_children, load_public_site_url, persist_sections_and_summary};
-/// Schedules a top-level post render container job.
-///
-/// The payload carries `body_markdown` and `summary_markdown` inline to avoid
-/// race conditions: the job worker uses these values directly instead of
-/// re-reading from the database (which might return stale data due to separate
-/// connection pools).
-pub async fn enqueue_render_post_job<J: JobsRepo + ?Sized>(
-    repo: &J,
-    slug: String,
-    body_markdown: String,
-    summary_markdown: Option<String>,
-    scheduled_at: Option<OffsetDateTime>,
-) -> Result<String, RepoError> {
-    enqueue_job(
-        repo,
-        JobType::RenderPost,
-        &RenderPostJobPayload {
-            slug,
-            body_markdown,
-            summary_markdown,
-        },
-        scheduled_at,
-        25,
-        0,
-    )
-    .await
-}
-
-pub async fn enqueue_render_page_job<J: JobsRepo + ?Sized>(
-    repo: &J,
-    slug: String,
-    markdown: String,
-    scheduled_at: Option<OffsetDateTime>,
-) -> Result<String, RepoError> {
-    enqueue_job(
-        repo,
-        JobType::RenderPage,
-        &RenderPageJobPayload { slug, markdown },
-        scheduled_at,
-        25,
-        0,
-    )
-    .await
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RenderPostJobPayload {
-    pub slug: String,
-    pub body_markdown: String,
-    pub summary_markdown: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RenderPostSectionsJobPayload {
-    pub tracking_id: String,
-    pub post_id: Uuid,
-    pub slug: String,
-    pub markdown: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RenderPostSectionJobPayload {
-    pub tracking_id: String,
-    pub post_id: Uuid,
-    pub slug: String,
-    pub section: RenderedSection,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RenderSummaryJobPayload {
-    pub tracking_id: String,
-    pub post_id: Uuid,
-    pub slug: String,
-    pub summary_markdown: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RenderPageJobPayload {
-    pub slug: String,
-    pub markdown: String,
-}
-
-#[derive(Debug, Error)]
-#[error("{message}")]
-struct JobConsistencyError {
-    message: String,
-}
-
-impl JobConsistencyError {
-    fn new(message: impl Into<String>) -> Self {
-        Self {
-            message: message.into(),
-        }
-    }
-}
+use super::{
+    JobConsistencyError, RenderPageJobPayload, RenderPostJobPayload, RenderPostSectionJobPayload,
+    RenderPostSectionsJobPayload, RenderSummaryJobPayload,
+};
 
 /// Container job responsible for coordinating render tasks and committing results.
 pub async fn process_render_post_job(
