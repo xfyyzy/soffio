@@ -27,6 +27,12 @@ use crate::util::timezone;
 use uuid::Uuid;
 const DEFAULT_PAGE_SIZE: usize = 6;
 
+#[path = "feed/presentation.rs"]
+mod presentation;
+#[path = "feed/sections.rs"]
+mod sections;
+#[path = "feed/summaries.rs"]
+mod summaries;
 #[derive(Clone)]
 pub enum FeedFilter {
     All,
@@ -463,22 +469,7 @@ impl FeedService {
 }
 
 fn record_to_card(record: &PostRecord, tags: &[TagRecord], timezone: chrono_tz::Tz) -> PostCard {
-    let published_at = record.published_at.unwrap_or(record.created_at);
-    let localized = timezone::localized_datetime(published_at, timezone);
-    let date = timezone::localized_date(published_at, timezone);
-
-    PostCard {
-        slug: record.slug.clone(),
-        title: record.title.clone(),
-        excerpt: record.excerpt.clone(),
-        iso_date: localized.to_rfc3339(),
-        published: posts::format_human_date(date),
-        badges: build_tag_badges(
-            tags.iter()
-                .map(|tag| (tag.slug.as_str(), tag.name.as_str())),
-        ),
-        is_pinned: record.pinned,
-    }
+    presentation::record_to_card(record, tags, timezone)
 }
 
 fn build_posts_ld_json(
@@ -487,187 +478,30 @@ fn build_posts_ld_json(
     public_site_url: &str,
     blog_name: &str,
 ) -> Option<String> {
-    if cards.is_empty() {
-        return None;
-    }
-
-    let site_url = normalize_public_site_url(public_site_url);
-    let blog_url = format!("{site_url}{}", filter.base_path());
-
-    let blog_posts = cards
-        .iter()
-        .map(|card| {
-            json!({
-                "@type": "BlogPosting",
-                "headline": card.title,
-                "description": card.excerpt,
-                "datePublished": card.iso_date,
-                "url": format!("{site_url}posts/{}", card.slug),
-            })
-        })
-        .collect::<Vec<_>>();
-
-    serde_json::to_string(&json!({
-        "@context": "https://schema.org",
-        "@type": "Blog",
-        "name": blog_name,
-        "url": blog_url,
-        "blogPost": blog_posts,
-    }))
-    .ok()
-}
-
-fn normalize_public_site_url(url: &str) -> String {
-    let trimmed = url.trim_end_matches('/');
-    format!("{trimmed}/")
+    presentation::build_posts_ld_json(cards, filter, public_site_url, blog_name)
 }
 
 fn build_post_section_events(nodes: &[PostSectionNode]) -> Vec<PostSectionEvent> {
-    let mut events = Vec::new();
-    for node in nodes {
-        append_section_events(node, &mut events);
-    }
-    events
-}
-
-fn append_section_events(node: &PostSectionNode, events: &mut Vec<PostSectionEvent>) {
-    events.push(PostSectionEvent::StartSection {
-        anchor: node.anchor_slug.clone(),
-        level: node.level,
-        heading_html: node.heading_html.clone(),
-        body_html: node.body_html.clone(),
-    });
-
-    if !node.children.is_empty() {
-        events.push(PostSectionEvent::StartChildren);
-        for child in &node.children {
-            append_section_events(child, events);
-        }
-        events.push(PostSectionEvent::EndChildren);
-    }
-
-    events.push(PostSectionEvent::EndSection);
+    sections::build_post_section_events(nodes)
 }
 
 fn build_post_toc_view(nodes: &[PostSectionNode]) -> Option<PostTocView> {
-    if nodes.is_empty() {
-        return None;
-    }
-
-    let mut events = Vec::new();
-    append_toc_events(nodes, &mut events);
-    Some(PostTocView { events })
-}
-
-fn append_toc_events(nodes: &[PostSectionNode], events: &mut Vec<PostTocEvent>) {
-    events.push(PostTocEvent::StartList);
-
-    for node in nodes {
-        let title = node.heading_text.trim().to_string();
-        events.push(PostTocEvent::StartItem {
-            anchor: node.anchor_slug.clone(),
-            title,
-            level: node.level,
-        });
-
-        if !node.children.is_empty() {
-            append_toc_events(&node.children, events);
-        }
-
-        events.push(PostTocEvent::EndItem);
-    }
-
-    events.push(PostTocEvent::EndList);
+    sections::build_post_toc_view(nodes)
 }
 
 pub fn build_datastar_append_response(
     payload: AppendPayload,
     load_more_query: String,
 ) -> Result<Response, HttpError> {
-    let AppendPayload {
-        offset,
-        cards,
-        next_cursor,
-        total_visible,
-    } = payload;
-
-    let appended_count = cards.len();
-
-    let cards_html = if appended_count > 0 {
-        let template = PostCardsAppendTemplate {
-            posts: cards,
-            offset,
-        };
-        Some(template.render().map_err(|err| {
-            HttpError::from(TemplateRenderError::new(
-                "application::feed::build_datastar_append_response",
-                "Template rendering failed",
-                err,
-            ))
-        })?)
-    } else {
-        None
-    };
-
-    let loader_html = FeedLoaderTemplate {
-        view: FeedLoaderContext {
-            has_results: total_visible > 0,
-            next_cursor,
-            load_more_query,
-        },
-    }
-    .render()
-    .map_err(|err| {
-        HttpError::from(TemplateRenderError::new(
-            "application::feed::build_datastar_append_response",
-            "Template rendering failed",
-            err,
-        ))
-    })?;
-
-    let mut stream = StreamBuilder::new();
-
-    if let Some(html) = cards_html {
-        stream.push_patch(html, "#post-grid", ElementPatchMode::Append);
-    }
-
-    stream.push_patch(
-        loader_html,
-        "#feed-sentinel-container",
-        ElementPatchMode::Inner,
-    );
-
-    let script = format!(
-        "(function() {{ const grid = document.querySelector('#post-grid'); if (grid) {{ grid.setAttribute('data-count', '{}'); }} }})();",
-        total_visible
-    );
-    stream.push_script(script);
-
-    stream.push_signals(r#"{"feedLoading": false}"#);
-
-    Ok(stream.into_response())
+    presentation::build_datastar_append_response(payload, load_more_query)
 }
 
 fn homepage_page_limit(settings: &SiteSettingsRecord) -> u32 {
-    let clamped = settings.homepage_size.clamp(1, 48) as u32;
-    if clamped == 0 {
-        DEFAULT_PAGE_SIZE as u32
-    } else {
-        clamped
-    }
+    presentation::homepage_page_limit(settings)
 }
 
 pub(crate) fn order_tags_with_pins(counts: &[TagWithCount]) -> Vec<&TagWithCount> {
-    let mut ordered: Vec<&TagWithCount> = counts.iter().collect();
-    ordered.sort_by(|left, right| {
-        right
-            .pinned
-            .cmp(&left.pinned)
-            .then(right.count.cmp(&left.count))
-            .then(left.name.to_lowercase().cmp(&right.name.to_lowercase()))
-            .then(left.slug.to_lowercase().cmp(&right.slug.to_lowercase()))
-    });
-    ordered
+    summaries::order_tags_with_pins(counts)
 }
 
 fn build_tag_summaries(
@@ -676,36 +510,7 @@ fn build_tag_summaries(
     total_posts: u64,
     settings: &SiteSettingsRecord,
 ) -> Vec<views::TagSummary> {
-    let mut summaries = Vec::with_capacity(counts.len() + 1);
-    summaries.push(views::TagSummary {
-        label: "All tags".to_string(),
-        path: "/".to_string(),
-        count: usize::try_from(total_posts).unwrap_or(usize::MAX),
-        is_active: active_tag.is_none(),
-    });
-
-    let ordered = order_tags_with_pins(counts);
-    let limit = settings.tag_filter_limit.max(0) as usize;
-    let mut non_pinned_added = 0;
-
-    for entry in ordered {
-        if !entry.pinned && non_pinned_added >= limit {
-            continue;
-        }
-
-        if !entry.pinned {
-            non_pinned_added += 1;
-        }
-
-        summaries.push(views::TagSummary {
-            label: format!("#{}", entry.name),
-            path: format!("/tags/{}", entry.slug),
-            count: usize::try_from(entry.count).unwrap_or(usize::MAX),
-            is_active: active_tag.map(|tag| tag == entry.slug).unwrap_or(false),
-        });
-    }
-
-    summaries
+    summaries::build_tag_summaries(counts, active_tag, total_posts, settings)
 }
 
 fn build_month_summaries(
@@ -714,23 +519,5 @@ fn build_month_summaries(
     total_posts: u64,
     limit: i32,
 ) -> Vec<views::MonthSummary> {
-    let mut summaries = Vec::with_capacity(counts.len() + 1);
-    summaries.push(views::MonthSummary {
-        label: "All months".to_string(),
-        path: "/".to_string(),
-        count: usize::try_from(total_posts).unwrap_or(usize::MAX),
-        is_active: active.is_none(),
-    });
-
-    let quota = limit.max(0) as usize;
-    for entry in counts.iter().take(quota) {
-        summaries.push(views::MonthSummary {
-            label: entry.label.clone(),
-            path: format!("/months/{}", entry.key),
-            count: entry.count,
-            is_active: active.map(|value| value == entry.key).unwrap_or(false),
-        });
-    }
-
-    summaries
+    summaries::build_month_summaries(counts, active, total_posts, limit)
 }

@@ -27,6 +27,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Render section processing internals are now split into focused modules (`sections/semantics`, `sections/outline`) with `src/application/render/service/sections.rs` reduced to orchestration, preserving rendered HTML semantics and section tree behavior.
 - Live integration test suites are now decomposed into focused modules under `tests/live_api/` and `tests/live_cache/`, reducing `tests/live_api.rs` and `tests/live_cache.rs` to shared harness wiring while preserving ignored live test behavior and coverage.
 - Render job orchestration internals are now split into focused `render/jobs` helper and test modules (`jobs/helpers.rs`, `jobs/tests.rs`), reducing `src/application/render/jobs.rs` to pipeline flow while preserving job payload and persistence semantics.
+- Feed presentation and summary helpers are now decomposed into focused `application/feed` modules (`presentation`, `sections`, `summaries`), reducing `src/application/feed.rs` to service flow orchestration without changing feed rendering semantics.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
