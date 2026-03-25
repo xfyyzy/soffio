@@ -23,6 +23,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Runtime entry wiring is now decomposed into focused `main` modules (`serve`, `renderall`, `import_export`) with `src/main.rs` reduced to startup and command dispatch, preserving existing command behavior.
 - Repository contracts are now decomposed into domain-focused modules under `src/application/repos/` (`posts`, `pages`, `tags`, `navigation`, `settings`, `uploads`, `audit`, `snapshots`, `jobs`, `api_keys`) with a stable `application::repos` re-export surface.
 - Site archive import/export internals are now split into focused `application/site` modules (`models`, `export`, `import`), reducing `src/application/site.rs` to entry orchestration with unchanged archive semantics.
+- Serve runtime internals are now split into focused `main/serve` modules (`context`, `repositories`, `job_monitor`, `http_server`), reducing `src/main/serve.rs` to orchestration while preserving startup behavior.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
