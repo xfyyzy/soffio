@@ -41,7 +41,7 @@ src/
 1. **准备依赖**
     - Rust 稳定版 >= 1.91（支持 2024 Edition）
     - PostgreSQL 18（默认连接 `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`）
-    - TypeScript Compiler - Version 5.9.3
+    - TypeScript Compiler 6.x（`tsc --version`，当前验证版本 6.0.2）
 
 2. **启动服务**
    ```bash

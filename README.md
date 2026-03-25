@@ -38,7 +38,7 @@ src/
 
 - Rust stable ≥ 1.91 (2024 Edition ready)
 - PostgreSQL 18 (default DSN `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`)
-- TypeScript Compiler 5.9.3
+- TypeScript Compiler 6.x (`tsc --version`, validated with 6.0.2)
 
 ## Quick Start
 

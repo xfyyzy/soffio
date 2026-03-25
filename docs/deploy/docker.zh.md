@@ -6,7 +6,7 @@
 
 ## 镜像结构
 
-- **Builder**：基于 `rust:1.91-alpine3.20`，集成 `cargo-chef` 与 TypeScript 编译器，通过 `TARGET_TRIPLE`（默认
+- **Builder**：基于 `rust:1.91-alpine3.20`，集成 `cargo-chef` 与 TypeScript 6.x（`npm install --global typescript@6`），通过 `TARGET_TRIPLE`（默认
   `x86_64-unknown-linux-musl`）与 `TARGET_CPU`（默认 `x86-64-v2`）编译静态二进制。
 - **Runtime**：继承 `MERMAID_CLI_IMAGE`（默认 `minlag/mermaid-cli:latest`），同时注入 `soffio` 二进制与 Mermaid CLI
   包装脚本，提供服务端图表渲染能力。镜像还包含 `/usr/local/bin/soffio-cli`，方便在容器内部通过 headless API 进行自动化。

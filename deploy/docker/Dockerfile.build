@@ -31,7 +31,7 @@ RUN set -eux; \
       cargo-deny@${CARGO_DENY_VERSION}; \
     # Pin cargo-nextest for reproducible CI test behavior.
     curl -LsSf https://get.nexte.st/${CARGO_NEXTEST_VERSION}/linux-musl | tar zxf - -C /usr/local/bin; \
-    npm install --global --unsafe-perm typescript@latest; \
+    npm install --global --unsafe-perm typescript@6; \
     if [ "${INSTALL_REDOC}" = "true" ]; then \
       npm install --global --unsafe-perm @redocly/cli; \
     fi

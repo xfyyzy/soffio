@@ -6,7 +6,7 @@ This guide explains how to build and run production-ready Soffio images with `de
 
 ## Image Layout
 
-- **Builder** — based on `rust:1.91-alpine3.20`, bundles `cargo-chef` and the TypeScript compiler, and produces a static binary via `TARGET_TRIPLE` (default `x86_64-unknown-linux-musl`) and `TARGET_CPU` (default `x86-64-v2`).
+- **Builder** — based on `rust:1.91-alpine3.20`, bundles `cargo-chef` and TypeScript 6.x (`npm install --global typescript@6`), and produces a static binary via `TARGET_TRIPLE` (default `x86_64-unknown-linux-musl`) and `TARGET_CPU` (default `x86-64-v2`).
 - **Runtime** — extends `MERMAID_CLI_IMAGE` (default `minlag/mermaid-cli:latest`), adds the `soffio` binary plus a Mermaid CLI wrapper script to support server-side diagram rendering. The image now also ships `soffio-cli` (headless API CLI) in `/usr/local/bin` so automation inside the container can call the API directly.
 
 ## Build the Image

@@ -83,6 +83,7 @@ SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_d
 **Static assets**
 
 Static assets are embedded into the binary even in development; restart the service after changing assets (CSS, templates, etc.) to see the effect.
+The build pipeline invokes `tsc --project tsconfig.json` from `build.rs`; keep the local TypeScript compiler on 6.x to match CI behavior.
 
 ---
 
