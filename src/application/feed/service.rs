@@ -1,117 +1,4 @@
-use std::sync::Arc;
-
-use askama::Template;
-use axum::response::Response;
-use datastar::prelude::ElementPatchMode;
-use serde_json::json;
-use thiserror::Error;
-
-use crate::application::error::HttpError;
-use crate::application::pagination::{PageRequest, PostCursor};
-use crate::application::repos::{
-    PostListScope, PostQueryFilter, PostsRepo, RepoError, SectionsRepo, SettingsRepo, TagWithCount,
-    TagsRepo,
-};
-use crate::application::stream::StreamBuilder;
-use crate::cache::{L0Store, hash_cursor_str, hash_post_list_key};
-use crate::domain::entities::{PostRecord, SiteSettingsRecord, TagRecord};
-use crate::domain::posts;
-use crate::domain::sections::{PostSectionNode, SectionTreeError, build_section_tree};
-use crate::domain::types::PostStatus;
-use crate::presentation::views::{
-    self, FeedLoaderContext, FeedLoaderTemplate, PageContext, PostCard, PostCardsAppendTemplate,
-    PostDetailContext, PostSectionEvent, PostTocEvent, PostTocView, TemplateRenderError,
-    build_tag_badges,
-};
-use crate::util::timezone;
-use uuid::Uuid;
-const DEFAULT_PAGE_SIZE: usize = 6;
-
-#[path = "feed/presentation.rs"]
-mod presentation;
-#[path = "feed/sections.rs"]
-mod sections;
-#[path = "feed/summaries.rs"]
-mod summaries;
-#[derive(Clone)]
-pub enum FeedFilter {
-    All,
-    Tag(String),
-    Month(String),
-}
-
-impl FeedFilter {
-    pub fn tag(&self) -> Option<&str> {
-        match self {
-            FeedFilter::Tag(value) => Some(value.as_str()),
-            _ => None,
-        }
-    }
-
-    pub fn month(&self) -> Option<&str> {
-        match self {
-            FeedFilter::Month(value) => Some(value.as_str()),
-            _ => None,
-        }
-    }
-
-    pub fn load_more_query(&self) -> String {
-        match self {
-            FeedFilter::All => String::new(),
-            FeedFilter::Tag(value) => format!("&tag={value}"),
-            FeedFilter::Month(value) => format!("&month={value}"),
-        }
-    }
-
-    pub fn base_path(&self) -> String {
-        match self {
-            FeedFilter::All => "/".to_string(),
-            FeedFilter::Tag(value) => format!("/tags/{value}"),
-            FeedFilter::Month(value) => format!("/months/{value}"),
-        }
-    }
-
-    fn to_query_filter(&self) -> PostQueryFilter {
-        let mut filter = PostQueryFilter::default();
-        match self {
-            FeedFilter::All => {}
-            FeedFilter::Tag(tag) => filter.tag = Some(tag.clone()),
-            FeedFilter::Month(month) => filter.month = Some(month.clone()),
-        }
-        filter
-    }
-}
-
-#[derive(Clone)]
-pub struct AppendPayload {
-    pub offset: usize,
-    pub cards: Vec<PostCard>,
-    pub next_cursor: Option<String>,
-    pub total_visible: usize,
-}
-
-#[derive(Clone)]
-pub struct FeedService {
-    posts: Arc<dyn PostsRepo>,
-    sections: Arc<dyn SectionsRepo>,
-    tags: Arc<dyn TagsRepo>,
-    settings: Arc<dyn SettingsRepo>,
-    cache: Option<Arc<L0Store>>,
-}
-
-#[derive(Debug, Error)]
-pub enum FeedError {
-    #[error("invalid cursor: {0}")]
-    InvalidCursor(String),
-    #[error("unknown tag")]
-    UnknownTag,
-    #[error("unknown month")]
-    UnknownMonth,
-    #[error("invalid section hierarchy: {0}")]
-    SectionTree(#[from] SectionTreeError),
-    #[error(transparent)]
-    Repo(#[from] RepoError),
-}
+use super::*;
 
 impl FeedService {
     pub fn new(
@@ -150,7 +37,7 @@ impl FeedService {
         let decoded_cursor = self.decode_cursor(cursor)?;
         let query_filter = filter.to_query_filter();
         let settings = self.load_site_settings().await?;
-        let page_limit = homepage_page_limit(&settings);
+        let page_limit = presentation::homepage_page_limit(&settings);
 
         let filter_hash = hash_post_list_key(&query_filter, page_limit);
         let cursor_hash = hash_cursor_str(cursor);
@@ -219,13 +106,13 @@ impl FeedService {
         };
 
         let tag_summaries = if settings.show_tag_aggregations {
-            build_tag_summaries(&tag_counts, filter.tag(), total_all, &settings)
+            summaries::build_tag_summaries(&tag_counts, filter.tag(), total_all, &settings)
         } else {
             Vec::new()
         };
 
         let month_summaries = if settings.show_month_aggregations {
-            build_month_summaries(
+            summaries::build_month_summaries(
                 &month_counts,
                 filter.month(),
                 total_all,
@@ -238,10 +125,14 @@ impl FeedService {
         let mut cards = Vec::with_capacity(page.items.len());
         for record in &page.items {
             let tags = self.tags.list_for_post(record.id).await?;
-            cards.push(record_to_card(record, &tags, settings.timezone));
+            cards.push(presentation::record_to_card(
+                record,
+                &tags,
+                settings.timezone,
+            ));
         }
 
-        let posts_ld_json = build_posts_ld_json(
+        let posts_ld_json = presentation::build_posts_ld_json(
             &cards,
             &filter,
             &settings.public_site_url,
@@ -272,7 +163,7 @@ impl FeedService {
         let decoded_cursor = self.decode_cursor(cursor)?;
         let query_filter = filter.to_query_filter();
         let settings = self.load_site_settings().await?;
-        let page_limit = homepage_page_limit(&settings);
+        let page_limit = presentation::homepage_page_limit(&settings);
         let filter_hash = hash_post_list_key(&query_filter, page_limit);
         let cursor_hash = hash_cursor_str(cursor);
 
@@ -304,7 +195,11 @@ impl FeedService {
         let mut cards = Vec::with_capacity(page.items.len());
         for record in &page.items {
             let tags = self.tags.list_for_post(record.id).await?;
-            cards.push(record_to_card(record, &tags, settings.timezone));
+            cards.push(presentation::record_to_card(
+                record,
+                &tags,
+                settings.timezone,
+            ));
         }
 
         let offset = if let Some(cursor) = decoded_cursor {
@@ -372,9 +267,9 @@ impl FeedService {
         let has_code_blocks = PostSectionNode::any_contains_code(&section_nodes);
         let has_math_blocks = PostSectionNode::any_contains_math(&section_nodes);
         let has_mermaid_diagrams = PostSectionNode::any_contains_mermaid(&section_nodes);
-        let sections = build_post_section_events(&section_nodes);
+        let sections = sections::build_post_section_events(&section_nodes);
         let toc = if settings.global_toc_enabled {
-            build_post_toc_view(&section_nodes)
+            sections::build_post_toc_view(&section_nodes)
         } else {
             None
         };
@@ -466,58 +361,4 @@ impl FeedService {
 
         Ok(settings)
     }
-}
-
-fn record_to_card(record: &PostRecord, tags: &[TagRecord], timezone: chrono_tz::Tz) -> PostCard {
-    presentation::record_to_card(record, tags, timezone)
-}
-
-fn build_posts_ld_json(
-    cards: &[PostCard],
-    filter: &FeedFilter,
-    public_site_url: &str,
-    blog_name: &str,
-) -> Option<String> {
-    presentation::build_posts_ld_json(cards, filter, public_site_url, blog_name)
-}
-
-fn build_post_section_events(nodes: &[PostSectionNode]) -> Vec<PostSectionEvent> {
-    sections::build_post_section_events(nodes)
-}
-
-fn build_post_toc_view(nodes: &[PostSectionNode]) -> Option<PostTocView> {
-    sections::build_post_toc_view(nodes)
-}
-
-pub fn build_datastar_append_response(
-    payload: AppendPayload,
-    load_more_query: String,
-) -> Result<Response, HttpError> {
-    presentation::build_datastar_append_response(payload, load_more_query)
-}
-
-fn homepage_page_limit(settings: &SiteSettingsRecord) -> u32 {
-    presentation::homepage_page_limit(settings)
-}
-
-pub(crate) fn order_tags_with_pins(counts: &[TagWithCount]) -> Vec<&TagWithCount> {
-    summaries::order_tags_with_pins(counts)
-}
-
-fn build_tag_summaries(
-    counts: &[TagWithCount],
-    active_tag: Option<&str>,
-    total_posts: u64,
-    settings: &SiteSettingsRecord,
-) -> Vec<views::TagSummary> {
-    summaries::build_tag_summaries(counts, active_tag, total_posts, settings)
-}
-
-fn build_month_summaries(
-    counts: &[posts::MonthCount],
-    active: Option<&str>,
-    total_posts: u64,
-    limit: i32,
-) -> Vec<views::MonthSummary> {
-    summaries::build_month_summaries(counts, active, total_posts, limit)
 }
