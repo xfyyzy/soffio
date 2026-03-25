@@ -1,237 +1,26 @@
-use std::sync::Arc;
-
-use serde::Serialize;
-use thiserror::Error;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-use crate::application::admin::audit::AdminAuditService;
-use crate::application::admin::snapshot_types::{PageSnapshotPayload, PageSnapshotSource};
 use crate::application::jobs::{
     PUBLISH_JOB_WAIT_TIMEOUT, enqueue_publish_page_job, wait_for_job_completion,
 };
-use crate::application::pagination::{CursorPage, PageCursor};
 use crate::application::render::{
-    RenderError, RenderRequest, RenderService, RenderTarget, enqueue_render_page_job,
-    render_service,
+    RenderRequest, RenderService, RenderTarget, enqueue_render_page_job, render_service,
 };
 use crate::application::repos::{
-    CreatePageParams, JobsRepo, PageQueryFilter, PagesRepo, PagesWriteRepo, RepoError,
-    RestorePageSnapshotParams, SettingsRepo, UpdatePageParams, UpdatePageStatusParams,
+    CreatePageParams, RepoError, UpdatePageParams, UpdatePageStatusParams,
 };
-use crate::cache::CacheTrigger;
 use crate::domain::entities::PageRecord;
-use crate::domain::{
-    slug::{SlugAsyncError, SlugError, generate_unique_slug_async},
-    types::PageStatus,
+use crate::domain::slug::{SlugAsyncError, SlugError, generate_unique_slug_async};
+use crate::domain::types::PageStatus;
+
+use super::service::AdminPageService;
+use super::types::{
+    AdminPageError, CreatePageCommand, PageSummarySnapshot, UpdatePageContentCommand,
+    UpdatePageStatusCommand, ensure_non_empty, normalize_public_site_url, normalize_status,
 };
-
-#[derive(Debug, Error)]
-pub enum AdminPageError {
-    #[error("{0}")]
-    ConstraintViolation(&'static str),
-    #[error(transparent)]
-    Render(#[from] RenderError),
-    #[error(transparent)]
-    Repo(#[from] RepoError),
-}
-
-#[derive(Debug, Clone)]
-pub struct CreatePageCommand {
-    pub slug: Option<String>,
-    pub title: String,
-    pub body_markdown: String,
-    pub status: PageStatus,
-    pub scheduled_at: Option<OffsetDateTime>,
-    pub published_at: Option<OffsetDateTime>,
-    pub archived_at: Option<OffsetDateTime>,
-}
-
-#[derive(Debug, Clone)]
-pub struct UpdatePageContentCommand {
-    pub id: Uuid,
-    pub slug: String,
-    pub title: String,
-    pub body_markdown: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct UpdatePageStatusCommand {
-    pub id: Uuid,
-    pub status: PageStatus,
-    pub scheduled_at: Option<OffsetDateTime>,
-    pub published_at: Option<OffsetDateTime>,
-    pub archived_at: Option<OffsetDateTime>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct AdminPageStatusCounts {
-    pub total: u64,
-    pub draft: u64,
-    pub published: u64,
-    pub archived: u64,
-    pub error: u64,
-}
-
-#[derive(Clone)]
-pub struct AdminPageService {
-    reader: Arc<dyn PagesRepo>,
-    writer: Arc<dyn PagesWriteRepo>,
-    jobs: Arc<dyn JobsRepo>,
-    audit: AdminAuditService,
-    settings: Arc<dyn SettingsRepo>,
-    cache_trigger: Option<Arc<CacheTrigger>>,
-}
 
 impl AdminPageService {
-    pub fn new(
-        reader: Arc<dyn PagesRepo>,
-        writer: Arc<dyn PagesWriteRepo>,
-        jobs: Arc<dyn JobsRepo>,
-        audit: AdminAuditService,
-        settings: Arc<dyn SettingsRepo>,
-    ) -> Self {
-        Self {
-            reader,
-            writer,
-            jobs,
-            audit,
-            settings,
-            cache_trigger: None,
-        }
-    }
-
-    /// Set the cache trigger for this service.
-    pub fn with_cache_trigger(mut self, trigger: Arc<CacheTrigger>) -> Self {
-        self.cache_trigger = Some(trigger);
-        self
-    }
-
-    /// Set the cache trigger for this service (optional).
-    pub fn with_cache_trigger_opt(mut self, trigger: Option<Arc<CacheTrigger>>) -> Self {
-        self.cache_trigger = trigger;
-        self
-    }
-
-    pub async fn snapshot_source(&self, id: Uuid) -> Result<PageSnapshotSource, AdminPageError> {
-        let page = self
-            .reader
-            .find_by_id(id)
-            .await?
-            .ok_or(AdminPageError::Repo(RepoError::NotFound))?;
-
-        Ok(PageSnapshotSource { page })
-    }
-
-    pub async fn restore_from_snapshot(
-        &self,
-        payload: PageSnapshotPayload,
-        page_id: Uuid,
-    ) -> Result<PageRecord, AdminPageError> {
-        let previous_slug = self
-            .reader
-            .find_by_id(page_id)
-            .await?
-            .map(|record| record.slug);
-        let params = RestorePageSnapshotParams {
-            id: page_id,
-            slug: payload.slug,
-            title: payload.title,
-            body_markdown: payload.body_markdown,
-            rendered_html: payload.rendered_html,
-            status: payload.status,
-            scheduled_at: payload.scheduled_at,
-            published_at: payload.published_at,
-            archived_at: payload.archived_at,
-        };
-
-        let page = self.writer.restore_page_snapshot(params).await?;
-
-        // Trigger cache invalidation
-        if let Some(trigger) = &self.cache_trigger {
-            let previous_slug = previous_slug.filter(|slug| slug != &page.slug);
-            trigger
-                .page_upserted_with_previous_slug(page.id, &page.slug, previous_slug.as_deref())
-                .await;
-        }
-
-        Ok(page)
-    }
-
-    pub async fn list(
-        &self,
-        status: Option<PageStatus>,
-        limit: u32,
-        cursor: Option<PageCursor>,
-        filter: &PageQueryFilter,
-    ) -> Result<CursorPage<PageRecord>, AdminPageError> {
-        self.reader
-            .list_pages(status, limit, cursor, filter)
-            .await
-            .map_err(AdminPageError::from)
-    }
-
-    pub async fn find_by_slug(&self, slug: &str) -> Result<Option<PageRecord>, AdminPageError> {
-        self.reader
-            .find_by_slug(slug)
-            .await
-            .map_err(AdminPageError::from)
-    }
-
-    pub async fn find_by_id(&self, id: Uuid) -> Result<Option<PageRecord>, AdminPageError> {
-        self.reader
-            .find_by_id(id)
-            .await
-            .map_err(AdminPageError::from)
-    }
-
-    pub async fn status_counts(
-        &self,
-        filter: &PageQueryFilter,
-    ) -> Result<AdminPageStatusCounts, AdminPageError> {
-        let total_filter = filter.clone();
-        let draft_filter = filter.clone();
-        let published_filter = filter.clone();
-        let archived_filter = filter.clone();
-        let error_filter = filter.clone();
-
-        let total_fut = self.reader.count_pages(None, &total_filter);
-        let draft_fut = self
-            .reader
-            .count_pages(Some(PageStatus::Draft), &draft_filter);
-        let published_fut = self
-            .reader
-            .count_pages(Some(PageStatus::Published), &published_filter);
-        let archived_fut = self
-            .reader
-            .count_pages(Some(PageStatus::Archived), &archived_filter);
-        let error_fut = self
-            .reader
-            .count_pages(Some(PageStatus::Error), &error_filter);
-
-        let (total, draft, published, archived, error) =
-            tokio::try_join!(total_fut, draft_fut, published_fut, archived_fut, error_fut)?;
-
-        Ok(AdminPageStatusCounts {
-            total,
-            draft,
-            published,
-            archived,
-            error,
-        })
-    }
-
-    pub async fn month_counts(
-        &self,
-        status: Option<PageStatus>,
-        filter: &PageQueryFilter,
-    ) -> Result<Vec<crate::domain::posts::MonthCount>, AdminPageError> {
-        self.reader
-            .list_month_counts(status, filter)
-            .await
-            .map_err(AdminPageError::from)
-    }
-
     pub async fn create_page(
         &self,
         actor: &str,
@@ -511,26 +300,6 @@ impl AdminPageService {
         Ok(())
     }
 
-    /// Trigger cache invalidation after background materialization completes.
-    pub(crate) async fn notify_page_materialized(
-        &self,
-        page_id: Uuid,
-        slug: &str,
-    ) -> Result<(), AdminPageError> {
-        let previous_slug = self
-            .reader
-            .find_by_id(page_id)
-            .await?
-            .map(|record| record.slug);
-        if let Some(trigger) = &self.cache_trigger {
-            let previous_slug = previous_slug.filter(|value| value != slug);
-            trigger
-                .page_upserted_with_previous_slug(page_id, slug, previous_slug.as_deref())
-                .await;
-        }
-        Ok(())
-    }
-
     async fn enqueue_render_job(&self, page: &PageRecord) -> Result<(), AdminPageError> {
         enqueue_render_page_job(
             self.jobs.as_ref(),
@@ -564,64 +333,4 @@ impl AdminPageService {
             .await?;
         Ok(())
     }
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct PageSummarySnapshot<'a> {
-    pub slug: &'a str,
-    pub title: &'a str,
-    pub status: PageStatus,
-}
-
-struct StatusTimestamps {
-    scheduled_at: Option<OffsetDateTime>,
-    published_at: Option<OffsetDateTime>,
-    archived_at: Option<OffsetDateTime>,
-}
-
-fn normalize_status(
-    status: PageStatus,
-    scheduled_at: Option<OffsetDateTime>,
-    published_at: Option<OffsetDateTime>,
-    archived_at: Option<OffsetDateTime>,
-) -> Result<StatusTimestamps, AdminPageError> {
-    match status {
-        PageStatus::Published => Ok(StatusTimestamps {
-            scheduled_at: None,
-            published_at: Some(published_at.unwrap_or_else(OffsetDateTime::now_utc)),
-            archived_at: None,
-        }),
-        PageStatus::Archived => Ok(StatusTimestamps {
-            scheduled_at: None,
-            published_at,
-            archived_at: Some(archived_at.unwrap_or_else(OffsetDateTime::now_utc)),
-        }),
-        PageStatus::Draft => Ok(StatusTimestamps {
-            scheduled_at,
-            published_at: None,
-            archived_at: None,
-        }),
-        PageStatus::Error => Ok(StatusTimestamps {
-            scheduled_at,
-            published_at,
-            archived_at,
-        }),
-    }
-}
-
-fn ensure_non_empty(value: &str, field: &'static str) -> Result<(), AdminPageError> {
-    if value.trim().is_empty() {
-        return Err(AdminPageError::ConstraintViolation(field));
-    }
-    Ok(())
-}
-
-fn normalize_public_site_url(url: &str) -> String {
-    let trimmed = url.trim();
-    if trimmed.is_empty() {
-        return String::new();
-    }
-
-    let without_trailing = trimmed.trim_end_matches('/');
-    format!("{without_trailing}/")
 }
