@@ -36,6 +36,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Admin navigation HTTP handlers are now decomposed into focused `navigation/handlers` modules (`listing`, `editing`, `mutations`) with `handlers.rs` reduced to shared imports and route re-exports, preserving existing admin navigation route behavior.
 - Admin page HTTP handlers are now decomposed into focused `pages/handlers` modules (`listing`, `editing`, `mutations`, `shared`) with `handlers.rs` reduced to shared imports and route re-exports, preserving existing admin page route behavior.
 - Admin tag HTTP handlers are now decomposed into focused `tags/handlers` modules (`listing`, `editing`, `mutations`, `shared`) with `handlers.rs` reduced to shared imports and route re-exports, preserving existing admin tag route behavior.
+- Pagination internals are now decomposed into focused `application/pagination` cursor modules (`post`, `page`, `navigation`, `tag`, `job`, `audit`, `upload`, `api_key`, `snapshot`) with `pagination.rs` reduced to shared exports, request/page types, errors, and tests while preserving cursor encode/decode behavior.
 
 ## [0.1.16-alpha.6] - 2026-03-23
 
