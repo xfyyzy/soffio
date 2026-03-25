@@ -126,14 +126,16 @@ Rules:
 
 Use the gate tier that matches the change risk:
 
-1) **Fast gate (default, every local iteration)** — `./scripts/gate-fast.sh`  
+1) **Fast gate (default, every local iteration and before local commit)** — `./scripts/gate-fast.sh`  
    Includes `fmt/check/clippy` and `nextest --lib` for rapid feedback.
-2) **Full gate (required before PR or merge)** — `./scripts/gate-full.sh`  
+2) **Full gate (required before PR/merge and before release cut)** — `./scripts/gate-full.sh`  
    Includes `fmt/check/clippy`, `./scripts/nextest-full.sh`, and ignored live tests.  
    Optional feature matrix: `RUN_FEATURE_POWERSET=1 ./scripts/gate-full.sh`
-3) **Dependency hygiene (scheduled/periodic)** — `./scripts/gate-hygiene.sh`  
+3) **Dependency hygiene (weekly scheduled or manual periodic run)** — `./scripts/gate-hygiene.sh`  
    Includes `cargo +nightly udeps --all-targets --workspace` and `cargo outdated -wR`.
 4) **Macros (if touched)** — `cargo expand -p <crate> --lib` and sanity‑scan the output.
+
+`gate-fast` is a feedback accelerator only. It MUST NOT replace `gate-full` as a release readiness gate.
 
 ### 4.4 Deliver (clear, auditable)
 
@@ -148,7 +150,7 @@ Use a single atomic commit when possible. Use the template in §9.
 - Changelog entries must describe user-visible experience or behavior changes, not internal technical details.
 - Release flow (run **only when the user explicitly asks to publish**):
   1) Bump version in `Cargo.toml` to the user-specified value.
-  2) Run the full gate with the env vars in §0.8:
+  2) Run the full gate with the env vars in §0:
      - `./scripts/gate-full.sh`
      - Snapshot tests first: `cargo insta test --review` — review diffs to ensure only version number changes, then accept.
      - Dependency hygiene: `./scripts/gate-hygiene.sh`
