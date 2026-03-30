@@ -3713,7 +3713,6 @@ dependencies = [
  "clap",
  "comrak",
  "config",
- "cron",
  "dashmap",
  "datastar",
  "futures",
