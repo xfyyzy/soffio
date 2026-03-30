@@ -11,5 +11,5 @@ sqlx = ["dep:sqlx"]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 time = { version = "0.3.46", features = ["macros", "formatting", "serde"] }
-uuid = { version = "1.22.0", features = ["serde", "v4"] }
+uuid = { version = "1.23.0", features = ["serde", "v4"] }
 sqlx = { version = "0.8", default-features = false, features = ["postgres", "time", "uuid", "derive"], optional = true }
