@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use apalis::prelude::*;
-use cron::Schedule;
+use apalis_cron::Schedule;
 use std::str::FromStr;
 
 use crate::application::api_keys::ApiKeyService;
@@ -51,6 +51,14 @@ pub fn expire_api_keys_schedule() -> Schedule {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn schedule_uses_apalis_cron_schedule_type() {
+        fn assert_apalis_schedule(_: &apalis_cron::Schedule) {}
+
+        let schedule = expire_api_keys_schedule();
+        assert_apalis_schedule(&schedule);
+    }
 
     #[test]
     fn schedule_parses_correctly() {
