@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Refreshed lockfile TLS dependency `rustls-webpki` to `0.103.12` to address newly published RustSec advisories and keep security gates green.
+
 ## [0.1.16-alpha.7] - 2026-03-25
 
 ### Changed
