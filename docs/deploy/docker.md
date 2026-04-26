@@ -11,7 +11,7 @@ This guide explains how to build and run production-ready Soffio images with `de
 
 ## Build the Image
 
-Download the release tarball produced by CI (contains `soffio` and `soffio-cli` for the desired CPU level) and unpack it into a directory passed as `PREBUILT_DIR`:
+Download the Linux musl release tarball produced by CI (contains `soffio` and `soffio-cli` for the desired CPU level) and unpack it into a directory passed as `PREBUILT_DIR`:
 
 ```bash
 tar -xzf soffio-${RELEASE_TAG}-x86-64-v2-musl.tar.gz -C prebuilt/x86-64-v2
@@ -28,6 +28,7 @@ docker buildx build \
 ```
 
 The Dockerfile no longer builds Rust binaries; it will fail if `PREBUILT_DIR` is missing or does not contain both executables.
+FreeBSD release tarballs are native FreeBSD archives and are not inputs for this Linux container image.
 
 ## Runtime Configuration
 

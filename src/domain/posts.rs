@@ -1,5 +1,6 @@
 mod data;
 
+use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
 use time::{Date, format_description::FormatItem, macros::format_description};
@@ -75,7 +76,7 @@ pub fn collect(filter: PostFilter<'_>) -> Vec<&'static Post> {
         }
     }
 
-    posts.sort_by(|a, b| b.date.cmp(&a.date));
+    posts.sort_by_key(|post| Reverse(post.date));
     posts
 }
 

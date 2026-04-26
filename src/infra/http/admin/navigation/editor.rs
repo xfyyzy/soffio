@@ -76,7 +76,7 @@ pub(super) async fn build_navigation_editor_view(
             selected: Some(page.id) == destination_page_id,
         })
         .collect();
-    page_options.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+    page_options.sort_by_cached_key(|option| option.title.to_lowercase());
 
     let id_value = item.map(|i| i.id.to_string());
     let toggle_suffix = id_value.as_deref().unwrap_or("new");

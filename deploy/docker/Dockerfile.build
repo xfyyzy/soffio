@@ -8,6 +8,10 @@ ARG INSTALL_REDOC=true
 ARG CARGO_AUDIT_VERSION=0.22.1
 ARG CARGO_DENY_VERSION=0.19.0
 ARG CARGO_NEXTEST_VERSION=0.9.132
+ARG CARGO_ZIGBUILD_VERSION=0.22.3
+ARG ZIG_VERSION=0.16.0
+ARG ZIG_X86_64_LINUX_TARBALL=https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
+ARG ZIG_X86_64_LINUX_SHA256=70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
 
 RUN set -eux; \
     apk update; \
@@ -24,11 +28,26 @@ RUN set -eux; \
       nodejs \
       npm \
       pkgconf \
-      python3; \
+      python3 \
+      xz; \
     rustup component add rustfmt clippy; \
+    rustup target add x86_64-unknown-freebsd; \
     cargo install --locked \
       cargo-audit@${CARGO_AUDIT_VERSION} \
-      cargo-deny@${CARGO_DENY_VERSION}; \
+      cargo-deny@${CARGO_DENY_VERSION} \
+      cargo-zigbuild@${CARGO_ZIGBUILD_VERSION}; \
+    mkdir -p /opt/zig/${ZIG_VERSION}; \
+    curl -LsSf "${ZIG_X86_64_LINUX_TARBALL}" -o /tmp/zig.tar.xz; \
+    echo "${ZIG_X86_64_LINUX_SHA256}  /tmp/zig.tar.xz" | sha256sum -c -; \
+    tar -xJf /tmp/zig.tar.xz -C /opt/zig/${ZIG_VERSION} --strip-components=1; \
+    ln -sf /opt/zig/${ZIG_VERSION}/zig /usr/local/bin/zig; \
+    printf '%s\n' \
+      '#!/usr/bin/env sh' \
+      "export CARGO_ZIGBUILD_ZIG_VERSION=${ZIG_VERSION}" \
+      'exec /usr/local/cargo/bin/cargo-zigbuild zig cc -- -g -fno-sanitize=all -target x86_64-freebsd.15.0 "$@"' \
+      > /usr/local/bin/cargo-zig-cc-x86_64-freebsd15; \
+    chmod +x /usr/local/bin/cargo-zig-cc-x86_64-freebsd15; \
+    rm -f /tmp/zig.tar.xz; \
     # Pin cargo-nextest for reproducible CI test behavior.
     curl -LsSf https://get.nexte.st/${CARGO_NEXTEST_VERSION}/linux-musl | tar zxf - -C /usr/local/bin; \
     npm install --global --unsafe-perm typescript@6; \

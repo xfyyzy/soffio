@@ -50,7 +50,7 @@ chrono-tz = { version = "0.10.4", features = ["serde"] }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 futures = "0.3"
 axum-extra = { version = "0.12.5", features = ["multipart"] }
-katex = "0.4.6"
+katex = { version = "0.4.6", default-features = false, features = ["duktape"] }
 imagesize = "0.14"
 toml = { version = "1.1", features = ["parse", "display"] }
 hex = "0.4"

@@ -123,6 +123,7 @@ jobs:
             -e SQLX_TEST_DATABASE_URL=postgres://soffio:soffio_local_dev@127.0.0.1:5432/postgres \
             -e SQLX_OFFLINE=true \
             -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS}" \
+            -e CC_x86_64_unknown_freebsd=cargo-zig-cc-x86_64-freebsd15 \
             "$CI_BUILDER_IMAGE" \
             sh -ec '
               set -eux; \
@@ -130,6 +131,8 @@ jobs:
               cargo fmt --all -- --check; \
               cargo check --workspace --all-targets --target x86_64-unknown-linux-musl; \
               cargo clippy --workspace --all-targets --target x86_64-unknown-linux-musl -- -D warnings; \
+              cargo check --workspace --all-targets --target x86_64-unknown-freebsd; \
+              cargo clippy --workspace --all-targets --target x86_64-unknown-freebsd -- -D warnings; \
               # sqlx pulls mysql/rsa into Cargo.lock through optional feature wiring;
               # the mysql backend is not enabled in this workspace.
               cargo audit --ignore RUSTSEC-2023-0071; \

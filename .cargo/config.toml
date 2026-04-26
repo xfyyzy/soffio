@@ -5,9 +5,14 @@
 # CI/Release override this via CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS.
 rustflags = ["-C", "target-cpu=native"]
 
+[target.x86_64-unknown-freebsd]
+linker = "cargo-zig-cc-x86_64-freebsd15"
+
 [env]
 # Use offline SQLx metadata during builds to avoid hitting a live DATABASE_URL in CI.
 SQLX_OFFLINE = "true"
+# Ensure cc-rs build scripts use the FreeBSD 15 Zig compiler wrapper when cross-compiling.
+CC_x86_64_unknown_freebsd = { value = "cargo-zig-cc-x86_64-freebsd15", force = false }
 
 [profile.release]
 split-debuginfo = "packed"

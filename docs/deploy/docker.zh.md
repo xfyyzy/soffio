@@ -14,7 +14,7 @@
 
 ## 构建镜像
 
-先下载 CI 生成的发行包（包含目标 CPU 级别的 `soffio` 与 `soffio-cli`），解压到 `PREBUILT_DIR`，再进行构建：
+先下载 CI 生成的 Linux musl 发行包（包含目标 CPU 级别的 `soffio` 与 `soffio-cli`），解压到 `PREBUILT_DIR`，再进行构建：
 
 ```bash
 tar -xzf soffio-${RELEASE_TAG}-x86-64-v2-musl.tar.gz -C prebuilt/x86-64-v2
@@ -31,6 +31,7 @@ docker buildx build \
 ```
 
 Dockerfile 现在只复制预编译产物，如果目录缺失或不包含两个可执行文件会直接失败。
+FreeBSD 发行包是原生 FreeBSD 压缩包，不作为这个 Linux 容器镜像的输入。
 
 
 
