@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16-alpha.8] - 2026-04-27
+
 ### Changed
 - Release builds now publish an additional FreeBSD 15 x86_64 binary archive alongside the existing Linux musl archives.
 - Refreshed lockfile TLS dependency `rustls-webpki` to `0.103.12` to address newly published RustSec advisories and keep security gates green.
