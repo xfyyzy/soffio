@@ -49,7 +49,7 @@ sha2 = "0.11"
 chrono-tz = { version = "0.10.4", features = ["serde"] }
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 futures = "0.3"
-axum-extra = { version = "0.12.5", features = ["multipart"] }
+axum-extra = { version = "0.12.6", features = ["multipart"] }
 katex = { version = "0.4.6", default-features = false, features = ["duktape"] }
 imagesize = "0.14"
 toml = { version = "1.1", features = ["parse", "display"] }
