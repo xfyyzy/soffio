@@ -7,6 +7,41 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-04-27
+
+### Breaking
+- `soffio-cli` is now built from a dedicated workspace package. Use `cargo build -p soffio-cli --release` instead of root-package bin selection (`--bin soffio-cli`).
+
+### Added
+- Public markdown code blocks now include a top-right `Copy` button that copies the rendered code text and temporarily switches to `Copied` before auto-resetting.
+- Cache observability metrics now cover L0/L1 hit/miss/evict events, queue depth/drop counts, and consume/warm latency.
+- Cache event queue backpressure is now configurable via `cache.max_event_queue_len`, including dropped-event accounting under burst load.
+- Upload table indexes for `created_at` and `(content_type, created_at)` improve admin list/filter responsiveness on larger datasets.
+- Release builds now include static Linux x86_64 musl, Linux aarch64 musl, and FreeBSD 15 x86_64 binary archives.
+
+### Changed
+- Promoted the 0.1.16 alpha train to the stable `0.1.16` release.
+- Refreshed project positioning around calm self-hosted publishing for technical writers and removed Product Hunt badges from the public README files.
+- New installations now use product copy focused on static output, admin workflows, and self-hosted control instead of legacy placeholder metadata.
+- Cargo package metadata now publishes repository, homepage, license, keywords, categories, and package descriptions.
+- API rate limiting now uses a bounded-memory limiter and route-template keying so limits are fair across parameterized endpoints.
+- Admin dashboard summary metrics now use database-side aggregate queries instead of page-by-page scans, reducing round-trips.
+- Cache write paths now do synchronous invalidation only; warming is deferred to the background consumer to reduce write-tail latency.
+- Build-time static asset preparation now skips expensive steps when input fingerprints are unchanged.
+- Public code-block copy button states now use tokenized semantic colors aligned with the site design system, removing hardcoded per-component status colors.
+- Release binary archives now use normalized platform names and include a matching top-level directory.
+- FreeBSD release binaries are now fully static and no longer require FreeBSD shared base libraries at runtime.
+- Documented and scripted the local full-gate live-test setup so database, seed, render, and service prerequisites are explicit.
+- Refreshed dependencies and lockfile TLS packages to resolve RustSec advisories and keep security gates green.
+
+### Fixed
+- Tag mutations and post-tag rebinding now trigger immediate cache invalidation for tag-derived aggregates and post indexes, so homepage/admin tag panels no longer show stale data after writes.
+- Post/page slug updates now invalidate both new and previous slug cache keys, preventing stale content at old URLs after slug changes.
+- Background render materialization now emits follow-up cache invalidation after persistence commits, closing stale-window drift between request-time invalidation and async writes.
+- API key issue/update/rotate/revoke/delete paths now emit prefix-scoped cache invalidation events so auth/cache lookups stay consistent with key lifecycle changes.
+- Restored API key lifecycle cache event emission on all key mutation paths and re-wired service bootstrap to pass the cache trigger.
+- Frontend snapshot test repositories now implement external-navigation counting required by dashboard aggregate metrics.
+
 ## [0.1.16-alpha.10] - 2026-04-27
 
 ### Changed

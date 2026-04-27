@@ -7,13 +7,13 @@
 [![Admin Site](https://img.shields.io/website?url=https%3A%2F%2Fadmin.soffio.xfyyzy.xyz&label=admin%20site)](https://admin.soffio.xfyyzy.xyz)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xfyyzy/soffio)
 
-<p align="center">
-  <a href="https://www.producthunt.com/products/soffio?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-soffio" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1037444&theme=light&t=1763008766261" alt="Soffio - Rust&#0045;native&#0032;publishing&#0032;with&#0032;a&#0032;calm&#0044;&#0032;focused&#0032;admin | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-</p>
-
 English | [中文](README.zh.md)
 
-Soffio is a Rust-powered publishing platform. The public site renders posts statically and sprinkles interactive widgets, while the admin console focuses on writing, editing, and releasing content. The stack centers on Axum, Askama, and SQLx, and the codebase enforces a domain/application/infra layering model (see `AGENTS.md`). Soffio is released under the BSD-2-Clause license.
+Soffio is a calm, self-hosted publishing system for technical writers who want static output, admin convenience, and operational control.
+
+Soffio is not a general-purpose CMS. It is a publishing system for people who want to write, publish, automate, and self-host without surrendering control. It favors static output over runtime magic, boring reliability over plugin sprawl, and explicit workflows over hidden automation.
+
+The public site renders posts statically and keeps reader-facing interactivity server-driven, while the admin console focuses on writing, editing, automation, and release workflows. The stack centers on Rust, Axum, Askama, and SQLx, and the codebase enforces a domain/application/infra layering model (see `AGENTS.md`). Soffio is released under the BSD-2-Clause license.
 
 ## Demo Environments
 

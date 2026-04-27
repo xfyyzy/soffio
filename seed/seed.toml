@@ -30,6 +30,10 @@ checksum = "bfa2a9b8528fce28ac83af1160b348c23ce8b12c2cf64c423d9aa8ceee3395dda0ee
 version = 20260206130000
 checksum = "64213ba480552594934dca96576ee843045e4c81739b9237ff9ab949e976e972f19e0ae8cb50035c22abbc133307cbf2"
 
+[[migrations.entries]]
+version = 20260427120000
+checksum = "297488b8ae06025547965ed7e5653a8a118ac04dcaf7abd3cd1faf4ae9c7de374a163ad6a1f53497a0ae2bfad10b3c13"
+
 [site_settings]
 homepage_size = 6
 admin_page_size = 6
@@ -40,14 +44,14 @@ month_filter_limit = 16
 global_toc_enabled = true
 brand_title = "Soffio"
 brand_href = "/"
-footer_copy = "Exploring distributed systems, compilers, databases, and the art of software engineering."
+footer_copy = "Static output, focused admin workflows, and self-hosted control for technical writers."
 public_site_url = "https://soffio.xfyyzy.xyz"
 favicon_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0f172a"/><defs><linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><path d="M48 14H24L14 24V31H38L44 25V20H48V14ZM16 50H40L50 40V33H26L20 39V44H16V50Z" fill="url(#g)"/></svg>'
 timezone = "Asia/Shanghai"
 meta_title = "Soffio"
-meta_description = "深入探索分布式系统、编译器原理、数据库内核与软件工程的技术博客。"
+meta_description = "Soffio is a calm, self-hosted publishing system for technical writers who want static output, admin convenience, and operational control."
 og_title = "Soffio"
-og_description = "A technical blog on distributed systems, compilers, databases, type theory, and modern software architecture."
+og_description = "Calm self-hosted publishing with static output, focused admin workflows, and explicit automation."
 
 [[posts]]
 slug = "bian-yuan-ji-suan-de-jue-qi-yun-de-xia-yi-ge-qian-yan"
@@ -17927,25 +17931,35 @@ slug = "about"
 title = "About Soffio"
 body_markdown = """
 # About Soffio
-**Soffio** is a modern, Rust-powered publishing platform designed for technical writers, individual bloggers, and small teams who value performance, simplicity, and control over their content.
+**Soffio** is a calm, self-hosted publishing system for technical writers who want static output, admin convenience, and operational control.
 
-## Why Soffio?
+## Product Position
 
-- **Blazing Fast** — Built entirely in Rust with Axum, Askama, and SQLx, Soffio delivers exceptional performance with minimal resource usage.
-- **Writer-Focused** — A clean, distraction-free admin interface lets you focus on what matters most: your writing.
-- **Headless Ready** — Full RESTful API with fine-grained permission scopes. Integrate with your existing tools and workflows.
-- **Zero Client-Side JavaScript** — Interactive features powered by server-side rendering and Datastar + SSE. No JavaScript frameworks, no bloat.
-- **Beautiful Rendering** — First-class Markdown support with syntax highlighting, KaTeX math formulas, and Mermaid diagrams out of the box.
+Soffio is not a general-purpose CMS. It is for people who want to write, publish, automate, and self-host without surrendering control.
+
+It favors:
+
+- **Static output over runtime magic**: public pages are rendered deliberately and can be served predictably.
+- **Boring reliability over plugin sprawl**: the core publishing path stays small, auditable, and operationally plain.
+- **Explicit workflows over hidden automation**: admin actions, API calls, CLI automation, and render jobs are visible parts of the publishing flow.
+
+## What It Provides
+
+- **Static public output**: rendered posts and pages for fast, cacheable delivery.
+- **Focused admin console**: writing, editing, organizing, publishing, settings, uploads, jobs, audit, and API keys.
+- **Headless API and CLI**: automation-friendly endpoints with scoped API keys and a command-line client.
+- **Server-driven interaction**: Datastar + SSE workflows without a client-side JavaScript application.
+- **Technical writing support**: Markdown, syntax highlighting, KaTeX math, and Mermaid diagrams.
 
 ## Architecture
 
 Soffio follows a clean, layered architecture:
 
-- **Public Site** — Statically rendered pages with optional interactive widgets for readers.
-- **Admin Console** — A dedicated interface for writing, editing, organizing, and publishing content.
-- **Headless API** — RESTful endpoints for automation, integrations, and the command-line tool.
+- **Public Site**: statically rendered pages with optional server-driven interactive widgets for readers.
+- **Admin Console**: a dedicated interface for writing, editing, organizing, and publishing content.
+- **Headless API**: RESTful endpoints for automation, integrations, and the command-line tool.
 
-## For Developers
+## For Operators and Developers
 
 Soffio is open source under the BSD-2-Clause license. The codebase enforces a strict Domain/Application/Infrastructure layering model, making it easy to understand, extend, and contribute.
 

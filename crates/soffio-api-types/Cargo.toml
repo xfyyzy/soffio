@@ -1,7 +1,13 @@
 [package]
 name = "soffio-api-types"
-version = "0.1.16-alpha.10"
+version = "0.1.16"
 edition = "2024"
+description = "Shared request and response types for the Soffio headless publishing API."
+license = "BSD-2-Clause"
+repository = "https://github.com/xfyyzy/soffio"
+homepage = "https://soffio.xfyyzy.xyz"
+keywords = ["soffio", "api", "publishing", "types", "rust"]
+categories = ["api-bindings", "web-programming"]
 
 [features]
 default = []
