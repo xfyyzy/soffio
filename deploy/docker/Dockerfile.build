@@ -36,7 +36,7 @@ RUN set -eux; \
       python3 \
       xz; \
     rustup component add rustfmt clippy; \
-    rustup target add x86_64-unknown-freebsd; \
+    rustup target add x86_64-unknown-freebsd aarch64-unknown-linux-musl; \
     cargo install --locked \
       cargo-audit@${CARGO_AUDIT_VERSION} \
       cargo-deny@${CARGO_DENY_VERSION} \
@@ -46,6 +46,20 @@ RUN set -eux; \
     echo "${ZIG_X86_64_LINUX_SHA256}  /tmp/zig.tar.xz" | sha256sum -c -; \
     tar -xJf /tmp/zig.tar.xz -C /opt/zig/${ZIG_VERSION} --strip-components=1; \
     ln -sf /opt/zig/${ZIG_VERSION}/zig /usr/local/bin/zig; \
+    printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'args=()' \
+      'while [ "$#" -gt 0 ]; do' \
+      '  case "$1" in' \
+      '    --target=*|-target=*) shift ;;' \
+      '    -target|--target) shift; [ "$#" -gt 0 ] && shift ;;' \
+      '    *) args+=("$1"); shift ;;' \
+      '  esac' \
+      'done' \
+      'exec /usr/local/bin/zig cc -target aarch64-linux-musl -fno-sanitize=all "${args[@]}"' \
+      > /usr/local/bin/aarch64-linux-musl-static-cc; \
+    chmod +x /usr/local/bin/aarch64-linux-musl-static-cc; \
     printf '%s\n' \
       '#!/usr/bin/env sh' \
       "export CARGO_ZIGBUILD_ZIG_VERSION=${ZIG_VERSION}" \
