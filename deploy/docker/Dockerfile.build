@@ -12,6 +12,9 @@ ARG CARGO_ZIGBUILD_VERSION=0.22.3
 ARG ZIG_VERSION=0.16.0
 ARG ZIG_X86_64_LINUX_TARBALL=https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
 ARG ZIG_X86_64_LINUX_SHA256=70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00
+ARG FREEBSD_VERSION=15.0-RELEASE
+ARG FREEBSD_BASE_TARBALL=https://download.freebsd.org/releases/amd64/amd64/15.0-RELEASE/base.txz
+ARG FREEBSD_BASE_SHA256=ac0c933cc02ee8af4da793f551e4a9a15cdcf0e67851290b1e8c19dd6d30bba8
 
 RUN set -eux; \
     apk update; \
@@ -23,8 +26,10 @@ RUN set -eux; \
       clang \
       cmake \
       curl \
+      file \
       git \
       libstdc++ \
+      lld \
       nodejs \
       npm \
       pkgconf \
@@ -48,6 +53,26 @@ RUN set -eux; \
       > /usr/local/bin/cargo-zig-cc-x86_64-freebsd15; \
     chmod +x /usr/local/bin/cargo-zig-cc-x86_64-freebsd15; \
     rm -f /tmp/zig.tar.xz; \
+    mkdir -p /opt/freebsd/${FREEBSD_VERSION}-amd64; \
+    curl -LsSf "${FREEBSD_BASE_TARBALL}" -o /tmp/freebsd-base.txz; \
+    echo "${FREEBSD_BASE_SHA256}  /tmp/freebsd-base.txz" | sha256sum -c -; \
+    tar -xJf /tmp/freebsd-base.txz -C /opt/freebsd/${FREEBSD_VERSION}-amd64 ./lib ./usr/lib ./usr/include ./usr/libdata; \
+    printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      "sysroot=/opt/freebsd/${FREEBSD_VERSION}-amd64" \
+      'args=()' \
+      'while [ "$#" -gt 0 ]; do' \
+      '  case "$1" in' \
+      '    --target=*|-target=*) shift ;;' \
+      '    -target) shift; [ "$#" -gt 0 ] && shift ;;' \
+      '    *) args+=("$1"); shift ;;' \
+      '  esac' \
+      'done' \
+      'exec clang --target=x86_64-unknown-freebsd15.0 --sysroot="${sysroot}" -fuse-ld=lld "${args[@]}"' \
+      > /usr/local/bin/freebsd15-static-cc; \
+    chmod +x /usr/local/bin/freebsd15-static-cc; \
+    rm -f /tmp/freebsd-base.txz; \
     # Pin cargo-nextest for reproducible CI test behavior.
     curl -LsSf https://get.nexte.st/${CARGO_NEXTEST_VERSION}/linux-musl | tar zxf - -C /usr/local/bin; \
     npm install --global --unsafe-perm typescript@6; \

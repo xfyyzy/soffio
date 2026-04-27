@@ -133,6 +133,15 @@ jobs:
               cargo clippy --workspace --all-targets --target x86_64-unknown-linux-musl -- -D warnings; \
               cargo check --workspace --all-targets --target x86_64-unknown-freebsd; \
               cargo clippy --workspace --all-targets --target x86_64-unknown-freebsd -- -D warnings; \
+              export CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_LINKER=freebsd15-static-cc; \
+              export CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_RUSTFLAGS="-C target-feature=+crt-static"; \
+              export CC_x86_64_unknown_freebsd=freebsd15-static-cc; \
+              cargo build --release --target x86_64-unknown-freebsd -p soffio --bin soffio; \
+              cargo build --release --target x86_64-unknown-freebsd -p soffio-cli --bin soffio-cli; \
+              sh scripts/assert-static-elf.sh target/x86_64-unknown-freebsd/release/soffio target/x86_64-unknown-freebsd/release/soffio-cli; \
+              export CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_LINKER=cargo-zig-cc-x86_64-freebsd15; \
+              unset CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_RUSTFLAGS; \
+              export CC_x86_64_unknown_freebsd=cargo-zig-cc-x86_64-freebsd15; \
               # sqlx pulls mysql/rsa into Cargo.lock through optional feature wiring;
               # the mysql backend is not enabled in this workspace.
               cargo audit --ignore RUSTSEC-2023-0071; \

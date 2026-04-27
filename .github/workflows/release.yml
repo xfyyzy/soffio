@@ -168,7 +168,9 @@ jobs:
             -e RELEASE_TAG="${RELEASE_TAG}" \
             -e TARGET_TRIPLE="${TARGET_TRIPLE}" \
             -e TARGET_LABEL="${TARGET_LABEL}" \
-            -e CC_x86_64_unknown_freebsd=cargo-zig-cc-x86_64-freebsd15 \
+            -e CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_LINKER=freebsd15-static-cc \
+            -e CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_RUSTFLAGS="-C target-feature=+crt-static" \
+            -e CC_x86_64_unknown_freebsd=freebsd15-static-cc \
             -w /work \
             "$RELEASE_BUILDER_IMAGE" \
             sh -ec '
@@ -178,6 +180,7 @@ jobs:
               rm -rf dist-freebsd && mkdir -p dist-freebsd && \
               cp target/${TARGET_TRIPLE}/release/${BIN_NAME} dist-freebsd/${BIN_NAME} && \
               cp target/${TARGET_TRIPLE}/release/${BIN_CLI} dist-freebsd/${BIN_CLI} && \
+              sh scripts/assert-static-elf.sh dist-freebsd/${BIN_NAME} dist-freebsd/${BIN_CLI} && \
               tar_name="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}.tar.gz" && \
               tar czf "${tar_name}" -C dist-freebsd ${BIN_NAME} ${BIN_CLI} && \
               # fix permissions before cache save on host
