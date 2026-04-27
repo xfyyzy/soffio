@@ -99,14 +99,33 @@ Create a post from files:
    # default fast loop
    ./scripts/gate-fast.sh
 
-   # before PR/merge
+   # before PR/merge; starts local Postgres, imports seed data, renders derived content,
+   # starts a temporary soffio instance, runs the full gate, then stops the instance
+   ./scripts/gate-full-local.sh
+
+   # use this only after manually preparing the database and local soffio instance
    ./scripts/gate-full.sh
 
    # periodic dependency hygiene (for example weekly)
    ./scripts/gate-hygiene.sh
    ```
-2. Consult `CONTRIBUTING.md` for branching strategy, commit format, and review expectations.
-3. Follow `.github/PULL_REQUEST_TEMPLATE.md` and ensure CI stays green before merging.
+2. To prepare the full gate prerequisites manually instead of using `gate-full-local.sh`, run:
+   ```bash
+   docker compose -f docker-compose-dev.yml up -d
+
+   SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev \
+     cargo run --bin soffio -- import seed/seed.toml
+
+   SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev \
+     cargo run --bin soffio -- renderall
+
+   SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev \
+     target/debug/soffio serve
+   ```
+   `gate-full.sh` fails fast when the default local Postgres container is not ready or the seeded API at
+   `tests/api_keys.seed.toml` is unavailable. Set `SKIP_LIVE_TESTS=1` only for non-release diagnostics.
+3. Consult `CONTRIBUTING.md` for branching strategy, commit format, and review expectations.
+4. Follow `.github/PULL_REQUEST_TEMPLATE.md` and ensure CI stays green before merging.
 
 ## Deployment
 

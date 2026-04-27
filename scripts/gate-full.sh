@@ -9,6 +9,8 @@ cd "${REPO_ROOT}"
 : "${DATABASE_URL:=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev}"
 export SQLX_TEST_DATABASE_URL DATABASE_URL
 
+./scripts/db-preflight.sh
+
 printf "==> cargo fmt --all -- --check\n"
 cargo fmt --all -- --check
 
@@ -24,6 +26,8 @@ printf "==> ./scripts/nextest-full.sh --no-fail-fast\n"
 if [ "${SKIP_LIVE_TESTS:-0}" = "1" ]; then
   printf "==> live tests (skipped: SKIP_LIVE_TESTS=1)\n"
 else
+  ./scripts/live-preflight.sh
+
   printf "==> cargo test --test live_api --test live_cache -- --ignored --test-threads=1\n"
   cargo test --test live_api --test live_cache -- --ignored --test-threads=1
 fi

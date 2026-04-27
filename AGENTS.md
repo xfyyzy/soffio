@@ -61,6 +61,31 @@ docker compose -f docker-compose-dev.yml up -d
 
 Connection URL: `postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev`
 
+**Local live-test gate**
+
+Prefer the one-shot local wrapper before PR/merge and before release readiness checks:
+
+```bash
+./scripts/gate-full-local.sh
+```
+
+It starts the Docker Compose Postgres service when the default database URLs are in use, imports `seed/seed.toml`,
+runs `renderall`, starts a temporary local `soffio` process, runs `./scripts/gate-full.sh`, and stops that process on
+exit.
+
+If you run `./scripts/gate-full.sh` directly, prepare the live-test environment first:
+
+```bash
+docker compose -f docker-compose-dev.yml up -d
+SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev cargo run --bin soffio -- import seed/seed.toml
+SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev cargo run --bin soffio -- renderall
+SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev target/debug/soffio serve
+```
+
+`gate-fast.sh` and `gate-full.sh` fail fast when the default local Postgres container is not ready. `gate-full.sh`
+also checks the seeded API from `tests/api_keys.seed.toml` before running ignored live tests. Use `SKIP_LIVE_TESTS=1`
+only for non-release diagnostics; release readiness must include live tests.
+
 **SQLx**
 
 Prefer compile-time checked macros (`sqlx::query!`, `sqlx::query_as!`, `sqlx::query_scalar!`) over runtime functions (`sqlx::query`, `sqlx::query_as`). For complex dynamic queries, `QueryBuilder` is acceptable.
@@ -128,10 +153,12 @@ Rules:
 Use the gate tier that matches the change risk:
 
 1) **Fast gate (default, every local iteration and before local commit)** — `./scripts/gate-fast.sh`  
-   Includes `fmt/check/clippy` and `nextest --lib` for rapid feedback.
-2) **Full gate (required before PR/merge and before release cut)** — `./scripts/gate-full.sh`  
-   Includes `fmt/check/clippy`, `./scripts/nextest-full.sh`, and ignored live tests.  
-   Optional feature matrix: `RUN_FEATURE_POWERSET=1 ./scripts/gate-full.sh`
+   Includes the default local Postgres preflight, `fmt/check/clippy`, and `nextest --lib` for rapid feedback.
+2) **Full gate (required before PR/merge and before release cut)** — `./scripts/gate-full-local.sh`
+   Prepares the local DB/seed/render/server prerequisites, then runs `./scripts/gate-full.sh`.
+   Direct `./scripts/gate-full.sh` use is acceptable only after the live-test environment is already prepared.
+   Includes `fmt/check/clippy`, `./scripts/nextest-full.sh`, and ignored live tests.
+   Optional feature matrix: `RUN_FEATURE_POWERSET=1 ./scripts/gate-full-local.sh`
 3) **Dependency hygiene (weekly scheduled or manual periodic run)** — `./scripts/gate-hygiene.sh`  
    Includes `cargo +nightly udeps --all-targets --workspace` and `cargo outdated -wR`.
 4) **Macros (if touched)** — `cargo expand -p <crate> --lib` and sanity‑scan the output.
@@ -152,7 +179,7 @@ Use a single atomic commit when possible. Use the template in §9.
 - Release flow (run **only when the user explicitly asks to publish**):
   1) Bump version in `Cargo.toml` to the user-specified value.
   2) Run the full gate with the env vars in §0:
-     - `./scripts/gate-full.sh`
+     - `./scripts/gate-full-local.sh`
      - Snapshot tests first: `cargo insta test --review` — review diffs to ensure only version number changes, then accept.
      - Dependency hygiene: `./scripts/gate-hygiene.sh`
   3) Update `CHANGELOG.md`: add the new version section, move Unreleased contents there, and fill in any missing release notes.

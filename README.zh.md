@@ -101,14 +101,33 @@ SOFFIO_API_KEY_FILE=~/.config/soffio/key \
    # 日常快速反馈
    ./scripts/gate-fast.sh
 
-   # 提交 PR / 合并前
+   # 提交 PR / 合并前；启动本地 Postgres、导入 seed、渲染派生内容、
+   # 启动临时 soffio 实例、运行 full gate，最后停止该实例
+   ./scripts/gate-full-local.sh
+
+   # 仅在已手动准备数据库和本地 soffio 实例时使用
    ./scripts/gate-full.sh
 
    # 周期性依赖体检（例如每周）
    ./scripts/gate-hygiene.sh
    ```
-2. 参考 `CONTRIBUTING.md` 获取分支策略与提交要求。
-3. 提交 PR 时遵循 `.github/PULL_REQUEST_TEMPLATE.md`，并保持 CI 绿色。
+2. 如果不使用 `gate-full-local.sh`，请手动准备 full gate 前置条件：
+   ```bash
+   docker compose -f docker-compose-dev.yml up -d
+
+   SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev \
+     cargo run --bin soffio -- import seed/seed.toml
+
+   SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev \
+     cargo run --bin soffio -- renderall
+
+   SOFFIO__DATABASE__URL=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev \
+     target/debug/soffio serve
+   ```
+   当默认本地 Postgres 未就绪，或 `tests/api_keys.seed.toml` 指向的 seeded API 不可用时，`gate-full.sh`
+   会提前失败并打印修复命令。`SKIP_LIVE_TESTS=1` 仅用于非发布诊断。
+3. 参考 `CONTRIBUTING.md` 获取分支策略与提交要求。
+4. 提交 PR 时遵循 `.github/PULL_REQUEST_TEMPLATE.md`，并保持 CI 绿色。
 
 ## 部署
 

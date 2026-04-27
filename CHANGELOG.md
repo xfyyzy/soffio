@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Documented and scripted the local full-gate live-test setup so database, seed, render, and service prerequisites are explicit.
+
 ## [0.1.16-alpha.9] - 2026-04-27
 
 ### Changed

@@ -9,6 +9,8 @@ cd "${REPO_ROOT}"
 : "${DATABASE_URL:=postgres://soffio:soffio_local_dev@localhost:5432/soffio_dev}"
 export SQLX_TEST_DATABASE_URL DATABASE_URL
 
+./scripts/db-preflight.sh
+
 printf "==> cargo fmt --all -- --check\n"
 cargo fmt --all -- --check
 
