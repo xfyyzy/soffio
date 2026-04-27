@@ -13,6 +13,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Release builds now include a static Linux aarch64 musl binary archive.
 - Release binary archives now use normalized platform names and include a matching top-level directory.
 - FreeBSD release binaries are now fully static and no longer require FreeBSD shared base libraries at runtime.
+- Release static-link verification now accepts static PIE Linux musl binaries while still rejecting shared-library dependencies.
 - Documented and scripted the local full-gate live-test setup so database, seed, render, and service prerequisites are explicit.
 - Refreshed dependency `axum-extra` to `0.12.6`.
 
