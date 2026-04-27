@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.16-alpha.9] - 2026-04-27
+
+### Changed
+- Refreshed lockfile TLS dependency `rustls-webpki` to `0.103.13` to resolve `RUSTSEC-2026-0104` and restore security audit gate status.
+
 ## [0.1.16-alpha.8] - 2026-04-27
 
 ### Changed
