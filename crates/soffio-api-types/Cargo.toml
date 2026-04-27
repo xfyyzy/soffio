@@ -1,6 +1,6 @@
 [package]
 name = "soffio-api-types"
-version = "0.1.16-alpha.9"
+version = "0.1.16-alpha.10"
 edition = "2024"
 
 [features]
