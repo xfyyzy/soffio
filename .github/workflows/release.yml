@@ -76,6 +76,8 @@ jobs:
         cpu_level: [x86-64-v2, x86-64-v3, x86-64-v4]
     env:
       RELEASE_BUILDER_IMAGE: ghcr.io/${{ github.repository }}/soffio-release-build:${{ needs.prepare-release-builder.outputs.image_tag }}
+      TARGET_TRIPLE: x86_64-unknown-linux-musl
+      TARGET_LABEL: linux-x86_64-musl-cpu-${{ matrix.cpu_level }}-static
     steps:
       - uses: actions/checkout@v6
       - name: Login to GHCR (for builder image)
@@ -105,20 +107,24 @@ jobs:
             -e BIN_NAME="${BIN_NAME}" \
             -e BIN_CLI="${BIN_CLI}" \
             -e CPU_LEVEL="${CPU_LEVEL}" \
+            -e TARGET_TRIPLE="${TARGET_TRIPLE}" \
+            -e TARGET_LABEL="${TARGET_LABEL}" \
             -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS}" \
             -e RELEASE_TAG="${RELEASE_TAG}" \
             -w /work \
             "$RELEASE_BUILDER_IMAGE" \
             sh -ec '
               set -eux
-              cargo build --release --target x86_64-unknown-linux-musl -p soffio --bin ${BIN_NAME} && \
-              cargo build --release --target x86_64-unknown-linux-musl -p soffio-cli --bin ${BIN_CLI} && \
-              rm -rf dist && mkdir -p dist && \
-              cp target/x86_64-unknown-linux-musl/release/${BIN_NAME} dist/${BIN_NAME} && \
-              cp target/x86_64-unknown-linux-musl/release/${BIN_CLI} dist/${BIN_CLI} && \
-              strip dist/${BIN_NAME} dist/${BIN_CLI} || true && \
-              tar_name="${BIN_NAME}-${RELEASE_TAG}-${CPU_LEVEL}-musl.tar.gz" && \
-              tar czf "${tar_name}" -C dist ${BIN_NAME} ${BIN_CLI} && \
+              cargo build --release --target ${TARGET_TRIPLE} -p soffio --bin ${BIN_NAME} && \
+              cargo build --release --target ${TARGET_TRIPLE} -p soffio-cli --bin ${BIN_CLI} && \
+              tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}" && \
+              rm -rf dist && mkdir -p "dist/${tar_root}" && \
+              cp target/${TARGET_TRIPLE}/release/${BIN_NAME} "dist/${tar_root}/${BIN_NAME}" && \
+              cp target/${TARGET_TRIPLE}/release/${BIN_CLI} "dist/${tar_root}/${BIN_CLI}" && \
+              strip "dist/${tar_root}/${BIN_NAME}" "dist/${tar_root}/${BIN_CLI}" || true && \
+              sh scripts/assert-static-elf.sh "dist/${tar_root}/${BIN_NAME}" "dist/${tar_root}/${BIN_CLI}" && \
+              tar_name="${tar_root}.tar.gz" && \
+              tar czf "${tar_name}" -C dist "${tar_root}" && \
               # fix permissions before cache save on host
               HOST_UID=$(stat -c '%u' /work) && HOST_GID=$(stat -c '%g' /work) && \
               chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true
@@ -126,11 +132,11 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl
-          path: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl.tar.gz
+          name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ env.TARGET_LABEL }}
+          path: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ env.TARGET_LABEL }}.tar.gz
       - uses: softprops/action-gh-release@v3
         with:
-          files: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl.tar.gz
+          files: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ env.TARGET_LABEL }}.tar.gz
         if: startsWith(github.ref, 'refs/tags/')
 
   build-freebsd:
@@ -139,7 +145,7 @@ jobs:
     env:
       RELEASE_BUILDER_IMAGE: ghcr.io/${{ github.repository }}/soffio-release-build:${{ needs.prepare-release-builder.outputs.image_tag }}
       TARGET_TRIPLE: x86_64-unknown-freebsd
-      TARGET_LABEL: x86_64-unknown-freebsd15
+      TARGET_LABEL: freebsd-x86_64-freebsd15-static
     steps:
       - uses: actions/checkout@v6
       - name: Login to GHCR (for builder image)
@@ -177,12 +183,13 @@ jobs:
               set -eux
               cargo build --release --target ${TARGET_TRIPLE} -p soffio --bin ${BIN_NAME} && \
               cargo build --release --target ${TARGET_TRIPLE} -p soffio-cli --bin ${BIN_CLI} && \
-              rm -rf dist-freebsd && mkdir -p dist-freebsd && \
-              cp target/${TARGET_TRIPLE}/release/${BIN_NAME} dist-freebsd/${BIN_NAME} && \
-              cp target/${TARGET_TRIPLE}/release/${BIN_CLI} dist-freebsd/${BIN_CLI} && \
-              sh scripts/assert-static-elf.sh dist-freebsd/${BIN_NAME} dist-freebsd/${BIN_CLI} && \
-              tar_name="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}.tar.gz" && \
-              tar czf "${tar_name}" -C dist-freebsd ${BIN_NAME} ${BIN_CLI} && \
+              tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}" && \
+              rm -rf dist-freebsd && mkdir -p "dist-freebsd/${tar_root}" && \
+              cp target/${TARGET_TRIPLE}/release/${BIN_NAME} "dist-freebsd/${tar_root}/${BIN_NAME}" && \
+              cp target/${TARGET_TRIPLE}/release/${BIN_CLI} "dist-freebsd/${tar_root}/${BIN_CLI}" && \
+              sh scripts/assert-static-elf.sh "dist-freebsd/${tar_root}/${BIN_NAME}" "dist-freebsd/${tar_root}/${BIN_CLI}" && \
+              tar_name="${tar_root}.tar.gz" && \
+              tar czf "${tar_name}" -C dist-freebsd "${tar_root}" && \
               # fix permissions before cache save on host
               HOST_UID=$(stat -c '%u' /work) && HOST_GID=$(stat -c '%g' /work) && \
               chown -R "$HOST_UID:$HOST_GID" /work/target /root/.cargo /root/.npm || true
@@ -203,6 +210,8 @@ jobs:
     strategy:
       matrix:
         cpu_level: [x86-64-v2, x86-64-v3, x86-64-v4]
+    env:
+      TARGET_LABEL: linux-x86_64-musl-cpu-${{ matrix.cpu_level }}-static
     steps:
       - uses: actions/checkout@v6
       - name: Cache prebuilt dir
@@ -213,11 +222,11 @@ jobs:
       - name: Download prebuilt binaries
         uses: actions/download-artifact@v8
         with:
-          name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl
+          name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ env.TARGET_LABEL }}
           path: prebuilt/${{ matrix.cpu_level }}
       - name: Extract prebuilt binaries
         run: |
-          tar -xzf prebuilt/${{ matrix.cpu_level }}/${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ matrix.cpu_level }}-musl.tar.gz -C prebuilt/${{ matrix.cpu_level }}
+          tar -xzf prebuilt/${{ matrix.cpu_level }}/${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ env.TARGET_LABEL }}.tar.gz -C prebuilt/${{ matrix.cpu_level }} --strip-components=1
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
