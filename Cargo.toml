@@ -58,7 +58,7 @@ dashmap = "6.1"
 tempfile = "3.27"
 subtle = "2.6"
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "multipart", "rustls"] }
-lru = "0.16.3"
+lru = "0.17.0"
 metrics = "0.24.2"
 soffio-api-types = { path = "crates/soffio-api-types", features = ["sqlx"] }
 
