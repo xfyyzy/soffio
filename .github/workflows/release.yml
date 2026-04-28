@@ -69,6 +69,7 @@ jobs:
           push: true
 
   build-binaries:
+    name: build-linux-x86_64-musl-cpu-${{ matrix.cpu_level }}
     needs: prepare-release-builder
     runs-on: ubuntu-latest
     strategy:
@@ -144,6 +145,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
 
   build-aarch64-musl:
+    name: build-linux-aarch64-musl
     needs: prepare-release-builder
     runs-on: ubuntu-latest
     env:
@@ -215,6 +217,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
 
   build-freebsd:
+    name: build-freebsd-x86_64-cpu-${{ matrix.cpu_level }}
     needs: prepare-release-builder
     runs-on: ubuntu-latest
     strategy:
