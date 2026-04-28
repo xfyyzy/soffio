@@ -1,6 +1,6 @@
 [package]
 name = "soffio-api-types"
-version = "0.1.17-alpha.1"
+version = "0.1.17-alpha.2"
 edition = "2024"
 description = "Shared request and response types for the Soffio headless publishing API."
 license = "BSD-2-Clause"

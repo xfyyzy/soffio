@@ -1,6 +1,6 @@
 [package]
 name = "soffio-cli"
-version = "0.1.17-alpha.1"
+version = "0.1.17-alpha.2"
 edition = "2024"
 description = "Command-line automation client for the Soffio headless publishing API."
 license = "BSD-2-Clause"
@@ -18,7 +18,7 @@ clap = { version = "4.6.1", features = ["derive", "env"] }
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "multipart", "rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-soffio-api-types = { path = "../soffio-api-types", version = "0.1.17-alpha.1" }
+soffio-api-types = { path = "../soffio-api-types", version = "0.1.17-alpha.2" }
 thiserror = "2.0"
 time = { version = "0.3.46", features = ["formatting", "parsing"] }
 tokio = { version = "1", features = ["fs", "macros", "rt-multi-thread"] }
