@@ -3696,7 +3696,7 @@ dependencies = [
 
 [[package]]
 name = "soffio"
-version = "0.1.16"
+version = "0.1.17-alpha.1"
 dependencies = [
  "ammonia",
  "apalis",
@@ -3757,7 +3757,7 @@ dependencies = [
 
 [[package]]
 name = "soffio-api-types"
-version = "0.1.16"
+version = "0.1.17-alpha.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -3768,7 +3768,7 @@ dependencies = [
 
 [[package]]
 name = "soffio-cli"
-version = "0.1.16"
+version = "0.1.17-alpha.1"
 dependencies = [
  "assert_cmd",
  "clap",

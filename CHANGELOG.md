@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.17-alpha.1] - 2026-04-29
+
 ### Changed
 - Documented release binary archive names with an optional ABI/OS-version segment, allowing FreeBSD artifacts to use generic FreeBSD platform names without repeating the OS.
 - FreeBSD x86_64 release archives now use generic FreeBSD artifact names and are published for `x86-64-v2`, `x86-64-v3`, and `x86-64-v4` CPU levels.
