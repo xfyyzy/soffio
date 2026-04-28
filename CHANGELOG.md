@@ -8,7 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
-- Release workflow build jobs now use platform-aligned display names matching the binary artifact naming scheme.
+- Release workflow build jobs now use platform-aligned job identifiers and display names matching the binary artifact naming scheme.
 
 ## [0.1.17-alpha.1] - 2026-04-29
 
