@@ -113,24 +113,25 @@ jobs:
             -e RELEASE_TAG="${RELEASE_TAG}" \
             -w /work \
             "$RELEASE_BUILDER_IMAGE" \
-            sh -ec '
-              set -eux
-              cargo build --release --target ${TARGET_TRIPLE} -p soffio --bin ${BIN_NAME}
-              cargo build --release --target ${TARGET_TRIPLE} -p soffio-cli --bin ${BIN_CLI}
-              tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}"
-              rm -rf dist
-              mkdir -p "dist/${tar_root}"
-              cp target/${TARGET_TRIPLE}/release/${BIN_NAME} "dist/${tar_root}/${BIN_NAME}"
-              cp target/${TARGET_TRIPLE}/release/${BIN_CLI} "dist/${tar_root}/${BIN_CLI}"
-              strip "dist/${tar_root}/${BIN_NAME}" "dist/${tar_root}/${BIN_CLI}" || true
-              sh scripts/assert-static-elf.sh "dist/${tar_root}/${BIN_NAME}" "dist/${tar_root}/${BIN_CLI}"
-              tar_name="${tar_root}.tar.gz"
-              tar czf "${tar_name}" -C dist "${tar_root}"
-              # fix permissions before cache save on host
-              HOST_UID=$(stat -c '%u' /work)
-              HOST_GID=$(stat -c '%g' /work)
-              chown -R "$HOST_UID:$HOST_GID" /work/target /work/dist "/work/${tar_name}" /root/.cargo /root/.npm || true
-            '
+            sh -ec "$(cat <<'BUILD_SCRIPT'
+          set -eux
+          cargo build --release --target ${TARGET_TRIPLE} -p soffio --bin ${BIN_NAME}
+          cargo build --release --target ${TARGET_TRIPLE} -p soffio-cli --bin ${BIN_CLI}
+          tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}"
+          rm -rf dist
+          mkdir -p "dist/${tar_root}"
+          cp target/${TARGET_TRIPLE}/release/${BIN_NAME} "dist/${tar_root}/${BIN_NAME}"
+          cp target/${TARGET_TRIPLE}/release/${BIN_CLI} "dist/${tar_root}/${BIN_CLI}"
+          strip "dist/${tar_root}/${BIN_NAME}" "dist/${tar_root}/${BIN_CLI}" || true
+          sh scripts/assert-static-elf.sh "dist/${tar_root}/${BIN_NAME}" "dist/${tar_root}/${BIN_CLI}"
+          tar_name="${tar_root}.tar.gz"
+          tar czf "${tar_name}" -C dist "${tar_root}"
+          # fix permissions before cache save on host
+          HOST_UID=$(stat -c '%u' /work)
+          HOST_GID=$(stat -c '%g' /work)
+          chown -R "$HOST_UID:$HOST_GID" /work/target /work/dist "/work/${tar_name}" /root/.cargo /root/.npm || true
+          BUILD_SCRIPT
+          )"
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -183,24 +184,25 @@ jobs:
             -e AR_aarch64_unknown_linux_musl=ar \
             -w /work \
             "$RELEASE_BUILDER_IMAGE" \
-            sh -ec '
-              set -eux
-              cargo build --release --target ${TARGET_TRIPLE} -p soffio --bin ${BIN_NAME}
-              cargo build --release --target ${TARGET_TRIPLE} -p soffio-cli --bin ${BIN_CLI}
-              tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}"
-              rm -rf dist-aarch64
-              mkdir -p "dist-aarch64/${tar_root}"
-              cp target/${TARGET_TRIPLE}/release/${BIN_NAME} "dist-aarch64/${tar_root}/${BIN_NAME}"
-              cp target/${TARGET_TRIPLE}/release/${BIN_CLI} "dist-aarch64/${tar_root}/${BIN_CLI}"
-              strip "dist-aarch64/${tar_root}/${BIN_NAME}" "dist-aarch64/${tar_root}/${BIN_CLI}" || true
-              sh scripts/assert-static-elf.sh "dist-aarch64/${tar_root}/${BIN_NAME}" "dist-aarch64/${tar_root}/${BIN_CLI}"
-              tar_name="${tar_root}.tar.gz"
-              tar czf "${tar_name}" -C dist-aarch64 "${tar_root}"
-              # fix permissions before cache save on host
-              HOST_UID=$(stat -c '%u' /work)
-              HOST_GID=$(stat -c '%g' /work)
-              chown -R "$HOST_UID:$HOST_GID" /work/target /work/dist-aarch64 "/work/${tar_name}" /root/.cargo /root/.npm || true
-            '
+            sh -ec "$(cat <<'BUILD_SCRIPT'
+          set -eux
+          cargo build --release --target ${TARGET_TRIPLE} -p soffio --bin ${BIN_NAME}
+          cargo build --release --target ${TARGET_TRIPLE} -p soffio-cli --bin ${BIN_CLI}
+          tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}"
+          rm -rf dist-aarch64
+          mkdir -p "dist-aarch64/${tar_root}"
+          cp target/${TARGET_TRIPLE}/release/${BIN_NAME} "dist-aarch64/${tar_root}/${BIN_NAME}"
+          cp target/${TARGET_TRIPLE}/release/${BIN_CLI} "dist-aarch64/${tar_root}/${BIN_CLI}"
+          strip "dist-aarch64/${tar_root}/${BIN_NAME}" "dist-aarch64/${tar_root}/${BIN_CLI}" || true
+          sh scripts/assert-static-elf.sh "dist-aarch64/${tar_root}/${BIN_NAME}" "dist-aarch64/${tar_root}/${BIN_CLI}"
+          tar_name="${tar_root}.tar.gz"
+          tar czf "${tar_name}" -C dist-aarch64 "${tar_root}"
+          # fix permissions before cache save on host
+          HOST_UID=$(stat -c '%u' /work)
+          HOST_GID=$(stat -c '%g' /work)
+          chown -R "$HOST_UID:$HOST_GID" /work/target /work/dist-aarch64 "/work/${tar_name}" /root/.cargo /root/.npm || true
+          BUILD_SCRIPT
+          )"
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -215,10 +217,13 @@ jobs:
   build-freebsd:
     needs: prepare-release-builder
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cpu_level: [x86-64-v2, x86-64-v3, x86-64-v4]
     env:
       RELEASE_BUILDER_IMAGE: ghcr.io/${{ github.repository }}/soffio-release-build:${{ needs.prepare-release-builder.outputs.image_tag }}
       TARGET_TRIPLE: x86_64-unknown-freebsd
-      TARGET_LABEL: freebsd-x86_64-freebsd15-static
+      TARGET_LABEL: freebsd-x86_64-cpu-${{ matrix.cpu_level }}-static
     steps:
       - uses: actions/checkout@v6
       - name: Login to GHCR (for builder image)
@@ -235,8 +240,10 @@ jobs:
           mkdir -p ~/.cargo/registry ~/.cargo/git ~/.npm
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: freebsd15
-      - name: Build (FreeBSD 15)
+          shared-key: freebsd-${{ matrix.cpu_level }}
+      - name: Build (FreeBSD)
+        env:
+          CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_RUSTFLAGS: -C target-feature=+crt-static -C target-cpu=${{ matrix.cpu_level }}
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/work" \
@@ -248,27 +255,28 @@ jobs:
             -e TARGET_TRIPLE="${TARGET_TRIPLE}" \
             -e TARGET_LABEL="${TARGET_LABEL}" \
             -e CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_LINKER=freebsd15-static-cc \
-            -e CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_RUSTFLAGS="-C target-feature=+crt-static" \
+            -e CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_FREEBSD_RUSTFLAGS}" \
             -e CC_x86_64_unknown_freebsd=freebsd15-static-cc \
             -w /work \
             "$RELEASE_BUILDER_IMAGE" \
-            sh -ec '
-              set -eux
-              cargo build --release --target ${TARGET_TRIPLE} -p soffio --bin ${BIN_NAME}
-              cargo build --release --target ${TARGET_TRIPLE} -p soffio-cli --bin ${BIN_CLI}
-              tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}"
-              rm -rf dist-freebsd
-              mkdir -p "dist-freebsd/${tar_root}"
-              cp target/${TARGET_TRIPLE}/release/${BIN_NAME} "dist-freebsd/${tar_root}/${BIN_NAME}"
-              cp target/${TARGET_TRIPLE}/release/${BIN_CLI} "dist-freebsd/${tar_root}/${BIN_CLI}"
-              sh scripts/assert-static-elf.sh "dist-freebsd/${tar_root}/${BIN_NAME}" "dist-freebsd/${tar_root}/${BIN_CLI}"
-              tar_name="${tar_root}.tar.gz"
-              tar czf "${tar_name}" -C dist-freebsd "${tar_root}"
-              # fix permissions before cache save on host
-              HOST_UID=$(stat -c '%u' /work)
-              HOST_GID=$(stat -c '%g' /work)
-              chown -R "$HOST_UID:$HOST_GID" /work/target /work/dist-freebsd "/work/${tar_name}" /root/.cargo /root/.npm || true
-            '
+            sh -ec "$(cat <<'BUILD_SCRIPT'
+          set -eux
+          cargo build --release --target ${TARGET_TRIPLE} -p soffio --bin ${BIN_NAME}
+          cargo build --release --target ${TARGET_TRIPLE} -p soffio-cli --bin ${BIN_CLI}
+          tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}"
+          rm -rf dist-freebsd
+          mkdir -p "dist-freebsd/${tar_root}"
+          cp target/${TARGET_TRIPLE}/release/${BIN_NAME} "dist-freebsd/${tar_root}/${BIN_NAME}"
+          cp target/${TARGET_TRIPLE}/release/${BIN_CLI} "dist-freebsd/${tar_root}/${BIN_CLI}"
+          sh scripts/assert-static-elf.sh "dist-freebsd/${tar_root}/${BIN_NAME}" "dist-freebsd/${tar_root}/${BIN_CLI}"
+          tar_name="${tar_root}.tar.gz"
+          tar czf "${tar_name}" -C dist-freebsd "${tar_root}"
+          # fix permissions before cache save on host
+          HOST_UID=$(stat -c '%u' /work)
+          HOST_GID=$(stat -c '%g' /work)
+          chown -R "$HOST_UID:$HOST_GID" /work/target /work/dist-freebsd "/work/${tar_name}" /root/.cargo /root/.npm || true
+          BUILD_SCRIPT
+          )"
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:

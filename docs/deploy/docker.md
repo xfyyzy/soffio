@@ -31,7 +31,9 @@ docker buildx build \
 ```
 
 The Dockerfile no longer builds Rust binaries; it will fail if `PREBUILT_DIR` is missing or does not contain both executables.
-Release binary archives use `soffio-${RELEASE_TAG}-${os}-${arch}-${abi_or_osver}[-cpu-${cpu_level}]-${linkage}.tar.gz` names and contain a matching top-level directory.
+Release binary archives use `soffio-${RELEASE_TAG}-${os}-${arch}[-${abi_or_osver}][-cpu-${cpu_level}]-${linkage}.tar.gz` names and contain a matching top-level directory.
+Include the ABI or OS-version segment only when it adds platform-specific information, such as `musl` for Linux archives; omit it when the OS and architecture already identify the target.
+For example, Linux x86_64 musl archives use `soffio-${RELEASE_TAG}-linux-x86_64-musl-cpu-x86-64-v2-static.tar.gz`, while FreeBSD x86_64 CPU-specific archives use `soffio-${RELEASE_TAG}-freebsd-x86_64-cpu-x86-64-v2-static.tar.gz`.
 FreeBSD release tarballs are native FreeBSD archives and are not inputs for this Linux container image.
 
 ## Runtime Configuration
