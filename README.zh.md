@@ -140,7 +140,7 @@ SOFFIO_API_KEY_FILE=~/.config/soffio/key \
 
 1. 迁移脚本与数据兼容性说明
 2. 新增配置项及默认值变更
-3. 发布二进制产物时，同时附带 Linux musl 压缩包与 FreeBSD 15 x86_64 压缩包
+3. 发布二进制产物时，同时附带 Linux musl、FreeBSD 15 x86_64 与 Darwin aarch64 压缩包
 
 ## 支持与安全
 

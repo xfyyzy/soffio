@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.17-alpha.3] - 2026-04-30
+
+### Added
+- Release builds now publish a Darwin aarch64 binary archive for Apple Silicon macOS alongside the existing Linux and FreeBSD archives.
+
 ## [0.1.17-alpha.2] - 2026-04-29
 
 ### Changed

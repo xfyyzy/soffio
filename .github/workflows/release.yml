@@ -291,6 +291,62 @@ jobs:
           overwrite_files: true
         if: startsWith(github.ref, 'refs/tags/')
 
+  build-darwin-aarch64:
+    name: build-darwin-aarch64
+    runs-on: macos-latest
+    env:
+      TARGET_TRIPLE: aarch64-apple-darwin
+      TARGET_LABEL: darwin-aarch64
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Prepare Rust
+        run: |
+          set -eux
+          RUST_VERSION="$(sed -n 's/^ARG RUST_IMAGE=rust:\([^-]*\)-.*/\1/p' deploy/docker/Dockerfile.build)"
+          rustup toolchain install "${RUST_VERSION}" --profile minimal
+          rustup default "${RUST_VERSION}"
+          rustup target add "${TARGET_TRIPLE}"
+      - name: Prepare TypeScript
+        run: npm install --global --unsafe-perm typescript@6
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: darwin-aarch64
+      - name: Build (Darwin aarch64)
+        run: |
+          set -eux
+          export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+          cargo build --release --target "${TARGET_TRIPLE}" -p soffio --bin "${BIN_NAME}"
+          cargo build --release --target "${TARGET_TRIPLE}" -p soffio-cli --bin "${BIN_CLI}"
+          tar_root="${BIN_NAME}-${RELEASE_TAG}-${TARGET_LABEL}"
+          rm -rf dist-darwin
+          mkdir -p "dist-darwin/${tar_root}"
+          cp "target/${TARGET_TRIPLE}/release/${BIN_NAME}" "dist-darwin/${tar_root}/${BIN_NAME}"
+          cp "target/${TARGET_TRIPLE}/release/${BIN_CLI}" "dist-darwin/${tar_root}/${BIN_CLI}"
+          for binary in "dist-darwin/${tar_root}/${BIN_NAME}" "dist-darwin/${tar_root}/${BIN_CLI}"; do
+            strip "${binary}" || true
+            codesign --force --sign - "${binary}"
+            codesign --verify --strict "${binary}"
+            file "${binary}"
+          done
+          otool -L "dist-darwin/${tar_root}/${BIN_NAME}" "dist-darwin/${tar_root}/${BIN_CLI}"
+          if otool -L "dist-darwin/${tar_root}/${BIN_NAME}" "dist-darwin/${tar_root}/${BIN_CLI}" | grep -E '/opt/homebrew|/usr/local'; then
+            echo "unexpected non-system dylib dependency" >&2
+            exit 1
+          fi
+          tar_name="${tar_root}.tar.gz"
+          tar czf "${tar_name}" -C dist-darwin "${tar_root}"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ env.TARGET_LABEL }}
+          path: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ env.TARGET_LABEL }}.tar.gz
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: ${{ env.BIN_NAME }}-${{ env.RELEASE_TAG }}-${{ env.TARGET_LABEL }}.tar.gz
+          overwrite_files: true
+        if: startsWith(github.ref, 'refs/tags/')
+
   docker:
     runs-on: ubuntu-latest
     needs: build-linux-x86_64-musl
@@ -339,7 +395,7 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ env.RELEASE_TAG }}-amd64-${{ matrix.cpu_level }}
 
   publish-release-builder:
-    needs: [prepare-release-builder, build-linux-x86_64-musl, build-linux-aarch64-musl, build-freebsd-x86_64]
+    needs: [prepare-release-builder, build-linux-x86_64-musl, build-linux-aarch64-musl, build-freebsd-x86_64, build-darwin-aarch64]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:

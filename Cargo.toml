@@ -1,6 +1,6 @@
 [package]
 name = "soffio"
-version = "0.1.17-alpha.2"
+version = "0.1.17-alpha.3"
 edition = "2024"
 description = "A calm, self-hosted publishing system for technical writers who want static output, admin convenience, and operational control."
 license = "BSD-2-Clause"
@@ -67,7 +67,7 @@ subtle = "2.6"
 reqwest = { version = "0.13.2", default-features = false, features = ["json", "multipart", "rustls"] }
 lru = "0.17.0"
 metrics = "0.24.2"
-soffio-api-types = { path = "crates/soffio-api-types", version = "0.1.17-alpha.2", features = ["sqlx"] }
+soffio-api-types = { path = "crates/soffio-api-types", version = "0.1.17-alpha.3", features = ["sqlx"] }
 
 [dev-dependencies]
 insta = { version = "1.47.2", features = ["glob"] }

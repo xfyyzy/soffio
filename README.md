@@ -137,7 +137,7 @@ Production deployments are typically containerized. Refer to [`docs/deploy/docke
 - Each release should ship with:
   1. Migration scripts plus backward-compatibility notes.
   2. A list of new/changed configuration keys and their defaults.
-  3. Linux musl archives and FreeBSD x86_64 archives when binary artifacts are published.
+  3. Linux musl, FreeBSD x86_64, and Darwin aarch64 archives when binary artifacts are published.
 
 ## Support, Community & Security
 

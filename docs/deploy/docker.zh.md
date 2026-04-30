@@ -34,10 +34,10 @@ docker buildx build \
 ```
 
 Dockerfile 现在只复制预编译产物，如果目录缺失或不包含两个可执行文件会直接失败。
-发行二进制归档统一使用 `soffio-${RELEASE_TAG}-${os}-${arch}[-${abi_or_osver}][-cpu-${cpu_level}]-${linkage}.tar.gz` 命名，并包含同名顶层目录。
+发行二进制归档统一使用 `soffio-${RELEASE_TAG}-${os}-${arch}[-${abi_or_osver}][-cpu-${cpu_level}][-static].tar.gz` 命名，并包含同名顶层目录。
 只有当 ABI 或 OS 版本段能补充平台信息时才保留它，例如 Linux 归档中的 `musl`；当 OS 与架构已经能标识目标平台时可省略。
-例如，Linux x86_64 musl 归档使用 `soffio-${RELEASE_TAG}-linux-x86_64-musl-cpu-x86-64-v2-static.tar.gz`，FreeBSD x86_64 CPU 分级归档使用 `soffio-${RELEASE_TAG}-freebsd-x86_64-cpu-x86-64-v2-static.tar.gz`。
-FreeBSD 发行包是原生 FreeBSD 压缩包，不作为这个 Linux 容器镜像的输入。
+例如，Linux x86_64 musl 归档使用 `soffio-${RELEASE_TAG}-linux-x86_64-musl-cpu-x86-64-v2-static.tar.gz`，FreeBSD x86_64 CPU 分级归档使用 `soffio-${RELEASE_TAG}-freebsd-x86_64-cpu-x86-64-v2-static.tar.gz`，Apple Silicon macOS 归档使用 `soffio-${RELEASE_TAG}-darwin-aarch64.tar.gz`。
+FreeBSD 与 Darwin 发行包是原生 OS 压缩包，不作为这个 Linux 容器镜像的输入。
 
 
 
