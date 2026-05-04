@@ -64,7 +64,7 @@ hex = "0.4"
 dashmap = "6.1"
 tempfile = "3.27"
 subtle = "2.6"
-reqwest = { version = "0.13.2", default-features = false, features = ["json", "multipart", "rustls"] }
+reqwest = { version = "0.13.3", default-features = false, features = ["json", "multipart", "rustls"] }
 lru = "0.17.0"
 metrics = "0.24.2"
 soffio-api-types = { path = "crates/soffio-api-types", version = "0.1.17-alpha.3", features = ["sqlx"] }
@@ -72,7 +72,7 @@ soffio-api-types = { path = "crates/soffio-api-types", version = "0.1.17-alpha.3
 [dev-dependencies]
 insta = { version = "1.47.2", features = ["glob"] }
 tower = "0.5"
-reqwest = { version = "0.13.2", default-features = false, features = ["json", "multipart", "rustls"] }
+reqwest = { version = "0.13.3", default-features = false, features = ["json", "multipart", "rustls"] }
 serial_test = "3"
 metrics-util = "0.20.1"
 
