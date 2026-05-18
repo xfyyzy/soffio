@@ -61,7 +61,7 @@ katex = { version = "0.4.6", default-features = false, features = ["duktape"] }
 imagesize = "0.14"
 toml = { version = "1.1", features = ["parse", "display"] }
 hex = "0.4"
-dashmap = "6.1"
+dashmap = "6.2"
 tempfile = "3.27"
 subtle = "2.6"
 reqwest = { version = "0.13.3", default-features = false, features = ["json", "multipart", "rustls"] }
