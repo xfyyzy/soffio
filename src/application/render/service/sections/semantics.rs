@@ -81,14 +81,11 @@ fn attach_code_copy_button(
 pub(super) fn augment_code_blocks_only(html: &str) -> Result<String, RenderError> {
     rewrite_str(
         html,
-        RewriteStrSettings {
-            element_content_handlers: vec![element!("pre", |el| {
-                apply_code_block_accessibility(el)?;
-                attach_code_copy_button(el)?;
-                Ok(())
-            })],
-            ..RewriteStrSettings::default()
-        },
+        RewriteStrSettings::new().append_element_content_handler(element!("pre", |el| {
+            apply_code_block_accessibility(el)?;
+            attach_code_copy_button(el)?;
+            Ok(())
+        })),
     )
     .map_err(|err| RenderError::Document {
         message: err.to_string(),
@@ -104,222 +101,211 @@ pub(super) fn augment_semantics(
 
     let rewritten = rewrite_str(
         html,
-        RewriteStrSettings {
-            element_content_handlers: vec![
-                element!("img", {
-                    let state = Rc::clone(&state);
-                    move |el| {
-                        {
-                            let mut state = state.borrow_mut();
-                            state.images = state.images.saturating_add(1);
-                            let has_width = el.get_attribute("width").is_some();
-                            let has_height = el.get_attribute("height").is_some();
-                            if !has_width || !has_height {
-                                state.images_missing_dimensions =
-                                    state.images_missing_dimensions.saturating_add(1);
-                            }
+        RewriteStrSettings::new()
+            .append_element_content_handler(element!("img", {
+                let state = Rc::clone(&state);
+                move |el| {
+                    {
+                        let mut state = state.borrow_mut();
+                        state.images = state.images.saturating_add(1);
+                        let has_width = el.get_attribute("width").is_some();
+                        let has_height = el.get_attribute("height").is_some();
+                        if !has_width || !has_height {
+                            state.images_missing_dimensions =
+                                state.images_missing_dimensions.saturating_add(1);
+                        }
 
-                            if el.get_attribute("alt").is_none() {
-                                state.images_missing_alt =
-                                    state.images_missing_alt.saturating_add(1);
-                                if let Some(title) = el.get_attribute("title") {
-                                    let trimmed = title.trim();
-                                    if trimmed.is_empty() {
-                                        el.set_attribute("alt", "")?;
-                                    } else {
-                                        el.set_attribute("alt", trimmed)?;
-                                    }
-                                } else {
+                        if el.get_attribute("alt").is_none() {
+                            state.images_missing_alt = state.images_missing_alt.saturating_add(1);
+                            if let Some(title) = el.get_attribute("title") {
+                                let trimmed = title.trim();
+                                if trimmed.is_empty() {
                                     el.set_attribute("alt", "")?;
+                                } else {
+                                    el.set_attribute("alt", trimmed)?;
                                 }
-                            }
-
-                            if let Some(src) = el.get_attribute("src")
-                                && is_external_http_url(&src)
-                                && let Some(domain) = extract_domain(&src)
-                            {
-                                state.image_domains.insert(domain);
+                            } else {
+                                el.set_attribute("alt", "")?;
                             }
                         }
 
-                        if el.get_attribute("loading").is_none() {
-                            el.set_attribute("loading", "lazy")?;
-                        }
-                        if el.get_attribute("decoding").is_none() {
-                            el.set_attribute("decoding", "async")?;
-                        }
-                        if el.get_attribute("width").is_some()
-                            && el.get_attribute("height").is_some()
+                        if let Some(src) = el.get_attribute("src")
+                            && is_external_http_url(&src)
+                            && let Some(domain) = extract_domain(&src)
                         {
-                            el.remove_attribute("data-default-aspect");
-                        } else {
-                            el.set_attribute("data-default-aspect", "16:9")?;
+                            state.image_domains.insert(domain);
                         }
-                        Ok(())
                     }
-                }),
-                element!("a", {
-                    let state = Rc::clone(&state);
-                    let site_url = Rc::clone(&site_url);
-                    move |el| {
-                        if let Some(href) = el.get_attribute("href") {
-                            let classification = classify_link(&href, site_url.as_ref().as_ref());
-                            match classification {
-                                LinkKind::External { domain } => {
-                                    {
-                                        let mut state = state.borrow_mut();
-                                        state.external_links =
-                                            state.external_links.saturating_add(1);
-                                        if let Some(domain) = domain.clone() {
-                                            state.link_domains.insert(domain);
-                                        }
+
+                    if el.get_attribute("loading").is_none() {
+                        el.set_attribute("loading", "lazy")?;
+                    }
+                    if el.get_attribute("decoding").is_none() {
+                        el.set_attribute("decoding", "async")?;
+                    }
+                    if el.get_attribute("width").is_some() && el.get_attribute("height").is_some() {
+                        el.remove_attribute("data-default-aspect");
+                    } else {
+                        el.set_attribute("data-default-aspect", "16:9")?;
+                    }
+                    Ok(())
+                }
+            }))
+            .append_element_content_handler(element!("a", {
+                let state = Rc::clone(&state);
+                let site_url = Rc::clone(&site_url);
+                move |el| {
+                    if let Some(href) = el.get_attribute("href") {
+                        let classification = classify_link(&href, site_url.as_ref().as_ref());
+                        match classification {
+                            LinkKind::External { domain } => {
+                                {
+                                    let mut state = state.borrow_mut();
+                                    state.external_links = state.external_links.saturating_add(1);
+                                    if let Some(domain) = domain.clone() {
+                                        state.link_domains.insert(domain);
                                     }
+                                }
 
-                                    let rel_value = merge_rel(
-                                        el.get_attribute("rel"),
-                                        &["noopener", "noreferrer"],
-                                    );
-                                    el.set_attribute("rel", &rel_value)?;
-                                    el.set_attribute("target", "_blank")?;
-                                    el.set_attribute("data-link-kind", "external")?;
+                                let rel_value =
+                                    merge_rel(el.get_attribute("rel"), &["noopener", "noreferrer"]);
+                                el.set_attribute("rel", &rel_value)?;
+                                el.set_attribute("target", "_blank")?;
+                                el.set_attribute("data-link-kind", "external")?;
+                            }
+                            LinkKind::Internal => {
+                                {
+                                    let mut state = state.borrow_mut();
+                                    state.internal_links = state.internal_links.saturating_add(1);
                                 }
-                                LinkKind::Internal => {
-                                    {
-                                        let mut state = state.borrow_mut();
-                                        state.internal_links =
-                                            state.internal_links.saturating_add(1);
-                                    }
-                                    el.set_attribute("data-link-kind", "internal")?;
-                                }
-                                LinkKind::Anchor => {
-                                    el.set_attribute("data-link-kind", "anchor")?;
-                                }
-                                LinkKind::Other => {
-                                    el.set_attribute("data-link-kind", "other")?;
-                                }
+                                el.set_attribute("data-link-kind", "internal")?;
+                            }
+                            LinkKind::Anchor => {
+                                el.set_attribute("data-link-kind", "anchor")?;
+                            }
+                            LinkKind::Other => {
+                                el.set_attribute("data-link-kind", "other")?;
                             }
                         }
-                        Ok(())
                     }
-                }),
-                element!("pre", {
-                    let state = Rc::clone(&state);
-                    move |el| {
-                        {
-                            let mut state = state.borrow_mut();
-                            state.code_blocks = state.code_blocks.saturating_add(1);
-                        }
+                    Ok(())
+                }
+            }))
+            .append_element_content_handler(element!("pre", {
+                let state = Rc::clone(&state);
+                move |el| {
+                    {
+                        let mut state = state.borrow_mut();
+                        state.code_blocks = state.code_blocks.saturating_add(1);
+                    }
 
-                        apply_code_block_accessibility(el)?;
-                        attach_code_copy_button(el)?;
-                        Ok(())
+                    apply_code_block_accessibility(el)?;
+                    attach_code_copy_button(el)?;
+                    Ok(())
+                }
+            }))
+            .append_element_content_handler(element!("code", |el| {
+                if let Some(lang) = el.get_attribute("data-language") {
+                    let trimmed = lang.trim();
+                    if !trimmed.is_empty() {
+                        el.set_attribute("data-lang", trimmed)?;
                     }
-                }),
-                element!("code", |el| {
-                    if let Some(lang) = el.get_attribute("data-language") {
-                        let trimmed = lang.trim();
-                        if !trimmed.is_empty() {
-                            el.set_attribute("data-lang", trimmed)?;
-                        }
+                }
+                Ok(())
+            }))
+            .append_element_content_handler(element!("div", {
+                let state = Rc::clone(&state);
+                move |el| {
+                    if el.get_attribute("data-math-style").is_some() {
+                        let mut state = state.borrow_mut();
+                        state.math_blocks = state.math_blocks.saturating_add(1);
                     }
                     Ok(())
-                }),
-                element!("div", {
-                    let state = Rc::clone(&state);
-                    move |el| {
-                        if el.get_attribute("data-math-style").is_some() {
-                            let mut state = state.borrow_mut();
-                            state.math_blocks = state.math_blocks.saturating_add(1);
-                        }
-                        Ok(())
-                    }
-                }),
-                element!("span", {
-                    let state = Rc::clone(&state);
-                    move |el| {
-                        if el.get_attribute("data-math-style").is_some() {
-                            let mut state = state.borrow_mut();
-                            state.math_blocks = state.math_blocks.saturating_add(1);
-                        }
-                        Ok(())
-                    }
-                }),
-                element!("figure", {
-                    let state = Rc::clone(&state);
-                    move |el| {
-                        if let Some(role) = el.get_attribute("data-role")
-                            && role == "diagram-mermaid"
-                        {
-                            let mut state = state.borrow_mut();
-                            state.mermaid_diagrams = state.mermaid_diagrams.saturating_add(1);
-                        }
-                        Ok(())
-                    }
-                }),
-                element!("table", |el| {
-                    el.set_attribute("data-role", "post-table")?;
-                    if el.get_attribute("role").is_none() {
-                        el.set_attribute("role", "table")?;
+                }
+            }))
+            .append_element_content_handler(element!("span", {
+                let state = Rc::clone(&state);
+                move |el| {
+                    if el.get_attribute("data-math-style").is_some() {
+                        let mut state = state.borrow_mut();
+                        state.math_blocks = state.math_blocks.saturating_add(1);
                     }
                     Ok(())
-                }),
-                element!("thead", |el| {
-                    el.set_attribute("data-role", "table-head")?;
-                    if el.get_attribute("role").is_none() {
-                        el.set_attribute("role", "rowgroup")?;
+                }
+            }))
+            .append_element_content_handler(element!("figure", {
+                let state = Rc::clone(&state);
+                move |el| {
+                    if let Some(role) = el.get_attribute("data-role")
+                        && role == "diagram-mermaid"
+                    {
+                        let mut state = state.borrow_mut();
+                        state.mermaid_diagrams = state.mermaid_diagrams.saturating_add(1);
                     }
                     Ok(())
-                }),
-                element!("tbody", |el| {
-                    el.set_attribute("data-role", "table-body")?;
-                    if el.get_attribute("role").is_none() {
-                        el.set_attribute("role", "rowgroup")?;
+                }
+            }))
+            .append_element_content_handler(element!("table", |el| {
+                el.set_attribute("data-role", "post-table")?;
+                if el.get_attribute("role").is_none() {
+                    el.set_attribute("role", "table")?;
+                }
+                Ok(())
+            }))
+            .append_element_content_handler(element!("thead", |el| {
+                el.set_attribute("data-role", "table-head")?;
+                if el.get_attribute("role").is_none() {
+                    el.set_attribute("role", "rowgroup")?;
+                }
+                Ok(())
+            }))
+            .append_element_content_handler(element!("tbody", |el| {
+                el.set_attribute("data-role", "table-body")?;
+                if el.get_attribute("role").is_none() {
+                    el.set_attribute("role", "rowgroup")?;
+                }
+                Ok(())
+            }))
+            .append_element_content_handler(element!("tr", |el| {
+                el.set_attribute("data-role", "table-row")?;
+                if el.get_attribute("role").is_none() {
+                    el.set_attribute("role", "row")?;
+                }
+                Ok(())
+            }))
+            .append_element_content_handler(element!("th", |el| {
+                el.set_attribute("data-role", "table-header-cell")?;
+                if el.get_attribute("scope").is_none() {
+                    el.set_attribute("scope", "col")?;
+                }
+                Ok(())
+            }))
+            .append_element_content_handler(element!("td", |el| {
+                el.set_attribute("data-role", "table-cell")?;
+                Ok(())
+            }))
+            .append_element_content_handler(element!("blockquote", |el| {
+                el.set_attribute("data-role", "post-quote")?;
+                if el.get_attribute("role").is_none() {
+                    el.set_attribute("role", "note")?;
+                }
+                Ok(())
+            }))
+            .append_element_content_handler(text!("*", {
+                let state = Rc::clone(&state);
+                move |t| {
+                    let words = t
+                        .as_str()
+                        .split_whitespace()
+                        .filter(|segment| !segment.is_empty())
+                        .count() as u32;
+                    if words > 0 {
+                        let mut state = state.borrow_mut();
+                        state.word_count = state.word_count.saturating_add(words);
                     }
                     Ok(())
-                }),
-                element!("tr", |el| {
-                    el.set_attribute("data-role", "table-row")?;
-                    if el.get_attribute("role").is_none() {
-                        el.set_attribute("role", "row")?;
-                    }
-                    Ok(())
-                }),
-                element!("th", |el| {
-                    el.set_attribute("data-role", "table-header-cell")?;
-                    if el.get_attribute("scope").is_none() {
-                        el.set_attribute("scope", "col")?;
-                    }
-                    Ok(())
-                }),
-                element!("td", |el| {
-                    el.set_attribute("data-role", "table-cell")?;
-                    Ok(())
-                }),
-                element!("blockquote", |el| {
-                    el.set_attribute("data-role", "post-quote")?;
-                    if el.get_attribute("role").is_none() {
-                        el.set_attribute("role", "note")?;
-                    }
-                    Ok(())
-                }),
-                text!("*", {
-                    let state = Rc::clone(&state);
-                    move |t| {
-                        let words = t
-                            .as_str()
-                            .split_whitespace()
-                            .filter(|segment| !segment.is_empty())
-                            .count() as u32;
-                        if words > 0 {
-                            let mut state = state.borrow_mut();
-                            state.word_count = state.word_count.saturating_add(words);
-                        }
-                        Ok(())
-                    }
-                }),
-            ],
-            ..RewriteStrSettings::default()
-        },
+                }
+            })),
     )
     .map_err(|err| RenderError::Document {
         message: err.to_string(),

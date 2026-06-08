@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Refreshed the HTML rewriting dependency to `lol_html` 3.0 while preserving existing rendered-output behavior.
+
 ## [0.1.17-alpha.3] - 2026-04-30
 
 ### Added

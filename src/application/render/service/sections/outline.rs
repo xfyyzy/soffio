@@ -31,8 +31,9 @@ pub(super) fn apply_heading_ids(
 
     let rewritten = rewrite_str(
         html,
-        RewriteStrSettings {
-            element_content_handlers: vec![element!("h1, h2, h3, h4, h5, h6", {
+        RewriteStrSettings::new().append_element_content_handler(element!(
+            "h1, h2, h3, h4, h5, h6",
+            {
                 let headings_shared = Rc::clone(&headings_shared);
                 let index = Rc::clone(&index);
                 let error_slot = Rc::clone(&error_slot);
@@ -65,9 +66,8 @@ pub(super) fn apply_heading_ids(
                     el.set_attribute("id", &info.slug)?;
                     Ok(())
                 }
-            })],
-            ..RewriteStrSettings::default()
-        },
+            }
+        )),
     )
     .map_err(|err| RenderError::Document {
         message: err.to_string(),
