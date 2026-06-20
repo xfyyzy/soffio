@@ -7,7 +7,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-06-20
+
+### Added
+- Release builds now publish a Darwin aarch64 binary archive for Apple Silicon macOS alongside the existing Linux and FreeBSD archives.
+- FreeBSD x86_64 release archives are now published for `x86-64-v2`, `x86-64-v3`, and `x86-64-v4` CPU levels.
+
 ### Changed
+- Promoted the 0.1.17 release train to the final stable maintenance release before repository archival.
+- Documented the project archive status in the README.
+- Release binary archive names now allow an optional ABI/OS-version segment and use platform-aligned workflow job identifiers.
 - Refreshed the HTML rewriting dependency to `lol_html` 3.0 while preserving existing rendered-output behavior.
 
 ## [0.1.17-alpha.3] - 2026-04-30
